@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-appid=1042420
-dayz_id=221100
+# Make sure we don't start collecting core files
+# FIXME Set this in Docker somewhere
+ulimit -c 0
 
+# Colors
 default="\e[0m"
 red="\e[31m"
 green="\e[32m"
@@ -13,75 +15,154 @@ lightblue="\e[94m"
 magenta="\e[35m"
 cyan="\e[36m"
 
-STEAMCMD=/steamcmd/steamcmd.sh
+# Base directories
+CFG_SRC_FILES="/files"
+SERVER_FILES="${HOME}/serverfiles"
+SERVER_PROFILE="${HOME}/serverprofile"
+
+# Default config file
+DEFAULT_CFG="${CFG_SRC_FILES}/default.cfg"
+
+# Battle Eye files
+BE_SERVER_FILE="beserver_x64.cfg"
+BE_SERVER_DST="${SERVER_FILES}/battleye/${BE_SERVER_FILE}"
+BE_SERVER_SRC="${CFG_SRC_FILES}/${BE_SERVER_FILE}"
+
+# Server configuration file
+SERVER_CFG_FILE="serverDZ.cfg"
+SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
+SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
+
+# Used to check if dayZ is installed
+SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
+
+# Steam files
+STEAM_LOGIN_DST="${HOME}/.steamlogin"
+STEAMCMD=steamcmd.sh
+
+# Workshop
+WORKSHOP_CFG="${HOME}/workshop.cfg"
+
+fn_prompt_yn(){
+  echo -n "${1} (y|N) " >&2
+  read -s -n 1 a
+  a=$(echo ${a} | tr A-Z a-z)
+  if [[ "${a}" = "y" ]]
+  then
+    echo
+    return 0
+  else
+    return 1
+  fi
+}
 
 fn_loadconfig_dayz(){
-  source /files/default.cfg
-  # Handle adding the server cfg file
-  if [ ! -f ${HOME}/serverfiles/serverDZ.cfg ]
+  source ${DEFAULT_CFG}
+  # Handle the server configuration file
+  if [ ! -f ${SERVER_CFG_DST} ]
   then
-    echo "Creating initial serverDZ.cfg"
-  	cp /files/serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
-	elif diff -q /files/default.cfg "${HOME}/serverfiles/serverDZ.cfg" > /dev/null
+    echo "Creating initial server configuration file"
+  	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	elif diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" > /dev/null
 	then
-    echo "Updating serverDZ.cfg"
-  	cp /files/serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
+	  if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
+	  then
+      echo "Updating the server configuration file"
+    	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+    else
+      echo "NOT updating the server configuration file"
+    fi
 	fi
 }
 
+# Checks for the destination file are already done before calls to this
+fn_do_rcon(){
+  echo -n "Creating the Battle Eye configuration file "
+  cp "${BE_SERVER_SRC}" "${BE_SERVER_DST}"
+  # Set a random RCON password, unless one's set in the environment
+  if grep -q RCON_PASSWORD "${BE_SERVER_SRC}"
+  then
+    RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+    echo -e "using random RCON password ${yellow}${RCON_PASSWORD}${default}"
+    sed -i "${BE_SERVER_DST}" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
+  else
+    echo "using the RCON_PASSWORD already set in ${BE_SERVER_SRC}."
+  fi
+}
+
 fn_create_beconfig(){
-  if [ -d "${HOME}/serverfiles/battleye" ] && [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]
+  if [ ! -f "${BE_SERVER_DST}" ]
   then
     echo -n "Creating Battle Eye RCON file "
     fn_do_rcon
-  elif diff -q /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg" > /dev/null
+  elif diff -q "${BE_SERVER_SRC}" "${BE_SERVER_DST}" > /dev/null
   then
     echo -n "Updating Battle Eye RCON file "
     fn_do_rcon
   fi
 }
 
-fn_do_rcon(){
-  cp /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg"
-  # Set a random RCON password, unless one's set in the environment
-  if grep -v RCON_PASSWORD /files/beserver_x64.cfg
-  then
-    RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-    echo -e "using random RCON password ${yellow}${RCON_PASSWORD}"
-    sed -i "${HOME}/serverfiles/battleye/beserver_x64.cfg" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
-  else
-    echo "using the RCON_PASSWORD already set in files/beserver_x64.cfg."
-  fi
-}
-
 fn_start_dayz(){
+  fn_create_beconfig
   fn_loadconfig_dayz
   fn_workshop_mods
   printf "[ ${green}DayZ${default} ] Starting server...\n"
-  cd ${HOME}/serverfiles
+  cd ${SERVER_FILES}
   ./DayZServer $dayzparameter "$workshop" || (
     echo
     echo -e "${yellow}========================================== error.log =========================================="
-    find /home/user -name error.log -exec cat {} \; -exec rm -f {} \;
+    find "${HOME}" -name error.log -exec cat {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== script*.log ========================================"
-    find /home/user -name "script*.log" -exec cat {} \; -exec rm -f {} \;
+    find "${HOME}" -name "script*.log" -exec cat {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== *.RPT =============================================="
-    find /home/user -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
+    find "${HOME}" -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== End crash log ======================================"
   )
 }
 
+fn_steam_login(){
+  if [ -f "${STEAM_LOGIN_DST}" ]
+  then
+    if fn_prompt_yn "The steam login is already set. Reset it?"
+    then
+      rm -f "${STEAM_LOGIN_DST}"
+    else
+      echo
+      echo "Not reset. Nothing to do. Exiting..."
+      exit 0
+    fi
+  fi
+  if [ ! -f "${STEAM_LOGIN_DST}" ]
+  then
+    echo "Setting up Steam credentials"
+    echo -n "Steam Username (anonymous): "
+    read steamlogin
+    if [[ "${steamlogin}" = "" ]]
+    then
+      echo "Steam login set to 'anonymous'"
+      steamlogin="anonymous"
+    fi
+    ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
+  fi
+}
+
 fn_steamlogin_dayz(){
-	source /files/steamlogin
+  if [ -f "${STEAM_LOGIN_DST}" ]
+  then
+  	source "${STEAM_LOGIN_DST}"
+  else
+    echo "No cached Steam credentials. Please configure this now: "
+    fn_steam_login
+  fi
 }
 
 fn_install_dayz(){
-	if [ ! -f "${HOME}/serverfiles/DayZServer" ]; then
-		mkdir ${HOME}/serverfiles &> /dev/null
-		mkdir ${HOME}/serverprofile &> /dev/null
+	if [ ! -f "${SERVER_INSTALL_FILE}" ]; then
+		mkdir -p "${SERVER_FILES}"
+		mkdir -p "${SERVER_PROFILE}"
 		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
 		fn_steamlogin_dayz
 		fn_runvalidate_dayz
@@ -92,13 +173,13 @@ fn_install_dayz(){
 
 fn_runupdate_dayz(){
 	fn_loadconfig_dayz
-	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" +quit
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
 }
 
 fn_update_dayz(){
 	fn_steamlogin_dayz
 	fn_loadconfig_dayz
-	appmanifestfile=${HOME}/serverfiles/steamapps/appmanifest_"${appid}".acf
+	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${appid}".acf
 	printf "[ ... ] Checking for update: SteamCMD"
 	# gets currentbuild
 	currentbuild=$(grep buildid "${appmanifestfile}" | tr '[:blank:]"' ' ' | tr -s ' ' | cut -d \  -f3)
@@ -108,7 +189,8 @@ fn_update_dayz(){
 		sleep 1
 	fi
 	# check for new build
-	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${appid}" +app_info_print "${appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${appid}" +app_info_print \
+	  "${appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
 	if [ -z "${availablebuild}" ]; then
 		printf "\r[ ${red}FAIL${default} ] Checking for update: SteamCMD\n"
 		printf "\r[ ${red}FAIL${default} ] Checking for update: SteamCMD: Not returning version info\n"
@@ -138,23 +220,23 @@ fn_update_dayz(){
 
 fn_runvalidate_dayz(){
 	fn_loadconfig_dayz
-	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" validate +quit
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
 fn_workshop_mods(){
 	fn_steamlogin_dayz
 	fn_loadconfig_dayz
 	declare -a workshopID
-	workshopfolder="${HOME}/serverfiles/steamapps/workshop/content/221100"
+	workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
 	workshoplist=""
-	if [ ! -f /files/workshop.cfg ]
+	if [ ! -f "${WORKSHOP_CFG}" ]
 	then
 	  echo "No workshop mods..."
 	  return
 	else
 	  echo "Syncing workshop mods..."
 	fi
-	mapfile -t -s 1 workshopID < /files/workshop.cfg
+	mapfile -t workshopID < "${WORKSHOP_CFG}"
 	# gather mods
 	for i in "${workshopID[@]}"
 	do
@@ -163,30 +245,90 @@ fn_workshop_mods(){
 		fi
 	done
 	# download mods
-	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" ${workshoplist} +quit
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	# link mods
 	for i in "${workshopID[@]}"
 	do
 		if [[ $i =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ] && [ -d "${workshopfolder}/$i" ]; then
 			modname=$(cut -d '"' -f 2 <<< $(grep name  ${workshopfolder}/$i/meta.cpp))
-			if [ ! -d "${HOME}/serverfiles/@${modname}" ]; then
-				ln -s ${workshopfolder}/$i "${HOME}/serverfiles/@${modname}" &> /dev/null
+			if [ ! -d "${SERVER_FILES}/@${modname}" ]; then
+				ln -s ${workshopfolder}/$i "${SERVER_FILES}/@${modname}" &> /dev/null
 			fi
 			find "${workshopfolder}/$i" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 		fi
 	done
-	if ls ${HOME}/serverfiles/@* 1> /dev/null 2>&1; then
+	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1; then
     printf "\n[ ${green}DayZ${default} ] Copy Key Files from Mods...\n"
-    cp -vu ${HOME}/serverfiles/@*/keys/* "${HOME}/serverfiles/keys/" > /dev/null 2>&1
+    cp -vu ${SERVER_FILES}/@*/keys/* "${SERVER_FILES}/keys/" > /dev/null 2>&1
   fi
 }
 
-# Make sure we don't start collecting core files
-ulimit -c 0
+fn_rcon(){
+  case "${1}" in
+    show)
+      if [ ! -f "${BE_SERVER_DST}" ]
+      then
+        fn_do_rcon
+      fi
+      echo "=================================================================="
+      cat "${BE_SERVER_DST}"
+      echo "=================================================================="
+      ;;
+    reset)
+      if fn_prompt_yn "Reset RCON password?"
+      then
+        rm -f "${BE_SERVER_DST}"
+        fn_do_rcon
+      else
+        echo
+        echo "Not reset. Nothing to do. Exiting..."
+        exit 0
+      fi
+      ;;
+  esac
+}
 
-if [[ ${1} = "start" ]]
-then
-  fn_install_dayz
-  fn_create_beconfig
-  fn_start_dayz
-fi
+fn_restart_dayz(){
+  echo "Restarting DayZ server..."
+}
+
+fn_backup(){
+  echo "Creating backup...WIP"
+}
+
+case "${1}" in
+  backup)
+    fn_backup
+    ;;
+  install)
+    fn_install_dayz
+    ;;
+  login)
+    fn_steam_login
+    ;;
+  rcon)
+    fn_rcon "${2}"
+    ;;
+  restart)
+    fn_restart_dayz
+    ;;
+  start)
+    fn_start_dayz
+    ;;
+  stop)
+    echo "Stopping DayZ server..."
+    ;;
+  update)
+    echo "Updating DayZ..."
+    fn_update_dayz
+    ;;
+  workshop)
+    echo "Manage workshopp..."
+    fn_workshop_mods
+    ;;
+  **)
+    echo "Unknown option '${1}'"
+    echo "Usage: $0 [ backup | login | rcon [ show | reset ] | restart | start | stop | update | workshop ]"
+    exit 0
+    ;;
+esac

@@ -33,9 +33,10 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# Add steamcmd to the image
+# Add steamcmd to the image.
 RUN  mkdir -p /steamcmd && \
-		curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf - -C steamcmd
+	cd /steamcmd && \
+	curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf -
 
 # Make our docker scripts easier to run
 ENV PATH /files:/steamcmd:${PATH}
@@ -46,6 +47,9 @@ RUN groupadd user && \
 
 # The volume needs to be owned by the user
 RUN cd /home/user; rm -rf *; rm -rf .*; chown user:user /home/user -R
+
+# SteamCMD wants to manage itself, so it has to be owned by the docker user.
+RUN chown user:user /steamcmd -R
 
 # Use our non-privileged user
 USER user

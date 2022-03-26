@@ -5,7 +5,7 @@ volumes:
 
 services:
 
-  run:
+  main:
     build: .
     ports:
       - "2302:2302/udp"

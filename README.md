@@ -14,7 +14,7 @@ moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experim
 This process will create a docker volume for the unprivileged user's home directory, which stores the DayZ server files.
 This volume can get quite large. It will require at least 2G of disk space for the default install. Much more with mods.
 
-## Setup, Build. and Configure
+## Configure and Build
 
 Edit `files/serverDZ.cfg` and set the values of any variables there. 
 See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-documentation/):
@@ -22,53 +22,75 @@ See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-d
 ```
 hostname = "Something other than Server Name";   // Server name
 ```
-Optionally edit `files/beserver_x64.cfg` and set the RCON password:
+Optionally edit `files/beserver_x64.cfg` and set the RCON password (leaving the other lines intact):
 ```
 RConPassword h4CKm3
 ```
-If the above step is not performed, a random RCON password will be generated and output on the first run. It can also be
-obtained and reset. (See [Management](#manage))
+If the above step is not performed, a random RCON password will be generated and output to the log on the first run. It 
+can also be obtained and reset. See [Manage](#manage).
 
-Add your Steam credentials. This step is necessary if you want to add mods. The vanilla server is installable by setting
-the steamlogin to `anonymous`. Edit `files/steamlogin` and set the steam username.
-```
-steamlogin=your_real_steam_username_or_anonymous
-```
-If you choose not to be anonymous, then you must login using your credentials. This is an interactive process that will
-prompt for the password and Steam Guard code. This only needs to be done once.
-
-Either way, we must build the container fist:
+Build the Docker image:
 ```
 docker-compose build
 ```
-Now login:
+
+### Steam Integration
+
+[SteamDMD](https://developer.valvesoftware.com/wiki/SteamCMD) is used to manage Steam downloads. A vanilla DayZ server
+can be installed with the `anonymous` Steam user, but most mods cannot. If the goal is to add mods, a real Steam login
+must be used. Login:
 ```
-docker-compose run --rm run manage login
+docker-compose run --rm main dayzserver login
 ```
+Follow the prompts. Hit enter to accept the default, which is to use the `anonymous` user, otherwise use your real
+username and keep following the prompts to add your password and Steam Guard code. With Steam Guard enabled on the Steam
+account, entering the password will trigger the sending of an email with the code. This process will wait indefinitely
+until the code is entered.
+
+The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) and stored in the
+docker volume. All subsequent SteamCMD command will use the cached credentials. so this process does not need to be
+repeated unless the session expires or the docker volume is deleted. 
+
+Run the command again to manage the login. See [Manage](#manage). 
+
 ## Run
 Launch the container into the background:
 ```
-docker-compose up -d run
+docker-compose up -d main
 ```
 Tail the log:
 ```
-docker-compose logs -f run
+docker-compose logs -f main
 ```
   
 ## Manage
 
-### Workshop
-To add a workshop item, edit `files/workshop.cfg` and add the item's id after the comment. Each id should be on its own
-line, after the comment, which should not be removed. Install them:
+### RCON
+Show the current `beserver_x64.cfg` file:
 ```
-docker-compose run --rm manage
+docker-compose run --rm main rcon show
+```
+Reset the RCON password:
+```
+docker-compose run --rm main rcon reset
+```
+### Restart
+```
+docker-compose run --rm main restart
+```
+### Update the DayZ server files
+```
+docker-compose run --rm main update
+```
+### Workshop
+WIP
+```
+docker-compose run --rm main workshop
 ```
 * Makage -mod= command line
 
 ## TODO
 
-* Update the server
-* Restart the server
 * RCON to the server?
 * List current rocn password
 * Detect changes to config files and propagate them, with prompting.
