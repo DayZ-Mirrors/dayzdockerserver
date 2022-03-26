@@ -1,0 +1,24 @@
+version: "3.9"
+
+volumes:
+  steam:
+  steamcmd:
+  serverfiles:
+  serverprofile:
+
+services:
+
+  dayzserver:
+    build: .
+    ports:
+      - "2302:2302/udp"
+      - "27016:27016/udp"
+    volumes:
+      - steam:/home/user/Steam
+      - steamcmd:/home/user/steamcmd
+      - serverfiles:/home/user/serverfiles
+      - serverprofile:/home/user/serverprofile
+    environment:
+      - STEAMLOGIN=anonymous
+#     Escape any forwardslashes: SERVERNAME="My thing \/ My other thing"
+      - SERVERNAME=DayZ on Linux for Linux

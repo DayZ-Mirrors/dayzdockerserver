@@ -22,20 +22,46 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
 	curl \
 	lib32gcc-s1 \
 	lib32stdc++6 \
+    locales \
 	psmisc \
 	wget \
 	rename
 
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
 # Setup a non-privileged user
-RUN groupadd -g 1000 user && \
-    useradd -l -u ${USER_ID} -m -g user user
+RUN groupadd user && \
+    useradd -l -m -g user user
 
-RUN chown user:user /home/user -R
+# Add the server script.
+# From https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673
+ADD dayzserver /home/user
 
-USER ${USER_ID}
+# Add the serverDZ.cfg from the same URL as above
+ADD serverDZ.cfg /home/user
 
-WORKDIR /work
+# Add our wrapper too
+ADD server.sh /home/user
 
-COPY . /home/user
+# Make sure the volumes can be written to by the local user
+RUN cd /home/user && \
+    mkdir -p serverfiles serverprofile Steam steamcmd
 
-CMD ["server.sh"]
+# Create the files the dayzserver script expects so we can take charge of populating them
+RUN cd /home/user && touch .steamlogin
+
+RUN cd /home/user && chown user:user /home/user -R
+
+# Use our non-privileged user
+USER user
+
+# The dayzserver script expects a home directory to itself.
+WORKDIR /home/user
+
+# Run the server.
+CMD ["./server.sh"]
