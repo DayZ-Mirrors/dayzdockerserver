@@ -4,11 +4,7 @@
 ulimit -c 0
 
 # This script will take environment variables and put them into the files the script expects.
-if ! grep STEAMLOGIN .steamlogin
-then
-  echo "Setting the STEAMLOGIN..."
-  echo "steamlogin=${STEAMLOGIN}" > .steamlogin
-fi
+echo "steamlogin=anonymous" > .steamlogin
 
 # Do something with SERVERNAME="DayZ on Linux for Linux"
 if ! grep SERVERNAME serverDZ.cfg

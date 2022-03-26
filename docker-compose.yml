@@ -19,6 +19,5 @@ services:
       - serverfiles:/home/user/serverfiles
       - serverprofile:/home/user/serverprofile
     environment:
-      - STEAMLOGIN=anonymous
 #     Escape any forwardslashes: SERVERNAME="My thing \/ My other thing"
       - SERVERNAME=DayZ on Linux for Linux
