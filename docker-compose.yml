@@ -5,6 +5,13 @@ volumes:
 
 services:
 
+  config:
+    build: .
+    command: /files/login.sh
+    volumes:
+      - homedir:/home/user
+      - ./files:/files
+
   dayzserver:
     build: .
     ports:
