@@ -37,24 +37,8 @@ ENV LC_ALL en_US.UTF-8
 RUN groupadd user && \
     useradd -l -m -g user user
 
-# Add the server script.
-# From https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673
-ADD dayzserver /home/user
-
-# Add the serverDZ.cfg from the same URL as above
-ADD serverDZ.cfg /home/user
-
-# Add our wrapper too
-ADD server.sh /home/user
-
-# Make sure the volumes can be written to by the local user
-RUN cd /home/user && \
-    mkdir -p serverfiles serverprofile Steam steamcmd
-
-# Create the files the dayzserver script expects so we can take charge of populating them
-RUN cd /home/user && touch .steamlogin
-
-RUN cd /home/user && chown user:user /home/user -R
+# The volume needs to be owned by the user
+RUN cd /home/user; rm -rf *; rm -rf .*; chown user:user /home/user -R
 
 # Use our non-privileged user
 USER user
@@ -63,4 +47,4 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-CMD ["./server.sh"]
+CMD ["/files/dayzserver", "start"]

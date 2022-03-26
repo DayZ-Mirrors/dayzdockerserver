@@ -36,34 +36,70 @@ fn_checkroot_dayz(){
 }
 
 fn_loadconfig_dayz(){
-	# default config
-	if [ ! -f "${HOME}/.default.cfg" ]; then
-		wget -P ${HOME}/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/.default.cfg
+  source /files/default.cfg
+  # Handle adding the server name from the environment to the serverFZ.cfg file.
+  if [ ! -f ${HOME}/serverfiles/serverDZ.cfg ]
+  then
+  	cp /files/serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
+	  sed -i "${HOME}/serverfiles/serverDZ.cfg" -e "s/SERVER_NAME/${SERVER_NAME}/"
 	fi
-	source ${HOME}/.default.cfg
-	cp serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
-	sed -i "${HOME}/serverfiles/serverDZ.cfg" -e "s/EXAMPLE NAME/${SERVERNAME}/"
-	# battleye config and rconpassword setup
-	if [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]; then
-		wget -P ${HOME}/serverfiles/battleye/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/beserver_x64.cfg
-		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
-		if [ "${passwd}" == "" ]; then
-			passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-		fi
-		if [ "${passwd}" == "" ]; then
-			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with './dayzserver cfg' and enter '3' to open it."
-			exit 1
-		else
-			sed -i "/RConPassword/ s/CHANGEME/${passwd}/" "${HOME}/serverfiles/battleye/beserver_x64.cfg"
-			printf "[ ${cyan}INFO${default} ] ${yellow}New "
-			grep RConPassword ${HOME}/serverfiles/battleye/beserver_x64.cfg
-			printf "${default}"
-		fi
-	fi
-	# workshop
-	if [ ! -f "${HOME}/.workshop.cfg" ]; then
-		wget -P ${HOME}/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/.workshop.cfg
-	fi
+
+  # Set a random RCON password, unless one's set in the environment
+  if [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]
+  then
+    echo -n "Creating Battle Eye RCON file "
+  	cp /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg"
+    if [[ ${RCON_PASSWORD} != "" ]]
+    then
+      echo "using the RCON_PASSWORD in the environment."
+    else
+      RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+      echo -e "using random RCON password ${yellow}${RCON_PASSWORD}"
+    fi
+    sed -i "${HOME}/serverfiles/battleye/beserver_x64.cfg" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
+  fi
+
+#	# default config
+#	if [ ! -f "${HOME}/.default.cfg" ]; then
+#		wget -P ${HOME}/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/.default.cfg
+#	fi
+#	source ${HOME}/.default.cfg
+#	# script config
+#	if [ ! -f "${HOME}/.dayzserver.cfg" ] || [ "$(grep dayzparameter ${HOME}/.dayzserver.cfg)" == "" ]; then
+#                cp ${HOME}/.default.cfg ${HOME}/.dayzserver.cfg
+#        fi
+#	source ${HOME}/.dayzserver.cfg
+	# hostname/servername
+#	if [ ! -f "${HOME}/serverfiles/serverDZ.cfg" ]; then
+#		wget -P ${HOME}/serverfiles/ -q https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/serverDZ.cfg
+#	fi
+#	defaultservername=$(grep -rwi ${HOME}/serverfiles/serverDZ.cfg -e 'EXAMPLE NAME')
+#	if [ "${defaultservername}" != "" ]; then
+#		printf "[ ${magenta}SERVER${default} ] Servername is set on default! 'EXAMPLE NAME'\n\n"
+#		read -p "Enter a new Servername: " servername
+#		sed -i "/hostname/ s/EXAMPLE NAME/${servername}/" "${HOME}/serverfiles/serverDZ.cfg"
+#	fi
+#	# battleye config and rconpassword setup
+#	if [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]; then
+#		wget -P ${HOME}/serverfiles/battleye/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/beserver_x64.cfg
+#		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
+#		if [ "${passwd}" == "" ]; then
+#			passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+#		fi
+#		if [ "${passwd}" == "" ]; then
+#			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with './dayzserver cfg' and enter '3' to open it."
+#			exit 1
+#		else
+#			sed -i "/RConPassword/ s/CHANGEME/${passwd}/" "${HOME}/serverfiles/battleye/beserver_x64.cfg"
+#			printf "[ ${cyan}INFO${default} ] ${yellow}New "
+#			grep RConPassword ${HOME}/serverfiles/battleye/beserver_x64.cfg
+#			printf "${default}"
+#		fi
+#	fi
+#	# workshop
+#	if [ ! -f "${HOME}/.workshop.cfg" ]; then
+#		wget -P ${HOME}/ -qN https://raw.githubusercontent.com/thelastnoc/dayz-sa_linuxserver/master/script/.workshop.cfg
+#	fi
 }
 
 fn_status_dayz(){
@@ -77,11 +113,23 @@ fn_start_dayz(){
 #		exit 1
 #	else
 		printf "[ ${green}DayZ${default} ] Starting server...\n"
-		sleep 0.5
+#		sleep 0.5
 		fn_loadconfig_dayz
-		sleep 0.5
+#		sleep 0.5
 		cd ${HOME}/serverfiles
-		exec ./DayZServer $dayzparameter "$workshop"
+		./DayZServer $dayzparameter "$workshop" || (
+      echo
+      echo -e "${yellow}========================================== error.log =========================================="
+      find /home/user -name error.log -exec cat {} \; -exec rm -f {} \;
+      echo
+      echo -e "${yellow}========================================== script*.log ========================================"
+      find /home/user -name "script*.log" -exec cat {} \; -exec rm -f {} \;
+      echo
+      echo -e "${yellow}========================================== *.RPT =============================================="
+      find /home/user -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
+      echo
+      echo -e "${yellow}========================================== End crash log ======================================"
+    )
 #		tmux new-session -d -x 23 -y 80 -s $(whoami)-tmux ./DayZServer $dayzparameter "$workshop"
 #		sleep 1
 #		cd ${HOME}
@@ -421,17 +469,29 @@ fn_opt_usage(){
         exit 1
 }
 
+# Make sure we don't start collecting core files
+ulimit -c 0
+
 # start functions
 fn_checkroot_dayz
+#fn_checktmux
+#fn_checkscreen
+
+# Use an anonymous login for the server files
+if [ ! -f ${HOME}/.steamlogin ]
+then
+  echo "steamlogin=anonymous" > ${HOME}/.steamlogin
+fi
 
 getopt=$1
 if [ ! -f "${HOME}/steamcmd/steamcmd.sh" ] || [ ! -f "${HOME}/serverfiles/DayZServer" ] && [ "${getopt}" != "cfg" ]; then
 	printf "[ ${yellow}INFO${default} ] No installed steamcmd and/or serverfiles found!\n"
-	chmod u+x ${HOME}/dayzserver
+#	chmod u+x ${HOME}/dayzserver
 	fn_install_dayz
 	if [ -f "${HOME}/steamcmd/steamcmd.sh" ] && [ -f "${HOME}/serverfiles/DayZServer" ]; then
-		fn_opt_usage
+		exec fn_start_dayz
 	fi
+	echo "Something failed? Shouldn't make it here..."
 	exit
 else
 	### Check if user commands exist and run corresponding scripts, or display script usage

@@ -1,10 +1,7 @@
 version: "3.3"
 
 volumes:
-  steam:
-  steamcmd:
-  serverfiles:
-  serverprofile:
+  homedir:
 
 services:
 
@@ -14,10 +11,10 @@ services:
       - "2302:2302/udp"
       - "27016:27016/udp"
     volumes:
-      - steam:/home/user/Steam
-      - steamcmd:/home/user/steamcmd
-      - serverfiles:/home/user/serverfiles
-      - serverprofile:/home/user/serverprofile
+      - homedir:/home/user
+      - ./files:/files
     environment:
-#     Escape any forwardslashes: SERVERNAME="My thing \/ My other thing"
+#     Don't use double quotes. Escape any forward slashes: SERVERNAME=My thing \/ My other thing
       - SERVERNAME=DayZ on Linux for Linux
+#     Set your own RCON password. Otherwise, a random one will be generated and shown in the log on the first run.
+#      - RCON_PASSWORD=H4CKM3
