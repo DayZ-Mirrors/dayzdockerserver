@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+if [[ "${1}" = "login" ]]
+then
+  if [ -f ${HOME}/.steamlogin ]
+  then
+    echo -n "The steam login is already set. Reset it? (Y|n): "
+    read -s -n 1 a
+    a=$(echo ${a} | tr A-Z a-z)
+    if [[ "${a}" = "y" ]]
+    then
+      rm -f ${HOME}/.steamlogin
+    else
+      echo "Not reset. Nothing to do. Exiting..."
+      exit 0
+    fi
+  fi
+  if [ ! -f ${HOME}/.steamlogin ]
+  then
+    echo "Setting up Steam credentials"
+    cp /files/steamlogin "${HOME}/.steamlogin"
+    source "${HOME}/.steamlogin"
+    steamcmd.sh +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +quit
+  fi
+elif [[ "${1}" = "workshop" ]]
+then
+  echo "Updating workshopp..."
+elif [[ "${1}" = "backup" ]]
+then
+  echo "Creating backup..."
+elif [[ "${1}" = "rconpassword" ]]
+then
+  echo "The RCON password is: ..."
+else
+  echo "Unknown option '${1}'"
+  echo "Usage: manage backup | login | workshop | rconpassword"
+  exit 0
+fi
+

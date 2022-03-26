@@ -5,14 +5,7 @@ volumes:
 
 services:
 
-  config:
-    build: .
-    command: /files/login.sh
-    volumes:
-      - homedir:/home/user
-      - ./files:/files
-
-  dayzserver:
+  run:
     build: .
     ports:
       - "2302:2302/udp"

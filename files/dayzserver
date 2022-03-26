@@ -3,79 +3,79 @@
 appid=1042420
 dayz_id=221100
 
-if [ "${ansi}" != "off" ]; then
-        # echo colors
-        default="\e[0m"
-        red="\e[31m"
-        green="\e[32m"
-        yellow="\e[33m"
-        lightyellow="\e[93m"
-        blue="\e[34m"
-        lightblue="\e[94m"
-        magenta="\e[35m"
-        cyan="\e[36m"
-        # carriage return & erase to end of line
-        creeol="\r\033[K"
-fi
+default="\e[0m"
+red="\e[31m"
+green="\e[32m"
+yellow="\e[33m"
+lightyellow="\e[93m"
+blue="\e[34m"
+lightblue="\e[94m"
+magenta="\e[35m"
+cyan="\e[36m"
+
+STEAMCMD=/steamcmd/steamcmd.sh
 
 fn_loadconfig_dayz(){
   source /files/default.cfg
   # Handle adding the server cfg file
   if [ ! -f ${HOME}/serverfiles/serverDZ.cfg ]
   then
+    echo "Creating initial serverDZ.cfg"
+  	cp /files/serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
+	elif diff -q /files/default.cfg "${HOME}/serverfiles/serverDZ.cfg" > /dev/null
+	then
+    echo "Updating serverDZ.cfg"
   	cp /files/serverDZ.cfg "${HOME}/serverfiles/serverDZ.cfg"
 	fi
 }
 
 fn_create_beconfig(){
-  # Set a random RCON password, unless one's set in the environment
   if [ -d "${HOME}/serverfiles/battleye" ] && [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]
   then
     echo -n "Creating Battle Eye RCON file "
-  	cp /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg"
-    if grep RCON_PASSWORD /files/beserver_x64.cfg
-    then
-      RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-      echo -e "using random RCON password ${yellow}${RCON_PASSWORD}"
-      sed -i "${HOME}/serverfiles/battleye/beserver_x64.cfg" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
-    else
-      echo "using the RCON_PASSWORD already set in files/beserver_x64.cfg."
-    fi
+    fn_do_rcon
+  elif diff -q /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg" > /dev/null
+  then
+    echo -n "Updating Battle Eye RCON file "
+    fn_do_rcon
+  fi
+}
+
+fn_do_rcon(){
+  cp /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg"
+  # Set a random RCON password, unless one's set in the environment
+  if grep -v RCON_PASSWORD /files/beserver_x64.cfg
+  then
+    RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+    echo -e "using random RCON password ${yellow}${RCON_PASSWORD}"
+    sed -i "${HOME}/serverfiles/battleye/beserver_x64.cfg" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
+  else
+    echo "using the RCON_PASSWORD already set in files/beserver_x64.cfg."
   fi
 }
 
 fn_start_dayz(){
   fn_loadconfig_dayz
   fn_workshop_mods
-		printf "[ ${green}DayZ${default} ] Starting server...\n"
-		cd ${HOME}/serverfiles
-		./DayZServer $dayzparameter "$workshop" || (
-      echo
-      echo -e "${yellow}========================================== error.log =========================================="
-      find /home/user -name error.log -exec cat {} \; -exec rm -f {} \;
-      echo
-      echo -e "${yellow}========================================== script*.log ========================================"
-      find /home/user -name "script*.log" -exec cat {} \; -exec rm -f {} \;
-      echo
-      echo -e "${yellow}========================================== *.RPT =============================================="
-      find /home/user -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
-      echo
-      echo -e "${yellow}========================================== End crash log ======================================"
-    )
+  printf "[ ${green}DayZ${default} ] Starting server...\n"
+  cd ${HOME}/serverfiles
+  ./DayZServer $dayzparameter "$workshop" || (
+    echo
+    echo -e "${yellow}========================================== error.log =========================================="
+    find /home/user -name error.log -exec cat {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== script*.log ========================================"
+    find /home/user -name "script*.log" -exec cat {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== *.RPT =============================================="
+    find /home/user -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== End crash log ======================================"
+  )
 }
 
 fn_steamlogin_dayz(){
 	source /files/steamlogin
-}
-
-fn_install_steamcmd(){
-	if [ ! -f "${HOME}/steamcmd/steamcmd.sh" ]; then
-		mkdir ${HOME}/steamcmd &> /dev/null
-		curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf - -C steamcmd
-		printf "[ ${yellow}STEAM${default} ] Steamcmd installed\n"
-	else
-		printf "[ ${lightblue}STEAM${default} ] Steamcmd already installed\n"
-	fi
 }
 
 fn_install_dayz(){
@@ -92,7 +92,7 @@ fn_install_dayz(){
 
 fn_runupdate_dayz(){
 	fn_loadconfig_dayz
-	${HOME}/steamcmd/steamcmd.sh +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" +quit
+	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" +quit
 }
 
 fn_update_dayz(){
@@ -108,7 +108,7 @@ fn_update_dayz(){
 		sleep 1
 	fi
 	# check for new build
-	availablebuild=$(${HOME}/steamcmd/steamcmd.sh +login "${steamlogin}" +app_info_update 1 +app_info_print "${appid}" +app_info_print "${appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${appid}" +app_info_print "${appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
 	if [ -z "${availablebuild}" ]; then
 		printf "\r[ ${red}FAIL${default} ] Checking for update: SteamCMD\n"
 		printf "\r[ ${red}FAIL${default} ] Checking for update: SteamCMD: Not returning version info\n"
@@ -138,7 +138,7 @@ fn_update_dayz(){
 
 fn_runvalidate_dayz(){
 	fn_loadconfig_dayz
-	${HOME}/steamcmd/steamcmd.sh +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" validate +quit
+	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
 fn_workshop_mods(){
@@ -163,7 +163,7 @@ fn_workshop_mods(){
 		fi
 	done
 	# download mods
-	${HOME}/steamcmd/steamcmd.sh +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" ${workshoplist} +quit
+	${STEAMCMD} +force_install_dir ${HOME}/serverfiles +login "${steamlogin}" ${workshoplist} +quit
 	# link mods
 	for i in "${workshopID[@]}"
 	do

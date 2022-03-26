@@ -33,6 +33,13 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+# Add steamcmd to the image
+RUN  mkdir -p /steamcmd && \
+		curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf - -C steamcmd
+
+# Make our docker scripts easier to run
+ENV PATH /files:/steamcmd:${PATH}
+
 # Setup a non-privileged user
 RUN groupadd user && \
     useradd -l -m -g user user
@@ -47,4 +54,4 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-CMD ["/files/dayzserver", "start"]
+CMD ["dayzserver", "start"]
