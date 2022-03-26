@@ -48,7 +48,7 @@ account, entering the password will trigger the sending of an email with the cod
 until the code is entered.
 
 The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) and stored in the
-docker volume. All subsequent SteamCMD command will use the cached credentials. so this process does not need to be
+docker volume. All subsequent SteamCMD commands will use the cached credentials. so this process does not need to be
 repeated unless the session expires or the docker volume is deleted. 
 
 Run the command again to manage the login. See [Manage](#manage). 
@@ -65,32 +65,37 @@ docker-compose logs -f main
   
 ## Manage
 
+The management commands many be run while the server is up. YMMV
+
 ### RCON
-Show the current `beserver_x64.cfg` file:
+Show the current Battle Eye configuration file (Derived from `files/beserver_x64.cfg`):
 ```
-docker-compose run --rm main rcon show
+docker-compose run --rm main dayzserver rcon show
 ```
-Reset the RCON password:
+Reset the RCON password in the Battle Eye configuration file:
 ```
-docker-compose run --rm main rcon reset
+docker-compose run --rm main dayzserver rcon reset
 ```
 ### Restart
+Restarts the server. If it's not running, does nothing.
 ```
-docker-compose run --rm main restart
+docker-compose run --rm main dayzserver restart
+```
+### Stop
+Stops the server. If it's not running, does nothing.
+```
+docker-compose run --rm main dayzserver stop
 ```
 ### Update the DayZ server files
 ```
-docker-compose run --rm main update
+docker-compose run --rm main dayzserver update
 ```
 ### Workshop
 WIP
 ```
-docker-compose run --rm main workshop
+docker-compose run --rm main dayzserver workshop
 ```
-* Makage -mod= command line
-
 ## TODO
 
-* RCON to the server?
-* List current rocn password
-* Detect changes to config files and propagate them, with prompting.
+* Makage -mod= command line
+* RCON to the server. Send real time messages to players, such as restart announcements.
