@@ -45,16 +45,16 @@ fn_loadconfig_dayz(){
 	fi
 
   # Set a random RCON password, unless one's set in the environment
-  if [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]
+  if [ -d "${HOME}/serverfiles" ] && [ ! -f "${HOME}/serverfiles/battleye/beserver_x64.cfg" ]
   then
     echo -n "Creating Battle Eye RCON file "
   	cp /files/beserver_x64.cfg "${HOME}/serverfiles/battleye/beserver_x64.cfg"
-    if [[ ${RCON_PASSWORD} != "" ]]
+    if grep RCON_PASSWORD /files/beserver_x64.cfg
     then
-      echo "using the RCON_PASSWORD in the environment."
-    else
       RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
       echo -e "using random RCON password ${yellow}${RCON_PASSWORD}"
+    else
+      echo "using the RCON_PASSWORD already set in files/beserver_x64.cfg."
     fi
     sed -i "${HOME}/serverfiles/battleye/beserver_x64.cfg" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
   fi
@@ -489,7 +489,7 @@ if [ ! -f "${HOME}/steamcmd/steamcmd.sh" ] || [ ! -f "${HOME}/serverfiles/DayZSe
 #	chmod u+x ${HOME}/dayzserver
 	fn_install_dayz
 	if [ -f "${HOME}/steamcmd/steamcmd.sh" ] && [ -f "${HOME}/serverfiles/DayZServer" ]; then
-		exec fn_start_dayz
+		fn_start_dayz
 	fi
 	echo "Something failed? Shouldn't make it here..."
 	exit

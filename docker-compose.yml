@@ -13,8 +13,3 @@ services:
     volumes:
       - homedir:/home/user
       - ./files:/files
-    environment:
-#     Don't use double quotes. Escape any forward slashes: SERVERNAME=My thing \/ My other thing
-      - SERVERNAME=DayZ on Linux for Linux
-#     Set your own RCON password. Otherwise, a random one will be generated and shown in the log on the first run.
-#      - RCON_PASSWORD=H4CKM3
