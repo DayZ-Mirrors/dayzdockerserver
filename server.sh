@@ -6,11 +6,16 @@ ulimit -c 0
 # This script will take environment variables and put them into the files the script expects.
 echo "steamlogin=anonymous" > .steamlogin
 
-# Do something with SERVERNAME="DayZ on Linux for Linux"
-if ! grep SERVERNAME serverDZ.cfg
-then
-  echo "Setting the SERVERNAME..."
-  sed -i serverDZ.cfg -e "s/SERVERNAME/${SERVERNAME}/"
-fi
+sed -i serverDZ.cfg -e "s/SERVERNAME/${SERVERNAME}/"
 
-./dayzserver start || find /home/user -name error.log -exec cat {} \;
+./dayzserver start || (
+  echo
+  echo "========================================== error.log =========================================="
+  find /home/user -name error.log -exec cat {} \; -exec rm -f {} \;
+  echo
+  echo "========================================== script*.log =========================================="
+  find /home/user -name "script*.log" -exec cat {} \; -exec rm -f {} \;
+  echo
+  echo "========================================== *.RPT =========================================="
+find /home/user -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
+)

@@ -9,19 +9,18 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 # Add contrib and backports
 RUN sed -i /etc/apt/sources.list -e 's/main/main contrib/'
 
-RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' >> /etc/apt/sources.list
+#RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' >> /etc/apt/sources.list
 
 # Add 32 bit arch for steam crap
 RUN dpkg --add-architecture i386
 
 # Install necessary packages
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
-	tmux \
 	nano \
-	htop \
 	curl \
 	lib32gcc-s1 \
 	lib32stdc++6 \
+    libcap2 \
     locales \
 	psmisc \
 	wget \
