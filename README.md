@@ -3,7 +3,7 @@
 A Linux DayZ server in a Docker container.
 The main script's functionality is derived from [this project](https://github.com/thelastnoc/dayz-sa_linuxserver).
 That functionality is described [here](https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673). The goal is
-to reproduce all that functionality and add even more while keeping it all in Docker. 
+to reproduce some of that functionality but also add more features. 
 
 ## Caveat Emptor
 
@@ -65,8 +65,6 @@ docker-compose logs -f main
   
 ## Manage
 
-The management commands many be run while the server is up. YMMV
-
 ### RCON
 Show the current Battle Eye configuration file (Derived from `files/beserver_x64.cfg`):
 ```
@@ -76,26 +74,31 @@ Reset the RCON password in the Battle Eye configuration file:
 ```
 docker-compose run --rm main dayzserver rcon reset
 ```
-### Restart
-Restarts the server. If it's not running, does nothing.
-```
-docker-compose run --rm main dayzserver restart
-```
-### Stop
-Stops the server. If it's not running, does nothing.
-```
-docker-compose run --rm main dayzserver stop
-```
 ### Update the DayZ server files
+It's probably not a good idea to update the server files while it's running. Make sure it's down first, then run the
+command:
 ```
+docker-compose down
 docker-compose run --rm main dayzserver update
 ```
-### Workshop
-WIP
+Don't forget to [bring it back up](#run).
+
+### Workshop - Add / List / Remove / Update mods
+Interactive interface for adding, listing, removing, and updating mods. 
 ```
-docker-compose run --rm main dayzserver workshop
+docker-compose run --rm main dayzserver workshop add id1 [id2...] | list | remove id [id2...] | update 
 ```
+Look for mods in the [DayZ Workshop](https://steamcommunity.com/app/221100/workshop/). Browse to one. In its URL will be
+an `id` parameter. Here is the URL to SimpleAutoRun: https://steamcommunity.com/sharedfiles/filedetails/?id=2264162971. To
+add it:
+```
+docker-compose run --rm main dayzserver workshop add 2264162971
+```
+Adding and removing mods will add and remove their names from the `-mod=` parameter.
+
+Note multiple ids may be specified to both add and remove.
+
 ## TODO
 
-* Makage -mod= command line
+* Makage -mod= command line. Allow for mods to exist but not be part of that parameter.
 * RCON to the server. Send real time messages to players, such as restart announcements.
