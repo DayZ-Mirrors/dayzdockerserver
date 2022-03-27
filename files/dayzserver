@@ -123,6 +123,10 @@ fn_start_dayz(){
   )
 }
 
+fn_stop_dayz(){
+  echo "Stopping DayZ server..."
+}
+
 fn_steam_login(){
   if [ -f "${STEAM_LOGIN_DST}" ]
   then
@@ -156,6 +160,18 @@ fn_steamlogin_dayz(){
   else
     echo "No cached Steam credentials. Please configure this now: "
     fn_steam_login
+  fi
+}
+
+fn_runvalidate_dayz(){
+	fn_loadconfig_dayz
+	if [[ "${FAKE_DAYZ_INSTALL}" = "" ]]
+	then
+  	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
+  else
+    echo
+    echo -e "${red}Faking DayZ install procedure!!${default}"
+    echo
   fi
 }
 
@@ -216,11 +232,6 @@ fn_update_dayz(){
 		printf "\tAvailable version: ${green}${availablebuild}${default}\n"
 		printf "\thttps://steamdb.info/app/${appid}/\n\n"
 	fi
-}
-
-fn_runvalidate_dayz(){
-	fn_loadconfig_dayz
-	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
 fn_workshop_mods(){
@@ -288,10 +299,6 @@ fn_rcon(){
   esac
 }
 
-fn_restart_dayz(){
-  echo "Restarting DayZ server..."
-}
-
 fn_backup(){
   echo "Creating backup...WIP"
 }
@@ -309,26 +316,20 @@ case "${1}" in
   rcon)
     fn_rcon "${2}"
     ;;
-  restart)
-    fn_restart_dayz
-    ;;
-  start)
-    fn_start_dayz
-    ;;
   stop)
-    echo "Stopping DayZ server..."
+    fn_stop_dayz
     ;;
   update)
-    echo "Updating DayZ..."
     fn_update_dayz
     ;;
   workshop)
-    echo "Manage workshopp..."
-    fn_workshop_mods
+    fn_workshop_mods "${2}"
     ;;
   **)
-    echo "Unknown option '${1}'"
-    echo "Usage: $0 [ backup | login | rcon [ show | reset ] | restart | start | stop | update | workshop ]"
+    echo
+    echo -e "${red}Unknown or missing option: '${1}'${default}"
+    echo -e "${green}Usage: $(basename $0) [ backup | login | rcon [ show | reset ] | stop | update | workshop [ add id | list | remove id ] ]${default}"
+    echo
     exit 0
     ;;
 esac
