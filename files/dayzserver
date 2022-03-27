@@ -25,7 +25,8 @@ DEFAULT_CFG="${CFG_SRC_FILES}/default.cfg"
 
 # Battle Eye files
 BE_SERVER_FILE="beserver_x64.cfg"
-BE_SERVER_DST="${SERVER_FILES}/battleye/${BE_SERVER_FILE}"
+BE_SERVER_DIR="${SERVER_FILES}/battleye"
+BE_SERVER_DST="${BE_SERVER_DIR}/${BE_SERVER_FILE}"
 BE_SERVER_SRC="${CFG_SRC_FILES}/${BE_SERVER_FILE}"
 
 # Server configuration file
@@ -37,7 +38,7 @@ SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 
 # Steam files
-STEAM_LOGIN_DST="${HOME}/.steamlogin"
+STEAM_LOGIN_DST="${HOME}/steamlogin"
 STEAMCMD=steamcmd.sh
 
 # Workshop
@@ -52,6 +53,7 @@ fn_prompt_yn(){
     echo
     return 0
   else
+    echo
     return 1
   fi
 }
@@ -63,8 +65,11 @@ fn_loadconfig_dayz(){
   then
     echo "Creating initial server configuration file"
   	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	elif diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" > /dev/null
+	elif ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
 	then
+	  echo "========================================================================="
+	  diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	  echo "========================================================================="
 	  if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
 	  then
       echo "Updating the server configuration file"
@@ -77,16 +82,23 @@ fn_loadconfig_dayz(){
 
 # Checks for the destination file are already done before calls to this
 fn_do_rcon(){
-  echo -n "Creating the Battle Eye configuration file "
-  cp "${BE_SERVER_SRC}" "${BE_SERVER_DST}"
-  # Set a random RCON password, unless one's set in the environment
-  if grep -q RCON_PASSWORD "${BE_SERVER_SRC}"
+  if [ ! -d "${BE_SERVER_DIR}" ]
   then
-    RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-    echo -e "using random RCON password ${yellow}${RCON_PASSWORD}${default}"
-    sed -i "${BE_SERVER_DST}" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
+    echo
+    echo -e "${yellow}DayZ is not installed yet. Can't manage RCON until then${default}"
+    echo
   else
-    echo "using the RCON_PASSWORD already set in ${BE_SERVER_SRC}."
+    echo -n "Creating the Battle Eye configuration file "
+    cp "${BE_SERVER_SRC}" "${BE_SERVER_DST}"
+    # Set a random RCON password, unless one's set in the environment
+    if grep -q RCON_PASSWORD "${BE_SERVER_SRC}"
+    then
+      RCON_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+      echo -e "using random RCON password ${yellow}${RCON_PASSWORD}${default}"
+      sed -i "${BE_SERVER_DST}" -e "s/RCON_PASSWORD/${RCON_PASSWORD}/"
+    else
+      echo "using the RCON_PASSWORD already set in ${BE_SERVER_SRC}."
+    fi
   fi
 }
 
@@ -149,6 +161,7 @@ fn_steam_login(){
       echo "Steam login set to 'anonymous'"
       steamlogin="anonymous"
     fi
+    echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN_DST}"
     ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
   fi
 }
@@ -281,9 +294,12 @@ fn_rcon(){
       then
         fn_do_rcon
       fi
-      echo "=================================================================="
-      cat "${BE_SERVER_DST}"
-      echo "=================================================================="
+      if [ -f "${BE_SERVER_DST}" ]
+      then
+        echo "=================================================================="
+        cat "${BE_SERVER_DST}"
+        echo "=================================================================="
+      fi
       ;;
     reset)
       if fn_prompt_yn "Reset RCON password?"
@@ -328,8 +344,7 @@ case "${1}" in
   **)
     echo
     echo -e "${red}Unknown or missing option: '${1}'${default}"
-    echo -e "${green}Usage: $(basename $0) [ backup | login | rcon [ show | reset ] | stop | update | workshop [ add id | list | remove id ] ]${default}"
+    echo -e "${green}Usage: $(basename $0) [ backup | install | login | rcon [ show | reset ] | stop | update | workshop [ add id | list | remove id ] ]${default}"
     echo
-    exit 0
     ;;
 esac
