@@ -99,7 +99,7 @@ fn_loadconfig_dayz(){
   if [ ! -f "${SERVER_INSTALL_FILE}" ]
   then
     echo
-    echo -e "The DayZ server files are not installed. Run '${green}docker-compose exec --rm main dayzserver install${default}'"
+    echo -e "The DayZ server files are not installed. Run '${green}docker-compose run --rm main dayzserver install${default}'"
     echo
     exit 1
   fi
@@ -108,18 +108,20 @@ fn_loadconfig_dayz(){
   then
     echo "Creating initial server configuration file"
   	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	elif ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	then
-	  echo "========================================================================="
-	  diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	  echo "========================================================================="
-	  if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
+	else
+	  if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
 	  then
-      echo "Updating the server configuration file"
-    	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-    else
-      echo "NOT updating the server configuration file"
-    fi
+      echo "========================================================================="
+      diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+      echo "========================================================================="
+      if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
+      then
+        echo "Updating the server configuration file"
+        cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+      else
+        echo "NOT updating the server configuration file"
+      fi
+	  fi
 	fi
 }
 
@@ -132,7 +134,6 @@ fn_start_dayz(){
     echo
     exit
   fi
-  fn_loadconfig_dayz
   fn_workshop_mods
   printf "[ ${green}DayZ${default} ] Starting server...\n"
   cd ${SERVER_FILES}
@@ -192,7 +193,6 @@ fn_steamlogin_dayz(){
 }
 
 fn_runvalidate_dayz(){
-	fn_loadconfig_dayz
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
@@ -209,13 +209,11 @@ fn_install_dayz(){
 }
 
 fn_runupdate_dayz(){
-	fn_loadconfig_dayz
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
 }
 
 fn_update_dayz(){
 	fn_steamlogin_dayz
-	fn_loadconfig_dayz
 	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${appid}".acf
 	printf "[ ... ] Checking for update:"
 	# gets currentbuild
@@ -256,7 +254,6 @@ fn_update_dayz(){
 
 fn_workshop_mods(){
 	fn_steamlogin_dayz
-	fn_loadconfig_dayz
 	declare -a workshopID
 	workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
 	workshoplist=""
@@ -336,6 +333,8 @@ Status:
   Server running: ${RUNNING}
 "
 }
+
+fn_loadconfig_dayz
 
 case "${1}" in
   install)
