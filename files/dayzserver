@@ -99,7 +99,7 @@ fn_loadconfig_dayz(){
   if [ ! -f "${SERVER_INSTALL_FILE}" ]
   then
     echo
-    echo -e "The DayZ server files are not installed yet. Run '${green}dayzserver install${default}'"
+    echo -e "The DayZ server files are not installed. Run '${green}docker-compose exec --rm main dayzserver install${default}'"
     echo
     exit 1
   fi
