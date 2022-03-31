@@ -96,6 +96,13 @@ fn_prompt_yn(){
 }
 
 fn_loadconfig_dayz(){
+  if [ ! -f "${SERVER_INSTALL_FILE}" ]
+  then
+    echo
+    echo -e "The DayZ server files are not installed yet. Run '${green}dayzserver install${default}'"
+    echo
+    exit 1
+  fi
   # Handle the server configuration file
   if [ ! -f ${SERVER_CFG_DST} ]
   then
@@ -186,14 +193,7 @@ fn_steamlogin_dayz(){
 
 fn_runvalidate_dayz(){
 	fn_loadconfig_dayz
-	if [[ "${FAKE_DAYZ_INSTALL}" = "" ]]
-	then
-  	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
-  else
-    echo
-    echo -e "${red}Faking DayZ install procedure!!${default}"
-    echo
-  fi
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
 fn_install_dayz(){
