@@ -13,6 +13,3 @@ services:
     volumes:
       - homedir:/home/user
       - ./files:/files
-#    environment:
-#      # So we don't have to always download the full server when testing
-#      - FAKE_DAYZ_INSTALL=1

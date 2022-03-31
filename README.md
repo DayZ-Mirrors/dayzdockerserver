@@ -1,9 +1,9 @@
 # DayZDockerServer
 
-A Linux DayZ server in a Docker container.
-The main script's functionality is derived from [this project](https://github.com/thelastnoc/dayz-sa_linuxserver).
-That functionality is described [here](https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673). The goal is
-to reproduce some of that functionality but also add more features. 
+A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) container. The main script's
+functionality is derived from [this project](https://github.com/thelastnoc/dayz-sa_linuxserver). That functionality is
+described [here](https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673). The goal is to reproduce some of
+that functionality but also add more features. 
 
 ## Caveat Emptor
 
@@ -15,6 +15,9 @@ This process will create a docker volume for the unprivileged user's home direct
 This volume can get quite large. It will require at least 2G of disk space for the default install. Much more with mods.
 
 ## Configure and Build
+
+Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)
+are installed.
 
 Edit `files/serverDZ.cfg` and set the values of any variables there. 
 See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-documentation/):
@@ -65,6 +68,11 @@ docker-compose logs -f main
   
 ## Manage
 
+This just runs a bash shell in the container. It allows for the file system and files to be easily inspected.
+### Shell in the container
+```
+docker-compose run --rm main bash
+```
 ### RCON
 Show the current Battle Eye configuration file (Derived from `files/beserver_x64.cfg`):
 ```

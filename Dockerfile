@@ -1,30 +1,31 @@
 FROM debian:bullseye
 
-# Replace shell with bash so we can source files
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-# Set debconf to run non-interactively
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+# Set debconf to run non-interactively and agree to the SteamCMD EULA
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections \
+	&& echo steam steam/question select "I AGREE" | debconf-set-selections \
+    && echo steam steam/license note '' | debconf-set-selections \
+    && dpkg --add-architecture i386
 
 # Add contrib and backports
-RUN sed -i /etc/apt/sources.list -e 's/main/main contrib/'
+RUN sed -i /etc/apt/sources.list -e 's/main/main contrib non-free/'
 
-#RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' >> /etc/apt/sources.list
+RUN echo 'deb http://deb.debian.org/debian bullseye-backports main non-free' >> /etc/apt/sources.list
 
-# Add 32 bit arch for steam crap
-RUN dpkg --add-architecture i386
-
-# Install necessary packages
-RUN apt-get update && apt-get -y upgrade && apt-get -y install \
+# Install _only_ the necessary packages
+RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
 	nano \
 	curl \
-	lib32gcc-s1 \
-	lib32stdc++6 \
+    ca-certificates \
+    lib32gcc-s1 \
+    lib32stdc++6 \
+    libcurl4:i386 \
+    libsdl2-2.0-0:i386  \
     libcap2 \
     locales \
-	psmisc \
+    procps \
 	wget \
-	rename
+	rename \
+    steamcmd
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
@@ -33,23 +34,17 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# Add steamcmd to the image.
-RUN  mkdir -p /steamcmd && \
-	cd /steamcmd && \
-	curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf -
+# steamcmd ends up in /usr/games
+ENV PATH /usr/games:${PATH}
 
-# Make our docker scripts easier to run
-ENV PATH /files:/steamcmd:${PATH}
+# Add the dayzserver to a directory in PATH. Might as well be /usr/games!
+ADD files/dayzserver /usr/games
 
 # Setup a non-privileged user
 RUN groupadd user && \
-    useradd -l -m -g user user
-
-# The volume needs to be owned by the user
-RUN cd /home/user; rm -rf *; rm -rf .*; chown user:user /home/user -R
-
-# SteamCMD wants to manage itself, so it has to be owned by the docker user.
-RUN chown user:user /steamcmd -R
+    useradd -l -g user user && \
+    mkdir /home/user && \
+    chown user:user /home/user
 
 # Use our non-privileged user
 USER user
