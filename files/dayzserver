@@ -216,10 +216,7 @@ fn_steamlogin_dayz(){
 }
 
 fn_runvalidate_dayz(){
-<<<<<<< Updated upstream
-=======
 #	fn_loadconfig_dayz
->>>>>>> Stashed changes
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
