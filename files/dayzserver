@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eE
+
 # Make sure we don't start collecting core files
 # FIXME Set this in Docker somewhere
 ulimit -c 0
@@ -20,7 +22,7 @@ logs="-nologs"
 mods=""
 
 # modify carefully! server won't start if syntax is corrupt!
-dayzparameter=" -config=${config} -port=${port} -mod='${mods}' -freezecheck ${profile} ${logs}"
+dayzparameter=" -config=${config} -port=${port} -mod='${mods}' -freezecheck -fps=60 -bepath=${HOME}/serverfiles/battleye ${profile} ${logs}"
 
 # Colors
 default="\e[0m"
@@ -107,22 +109,43 @@ fn_loadconfig_dayz(){
   if [ ! -f ${SERVER_CFG_DST} ]
   then
     echo "Creating initial server configuration file"
-  	cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	else
-	  if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	  then
-      echo "========================================================================="
-      diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-      echo "========================================================================="
-      if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
-      then
-        echo "Updating the server configuration file"
-        cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-      else
-        echo "NOT updating the server configuration file"
-      fi
-	  fi
-	fi
+    cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+  elif ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+  then
+    echo "========================================================================="
+    diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
+    echo "========================================================================="
+    if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
+    then
+      echo "Updating the server configuration file"
+      cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+    else
+      echo "NOT updating the server configuration file"
+    fi
+  fi
+  # battleye config and rconpassword setup
+  BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
+  if [ ! -f "${BE_SERVER_FILE}" ]
+  then
+    passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
+    if [ "${passwd}" == "" ]; then
+      passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+    fi
+    if [ "${passwd}" == "" ]; then
+      printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
+      exit 1
+    else
+      cat > "${BE_SERVER_FILE}" <<EOF
+RConPassword CHANGEME
+RestrictRCon 1
+RConPort 2302
+EOF
+      sed -i "/RConPassword/ s/CHANGEME/${passwd}/" "${BE_SERVER_FILE}"
+      printf "[ ${cyan}INFO${default} ] ${yellow}New "
+      grep RConPassword "${BE_SERVER_FILE}"
+      printf "${default}"
+    fi
+  fi
 }
 
 fn_start_dayz(){
@@ -185,7 +208,7 @@ fn_steam_login(){
 fn_steamlogin_dayz(){
   if [ -f "${STEAM_LOGIN}" ]
   then
-  	source "${STEAM_LOGIN}"
+    source "${STEAM_LOGIN}"
   else
     echo "No cached Steam credentials. Please configure this now: "
     fn_steam_login
@@ -193,6 +216,10 @@ fn_steamlogin_dayz(){
 }
 
 fn_runvalidate_dayz(){
+<<<<<<< Updated upstream
+=======
+#	fn_loadconfig_dayz
+>>>>>>> Stashed changes
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 }
 
@@ -319,7 +346,7 @@ fn_status(){
     LOGGED_IN="${YES}"
   fi
   # Running or not
-  if pidof DayZServer
+  if pidof DayZServer > /dev/null
   then
     RUNNING="${YES}"
   fi
