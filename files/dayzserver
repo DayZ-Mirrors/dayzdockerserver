@@ -2,28 +2,6 @@
 
 set -eE
 
-# Make sure we don't start collecting core files
-# FIXME Set this in Docker somewhere
-ulimit -c 0
-
-# DayZ SteamID
-appid=1042420
-dayz_id=221100
-
-config=serverDZ.cfg
-port=2302
-profile="-profiles=${HOME}/serverprofile/"
-
-# To log or not to log
-#logs="-dologs -adminlog -netlog"
-logs="-nologs"
-
-# mods="@CF;@community-Online-Tools;@Banov;@SimpleAutorun"
-mods=""
-
-# modify carefully! server won't start if syntax is corrupt!
-dayzparameter=" -config=${config} -port=${port} -mod='${mods}' -freezecheck -fps=60 -bepath=${HOME}/serverfiles/battleye ${profile} ${logs}"
-
 # Colors
 default="\e[0m"
 red="\e[31m"
@@ -33,6 +11,38 @@ lightblue="\e[94m"
 blue="\e[34m"
 magenta="\e[35m"
 cyan="\e[36m"
+
+# Make sure we don't start collecting core files
+# FIXME Set this in Docker somewhere
+ulimit -c 0
+
+# DayZ Experimental SteamID, because there is no release version of the Linux server yet
+appid=1042420
+
+# DayZ Release SteamID. This is for mods, as only the release has them.
+dayz_id=221100
+
+# Command line argument variables
+# Server config file
+config=serverDZ.cfg
+# Server port
+port=2302
+rcon_port=2303
+# Server profile directory
+profile="-profiles=${HOME}/serverprofile/"
+# To log or not to log.
+# All possible logging on:
+#logs="-dologs -adminlog -netlog"
+# No logs? This should read "-somelogs"
+logs="-nologs"
+
+# Mods. WIP. This will have to come from another file, as the plan is to manage this with
+# this very script.
+# mods="@CF;@community-Online-Tools;@Banov;@SimpleAutorun"
+mods=""
+
+# Put them all together
+dayzparameter=" -config=${config} -port=${port} -mod='${mods}' -freezecheck -fps=60 -BEpath=${HOME}/serverfiles/battleye ${profile} ${logs}"
 
 # Base directories
 CFG_SRC_FILES="/files"
@@ -68,8 +78,7 @@ Options and arguments:
 
   install - Install the DayZ server files
   login - Login to Steam
-  rcon - RCON Features
-    say - Send a message to players on the server
+  rcon - Connect to the server using a python RCON client
   status - Shows the server's status as well as the state of the server files and mods (Needs install, update, etc.)
   stop - Stop the server
   update - Update the DayZ server files
@@ -124,6 +133,9 @@ fn_loadconfig_dayz(){
     fi
   fi
   # battleye config and rconpassword setup
+  # The server creates a new file from this file, which it then uses.
+  # Let's make sure to delete it first
+  rm -f "${HOME}/serverfiles/battleye/beserver_x64_active*"
   BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
   if [ ! -f "${BE_SERVER_FILE}" ]
   then
@@ -136,16 +148,20 @@ fn_loadconfig_dayz(){
       exit 1
     else
       cat > "${BE_SERVER_FILE}" <<EOF
-RConPassword CHANGEME
+RConPassword ${passwd}
 RestrictRCon 1
-RConPort 2302
+RConPort ${rcon_port}
 EOF
-      sed -i "/RConPassword/ s/CHANGEME/${passwd}/" "${BE_SERVER_FILE}"
-      printf "[ ${cyan}INFO${default} ] ${yellow}New "
-      grep RConPassword "${BE_SERVER_FILE}"
-      printf "${default}"
     fi
+  else
+    passwd=$(grep RConPassword ${BE_SERVER_FILE})
   fi
+  printf "[ ${cyan}INFO${default} ] ${yellow}RCON password: ${passwd}${default}\n"
+  cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
+  jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
+    '.logfile="py3rcon.log" | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
+    /usr/local/py3rcon/configexample.json \
+    > ~/py3rcon.config.json
 }
 
 fn_start_dayz(){
@@ -176,7 +192,7 @@ fn_start_dayz(){
 }
 
 fn_stop_dayz(){
-  echo "Stopping DayZ server..."
+  echo "Stopping DayZ server...(this is not implemented)"
 }
 
 fn_steam_login(){
@@ -316,14 +332,7 @@ fn_workshop_mods(){
 }
 
 fn_rcon(){
-  case "${1}" in
-    say)
-      echo "Sending message to server: '${1}'"
-      ;;
-    **)
-      fn_usage rcon "${1}"
-      ;;
-  esac
+  exec py3rcon.py --gui ~/py3rcon.config.json
 }
 
 fn_status(){
