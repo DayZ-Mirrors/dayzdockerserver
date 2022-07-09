@@ -10,6 +10,7 @@ services:
     ports:
       - "2302:2302/udp"
       - "2304:2304/udp"
+      - "2305:2305/udp"
       - "27016:27016/udp"
     volumes:
       - homedir:/home/user
