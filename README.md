@@ -25,12 +25,7 @@ See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-d
 ```
 hostname = "Something other than Server Name";   // Server name
 ```
-Optionally edit `files/beserver_x64.cfg` and set the RCON password (leaving the other lines intact):
-```
-RConPassword h4CKm3
-```
-If the above step is not performed, a random RCON password will be generated and output to the log on the first run. It 
-can also be obtained and reset. See [Manage](#manage).
+A random RCON password will be generated and output to the log when the server is run.
 
 Build the Docker image:
 ```
@@ -74,13 +69,15 @@ This just runs a bash shell in the container. It allows for the file system and 
 docker-compose run --rm main bash
 ```
 ### RCON
-Show the current Battle Eye configuration file (Derived from `files/beserver_x64.cfg`):
+A command line RCON client is included: https://github.com/indepth666/py3rcon.
+The dayzserver script manages what's necessary to configure and run it:
 ```
-docker-compose run --rm main dayzserver rcon show
+docker-compose exec main dayzserver rcon
 ```
-Reset the RCON password in the Battle Eye configuration file:
+To reset the RCON password in the Battle Eye configuration file, simply delete it, and a random one will be generated
+on the next server startup:
 ```
-docker-compose run --rm main dayzserver rcon reset
+docker-compose run --rm main rm serverfiles/battleye/baserver_x64_active*
 ```
 ### Update the DayZ server files
 It's probably not a good idea to update the server files while it's running. Make sure it's down first, then run the
