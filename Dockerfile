@@ -16,6 +16,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     nano \
     curl \
     ca-certificates \
+    git \
+    jq \
     lib32gcc-s1 \
     lib32stdc++6 \
     libcurl4:i386 \
@@ -23,9 +25,13 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     libcap2 \
     locales \
     procps \
+    python3-pip \
     wget \
     rename \
     steamcmd
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
+RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
@@ -33,8 +39,11 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+# Add py3rcon
+RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
+
 # steamcmd ends up in /usr/games
-ENV PATH /usr/games:${PATH}
+ENV PATH /usr/games:/usr/local/py3rcon:${PATH}
 
 # Setup a non-privileged user
 RUN groupadd user && \
@@ -43,7 +52,7 @@ RUN groupadd user && \
     chown user:user /home/user
 
 # Add the dayzserver to a directory in PATH. Might as well be /usr/games!
-ADD files/dayzserver /usr/games
+#ADD files/dayzserver /usr/games
 
 # Use our non-privileged user
 USER user
