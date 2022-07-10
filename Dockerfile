@@ -42,17 +42,15 @@ ENV LC_ALL en_US.UTF-8
 # Add py3rcon
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 
-# steamcmd ends up in /usr/games
-ENV PATH /usr/games:/usr/local/py3rcon:${PATH}
+# Steamcmd needs its path added, as it ends up in /usr/games.
+# Our server script is bind mounted in /files in docker-compose.
+ENV PATH /usr/games:/files:${PATH}
 
 # Setup a non-privileged user
 RUN groupadd user && \
     useradd -l -g user user && \
     mkdir /home/user && \
     chown user:user /home/user
-
-# Add the dayzserver to a directory in PATH. Might as well be /usr/games!
-#ADD files/dayzserver /usr/games
 
 # Use our non-privileged user
 USER user
