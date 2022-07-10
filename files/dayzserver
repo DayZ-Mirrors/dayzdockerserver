@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -eE
-
 # Colors
 default="\e[0m"
 red="\e[31m"
@@ -11,6 +9,21 @@ lightblue="\e[94m"
 blue="\e[34m"
 magenta="\e[35m"
 cyan="\e[36m"
+
+# Make sure to report and clean up on exit, as these files remain in the container's volume
+function report() {
+    echo
+    echo -e "${yellow}========================================== error.log =========================================="
+    find "${HOME}" -name error.log -exec head {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== script*.log ========================================"
+    find "${HOME}" -name "script*.log" -exec head {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== *.RPT =============================================="
+    find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec rm -f {} \;
+    echo
+    echo -e "${yellow}========================================== End crash log ======================================"
+}
 
 # Make sure we don't start collecting core files
 # FIXME Set this in Docker somewhere
@@ -114,30 +127,18 @@ fn_loadconfig_dayz(){
     echo
     exit 1
   fi
-  # Handle the server configuration file
+  # Handle the initial server configuration file
   if [ ! -f ${SERVER_CFG_DST} ]
   then
     echo "Creating initial server configuration file"
     cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-  elif ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-  then
-    echo "========================================================================="
-    diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
-    echo "========================================================================="
-    if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
-    then
-      echo "Updating the server configuration file"
-      cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-    else
-      echo "NOT updating the server configuration file"
-    fi
   fi
   # battleye config and rconpassword setup
   # The server creates a new file from this file, which it then uses.
   # Let's make sure to delete it first
-  rm -f "${HOME}/serverfiles/battleye/beserver_x64_active*"
   BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
-  if [ ! -f "${BE_SERVER_FILE}" ]
+  ALT_BE_SERVER_FILE=$(find ${HOME}/serverfiles/battleye -name "beserver_x64_active*")
+  if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
   then
     passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
     if [ "${passwd}" == "" ]; then
@@ -149,17 +150,25 @@ fn_loadconfig_dayz(){
     else
       cat > "${BE_SERVER_FILE}" <<EOF
 RConPassword ${passwd}
-RestrictRCon 1
+RestrictRCon 0
 RConPort ${rcon_port}
 EOF
     fi
+    printf "[ ${cyan}INFO${default} ] New RCON password: ${yellow}${passwd}${default}\n"
   else
-    passwd=$(grep RConPassword ${BE_SERVER_FILE})
+    if [ -f "${BE_SERVER_FILE}" ]
+    then
+      FILE="${BE_SERVER_FILE}"
+    elif [ -f "${ALT_BE_SERVER_FILE}" ]
+    then
+      FILE="${ALT_BE_SERVER_FILE}"
+    fi
+    passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
+#    printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
   fi
-  printf "[ ${cyan}INFO${default} ] ${yellow}RCON password: ${passwd}${default}\n"
   cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
   jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
-    '.logfile="py3rcon.log" | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
+    '.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
     /usr/local/py3rcon/configexample.json \
     > ~/py3rcon.config.json
 }
@@ -173,22 +182,23 @@ fn_start_dayz(){
     echo
     exit
   fi
+  # Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
+  trap '
+    report
+  ' EXIT
   fn_workshop_mods
-  printf "[ ${green}DayZ${default} ] Starting server...\n"
   cd ${SERVER_FILES}
-  ./DayZServer $dayzparameter "$workshop" || (
-    echo
-    echo -e "${yellow}========================================== error.log =========================================="
-    find "${HOME}" -name error.log -exec cat {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== script*.log ========================================"
-    find "${HOME}" -name "script*.log" -exec cat {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== *.RPT =============================================="
-    find "${HOME}" -name "*.RPT" -exec cat {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== End crash log ======================================"
-  )
+  # Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
+  # safely shut the container down without killing the server within.
+  printf "[ ${green}DayZ${default} ] Server starting...\n"
+  ./DayZServer $dayzparameter
+  EXIT_CODE=$?
+  if [[ ${EXIT_CODE} = "139" ]]
+  then
+    EXIT_CODE=0
+  fi
+  printf "[ ${yellow}DayZ${default} ] Server stopped. Exit code: ${EXIT_CODE}\n"
+  exit ${EXIT_CODE}
 }
 
 fn_stop_dayz(){
@@ -249,7 +259,20 @@ fn_install_dayz(){
 }
 
 fn_runupdate_dayz(){
-	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
+  if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+  then
+    echo "========================================================================="
+    diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
+    echo "========================================================================="
+    if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
+    then
+      echo "Updating the server configuration file"
+      cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+    else
+      echo "NOT updating the server configuration file"
+    fi
+  fi
+  ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
 }
 
 fn_update_dayz(){
@@ -332,7 +355,7 @@ fn_workshop_mods(){
 }
 
 fn_rcon(){
-  exec py3rcon.py --gui ~/py3rcon.config.json
+  exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
 }
 
 fn_status(){
@@ -350,6 +373,10 @@ fn_status(){
   if [ -f "${STEAM_LOGIN}" ]
   then
     LOGGED_IN="${YES}"
+    if grep -q anonymous "${STEAM_LOGIN}"
+    then
+      ANONYMOUS="(as anonymous)"
+    fi
   fi
   # Running or not
   if pidof DayZServer > /dev/null
@@ -360,26 +387,27 @@ fn_status(){
   echo -e "
 Status:
 
-  Logged in to Steam: ${LOGGED_IN}
+  Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
   Server files installed: ${INSTALLED}
   Mods installed: ${MOD_INSTALLED}${MOD_LIST}
   Server running: ${RUNNING}
 "
 }
 
-fn_loadconfig_dayz
-
 case "${1}" in
   install)
+    fn_loadconfig_dayz
     fn_install_dayz
     ;;
   login)
+    fn_loadconfig_dayz
     fn_steam_login
     ;;
   rcon)
     fn_rcon "${2}"
     ;;
   start)
+    fn_loadconfig_dayz
     fn_start_dayz
     ;;
   status)
@@ -389,9 +417,11 @@ case "${1}" in
     fn_stop_dayz
     ;;
   update)
+    fn_loadconfig_dayz
     fn_update_dayz
     ;;
   workshop)
+    fn_loadconfig_dayz
     fn_workshop_mods "${2}"
     ;;
   **)
