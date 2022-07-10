@@ -1,5 +1,9 @@
 version: "3.3"
 
+# This is where the server files, profile, mods, and logs will reside.
+# The server script does its best to clean up the copious logs that the
+# server creates, but with mods, this volume will grow rather large.
+# It's best to keep an eye on its size.
 volumes:
   homedir:
 
@@ -7,12 +11,18 @@ services:
 
   main:
     build: .
-    command: bash -c "/files/dayzserver start"
-    ports:
-      - "2302:2302/udp"
-      - "2303:2303/udp"
-      - "2304:2304/udp"
-      - "27016:27016/udp"
+    # To have the server show up in the LAN tab of the DayZ launcher,
+    # it must run under host mode.
+    network_mode: host
+    # The above is mutually exclusive with the below. If you don't need
+    # the server to show up on the LAN, comment out the network_mode above
+    # and uncomment the port mappings below.
+#    ports:
+#      - 2302:2302/udp
+#      - 2303:2303/udp
+#      - 2304:2304/udp
+#      - 27016:27016/udp
+    restart: on-failure
     volumes:
       - homedir:/home/user
-      - ./files/dayzserver:/usr/games/dayzserver
+      - ./files:/files
