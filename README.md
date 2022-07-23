@@ -48,11 +48,20 @@ username and keep following the prompts to add your password and Steam Guard cod
 account, entering the password will trigger the sending of an email with the code. This process will wait indefinitely
 until the code is entered.
 
-The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) and stored in the
-docker volume. All subsequent SteamCMD commands will use the cached credentials. so this process does not need to be
-repeated unless the session expires or the docker volume is deleted. 
+The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD). How it encrypts or
+otherwise obfuscates the credentials is beyond the scope of this document. Suffice to say that they are stored in the
+docker volume. All subsequent SteamCMD commands will use the stored credentials. so this process does not need to be
+repeated unless the session expires or the docker volume is deleted.
 
 Run the command again to manage the login. See [Manage](#manage). 
+
+## Install
+
+The server files must be installed before the server can be run:
+```
+docker compose run --rm main dayzserver install
+```
+This process will download the several gigabyes of files required to run the server.
 
 ## Run
 
@@ -71,14 +80,6 @@ docker compose logs -f
 ## Manage
 
 The following management commands presume the server has been brought [up](#run).
-
-### Shell in the container
-
-Run a bash shell in the container. This allows for the files to be easily inspected:
-
-```
-docker compose exec main bash
-```
 
 ### RCON
 
@@ -142,6 +143,17 @@ Optionally, to avoid re-downloading large mods, the `activate` and `deactivate` 
 simply disable the mod but keep its files. Keep in mind that mod updates will also update deactivated 
 mods.
 
+### Looking under the hood
+
+All the server files persist in a docker volume that represents the container's unprivileged user's home directory. Open a bash shell in
+the running container:
+
+```
+docker compose exec main bash
+```
+
+Use this shell cautiously.
+
 ## TODO
 
-* Create some way to send messages to playes on the server using RCON.
+* Create some way to send messages to players on the server using RCON.
