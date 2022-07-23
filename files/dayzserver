@@ -72,6 +72,15 @@ STEAMCMD=steamcmd
 
 # Workshop
 WORKSHOP_CFG="${HOME}/workshop.cfg"
+if [ ! -f "${WORKSHOP_CFG}" ]
+then
+	touch "${WORKSHOP_CFG}"
+fi
+
+declare -a workshopID
+workshoplist=""
+workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
+mod_command_line=""
 
 # Other stuff
 YES="${green}yes${default}"
@@ -93,7 +102,7 @@ Options and arguments:
   update - Update the DayZ server files
   workshop - Workshop Features
     activate id [id...] - Activate one or many installed DayZ Workshop item by id
-    add id [id...] - Add one or many DayZ Workshop items by id
+    add id [id...] - Add one or many DayZ Workshop items by id. Added items are become active by default.
     deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the addon files but excludes from -mod=
     list - List Workshop items and their states (Active vs. Non)
     remove id [id...] - Remove one or many Workshop items by id
@@ -297,8 +306,8 @@ fn_update_dayz(){
 		printf "\thttps://steamdb.info/app/${appid}/\n"
 		printf "\nApplying update"
 		# run update
-    fn_runupdate_dayz
-    fn_workshop_mods
+		fn_runupdate_dayz
+		fn_workshop_mods
 	else
 		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
 		printf "\nNo update available:\n"
@@ -308,43 +317,167 @@ fn_update_dayz(){
 	fi
 }
 
-fn_workshop_mods(){
-	fn_steamlogin_dayz
-	declare -a workshopID
-	workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
-	workshoplist=""
-	if [ ! -f "${WORKSHOP_CFG}" ]
-	then
-	  echo "No workshop mods..."
-	  return
-	else
-	  echo "Syncing workshop mods..."
-	fi
+fn_get_mods(){
 	mapfile -t workshopID < "${WORKSHOP_CFG}"
-	# gather mods
 	for i in "${workshopID[@]}"
 	do
-		if [[ $i =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ]; then
+		if [[ $i =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ]
+		then
 			workshoplist+=" +workshop_download_item "${dayz_id}" "$i""
 		fi
 	done
-	# download mods
+}
+
+fn_update_mods(){
+	fn_get_mods
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
-	# link mods
+}
+
+fn_link_mods(){
 	for i in "${workshopID[@]}"
 	do
-		if [[ $i =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ] && [ -d "${workshopfolder}/$i" ]; then
-			modname=$(cut -d '"' -f 2 <<< $(grep name  ${workshopfolder}/$i/meta.cpp))
-			if [ ! -d "${SERVER_FILES}/@${modname}" ]; then
-				ln -s ${workshopfolder}/$i "${SERVER_FILES}/@${modname}" &> /dev/null
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ID} =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ] && [ -d "${workshopfolder}/${ID}" ]
+		then
+			modname=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${ID}/meta.cpp))
+			if [ ! -d "${SERVER_FILES}/@${modname}" ]
+			then
+				ln -s ${workshopfolder}/${ID} "${SERVER_FILES}/@${modname}" &> /dev/null
 			fi
-			find "${workshopfolder}/$i" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+			find "${workshopfolder}/${ID}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 		fi
 	done
-	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1; then
-    printf "\n[ ${green}DayZ${default} ] Copy Key Files from Mods...\n"
-    cp -vu ${SERVER_FILES}/@*/keys/* "${SERVER_FILES}/keys/" > /dev/null 2>&1
-  fi
+	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1
+	then
+		cp -vu ${SERVER_FILES}/@*/keys/* "${SERVER_FILES}/keys/" > /dev/null 2>&1
+	fi
+}
+
+fn_add_mod(){
+	if [ -d "${workshopfolder}/${1}" ]
+	then
+		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
+	fi
+	if grep -qP "\b${1}\b" "${WORKSHOP_CFG}"
+	then
+		echo "The mod with id ${1} is already installed"
+		return
+	fi
+	echo "Adding mod id ${1}"
+	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
+	fn_update_mods
+	if [ -d "${workshopfolder}/${1}" ]
+	then
+		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+		sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
+		echo
+		echo "Mod id ${1} - ${MODNAME} - added"
+	else
+		echo
+		echo "Installation failed! See above (You probably need to use a real Steam login)"
+		head -n-1 "${WORKSHOP_CFG}" > /tmp/workshop.cfg.tmp
+		mv /tmp/workshop.cfg.tmp "${WORKSHOP_CFG}"
+	fi
+}
+
+fn_remove_mod(){
+	if [ -d "${workshopfolder}/${1}" ]
+	then
+		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+		echo "Removing directory ${workshopfolder}/${1}"
+		rm -rf "${workshopfolder}/${1}"
+	fi
+	if [ -s "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
+		rm -f "${SERVER_FILES}/@${MODNAME}"
+	fi
+	if grep -q ${1} "${WORKSHOP_CFG}"
+	then
+		echo "Removing workshop file entry"
+		sed -i "${WORKSHOP_CFG}" -e "/${1}:${MODNAME}:\d/d" 
+	fi
+	echo "Mod id ${1} - ${MODNAME} - removed"
+}
+
+fn_activate_mod(){
+	echo "Activcating mod id ${1}"
+}
+
+fn_deactivate_mod(){
+	echo "Deactivcating mod id ${1}"
+}
+
+fn_list_mods(){
+	fn_get_mods
+	spaces="                        "
+	echo -e "ID\t\tName\t\t\tStatus\tURL"
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		printf "%s\t%.23s%s\t%s\thttps://steamcommunity.com/sharedfiles/filedetails/?id=%s\n" ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID}
+	done
+}
+
+fn_mod_cmd(){
+	fn_get_mods
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ACTIVE} = "1" ]]
+		then
+			modname=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${ID}/meta.cpp))
+			mod_command_line="${mod_command_line}@${modname};"
+		fi
+	done
+}
+
+fn_workshop_mods(){
+	# Check usage
+	if [[ ${1} = "" ]]
+	then
+		fn_usage
+	fi
+	if [[ ${1} != "list" ]] && [[ ${2} = "" ]]
+	then
+		fn_usage
+	fi
+	# Most mods require a valid Steam login. Not all will work with the anonymous user.
+	fn_steamlogin_dayz
+	fn_get_mods
+	# Options
+	case "${1}" in
+	activate)
+		fn_activate_mod ${2}
+		;;
+	add)
+		fn_add_mod ${2}
+		;;
+	deactivate)
+		fn_deactivate_mod ${2}
+		;;
+	list)
+		fn_list_mods
+		;;
+
+	remove)
+		fn_remove_mod ${2}
+		;;
+	update)
+		echo "Updating mods..."
+		fn_update_mods
+		fn_link_mods
+		;;
+	**)
+		fn_usage
+		;;
+	esac
 }
 
 fn_rcon(){
@@ -415,7 +548,7 @@ case "${1}" in
     ;;
   workshop)
     fn_loadconfig_dayz
-    fn_workshop_mods "${2}"
+    fn_workshop_mods ${2} ${3} ${4}
     ;;
   **)
     fn_usage "$*"
