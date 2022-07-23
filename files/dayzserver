@@ -14,20 +14,16 @@ cyan="\e[36m"
 function report() {
     echo
     echo -e "${yellow}========================================== error.log =========================================="
-    find "${HOME}" -name error.log -exec head {} \; -exec rm -f {} \;
+    find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== script*.log ========================================"
-    find "${HOME}" -name "script*.log" -exec head {} \; -exec rm -f {} \;
+    find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== *.RPT =============================================="
-    find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec rm -f {} \;
+    find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
     echo
     echo -e "${yellow}========================================== End crash log ======================================"
 }
-
-# Make sure we don't start collecting core files
-# FIXME Set this in Docker somewhere
-ulimit -c 0
 
 # DayZ Experimental SteamID, because there is no release version of the Linux server yet
 appid=1042420
@@ -193,16 +189,13 @@ fn_start_dayz(){
   printf "[ ${green}DayZ${default} ] Server starting...\n"
   ./DayZServer $dayzparameter
   EXIT_CODE=$?
-  if [[ ${EXIT_CODE} = "139" ]]
-  then
-    EXIT_CODE=0
-  fi
-  printf "[ ${yellow}DayZ${default} ] Server stopped. Exit code: ${EXIT_CODE}\n"
+  printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
   exit ${EXIT_CODE}
 }
 
 fn_stop_dayz(){
-  echo "Stopping DayZ server...(this is not implemented)"
+  echo "Stopping DayZ server..."
+  kill -TERM $(pidof DayZServer)
 }
 
 fn_steam_login(){
