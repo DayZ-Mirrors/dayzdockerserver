@@ -45,13 +45,8 @@ profile="-profiles=${HOME}/serverprofile/"
 # No logs? This should read "-somelogs"
 logs="-nologs"
 
-# Mods. WIP. This will have to come from another file, as the plan is to manage this with
-# this very script.
-# mods="@CF;@community-Online-Tools;@Banov;@SimpleAutorun"
-mods=""
-
 # Put them all together
-dayzparameter=" -config=${config} -port=${port} -mod='${mods}' -freezecheck -fps=60 -BEpath=${HOME}/serverfiles/battleye ${profile} ${logs}"
+dayzparameter=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${HOME}/serverfiles/battleye ${profile} ${logs}"
 
 # Base directories
 CFG_SRC_FILES="/files"
@@ -80,7 +75,7 @@ fi
 declare -a workshopID
 workshoplist=""
 workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
-mod_command_line=""
+mod_command_line="-mod='"
 
 # Other stuff
 YES="${green}yes${default}"
@@ -191,12 +186,12 @@ fn_start_dayz(){
   trap '
     report
   ' EXIT
-  fn_workshop_mods
+  fn_mod_cmd
   cd ${SERVER_FILES}
   # Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
   # safely shut the container down without killing the server within.
   printf "[ ${green}DayZ${default} ] Server starting...\n"
-  ./DayZServer $dayzparameter
+  ./DayZServer ${dayzparameter} ${mod_command_line}
   EXIT_CODE=$?
   printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
   exit ${EXIT_CODE}
@@ -307,7 +302,7 @@ fn_update_dayz(){
 		printf "\nApplying update"
 		# run update
 		fn_runupdate_dayz
-		fn_workshop_mods
+		fn_update_mods
 	else
 		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
 		printf "\nNo update available:\n"
@@ -331,27 +326,26 @@ fn_get_mods(){
 fn_update_mods(){
 	fn_get_mods
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	echo
 }
 
-fn_link_mods(){
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		if [[ ${ID} =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ] && [ -d "${workshopfolder}/${ID}" ]
-		then
-			modname=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${ID}/meta.cpp))
-			if [ ! -d "${SERVER_FILES}/@${modname}" ]
-			then
-				ln -s ${workshopfolder}/${ID} "${SERVER_FILES}/@${modname}" &> /dev/null
-			fi
-			find "${workshopfolder}/${ID}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
-		fi
-	done
+fn_link_mod(){
+	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+	if [ ! -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${MODNAME}"
+		echo "Created symlink for mod id ${1}"
+	else
+		echo "Symlink for mod id ${1} already exists"
+	fi
+
+#	find "${workshopfolder}/${1}" -depth -print -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+
 	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1
 	then
-		cp -vu ${SERVER_FILES}/@*/keys/* "${SERVER_FILES}/keys/" > /dev/null 2>&1
+		echo "Copying key files..."
+		cp -vu "${workshopfolder}/*/Keys/*" "${SERVER_FILES}/keys/" 2> /dev/null
+#		cp -vu "${SERVER_FILES}/@*/{K,k}eys/*" "${SERVER_FILES}/keys/"
 	fi
 }
 
@@ -359,6 +353,15 @@ fn_add_mod(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
+		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+	else
+		echo -e "${green}The mod directory ${workshopfolder}/${1} doesn't exist...${default}"
+	fi
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo -e "${yellow}Warning: The mod symlink ${SERVER_FILES}/@${MODNAME} already exists!${default}"
+	else
+		echo -e "${green}The mod symlink ${SERVER_FILES}/@${MODNAME} doesn't exist...${default}"
 	fi
 	if grep -qP "\b${1}\b" "${WORKSHOP_CFG}"
 	then
@@ -368,14 +371,12 @@ fn_add_mod(){
 	echo "Adding mod id ${1}"
 	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
 	fn_update_mods
+	fn_link_mod ${1}
 	if [ -d "${workshopfolder}/${1}" ]
 	then
-		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
 		sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
-		echo
 		echo "Mod id ${1} - ${MODNAME} - added"
 	else
-		echo
 		echo "Installation failed! See above (You probably need to use a real Steam login)"
 		head -n-1 "${WORKSHOP_CFG}" > /tmp/workshop.cfg.tmp
 		mv /tmp/workshop.cfg.tmp "${WORKSHOP_CFG}"
@@ -389,7 +390,7 @@ fn_remove_mod(){
 		echo "Removing directory ${workshopfolder}/${1}"
 		rm -rf "${workshopfolder}/${1}"
 	fi
-	if [ -s "${SERVER_FILES}/@${MODNAME}" ]
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
 		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
 		rm -f "${SERVER_FILES}/@${MODNAME}"
@@ -397,23 +398,55 @@ fn_remove_mod(){
 	if grep -q ${1} "${WORKSHOP_CFG}"
 	then
 		echo "Removing workshop file entry"
-		sed -i "${WORKSHOP_CFG}" -e "/${1}:${MODNAME}:\d/d" 
+		sed -i "${WORKSHOP_CFG}" -e "/${1}:/d" 
 	fi
 	echo "Mod id ${1} - ${MODNAME} - removed"
 }
 
 fn_activate_mod(){
-	echo "Activcating mod id ${1}"
+	fn_get_mods
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ID} = ${1} ]]
+		then
+			if [[ ${ACTIVE} = "0" ]]
+			then
+				sed -i "${WORKSHOP_CFG}" -e 's/'${1}':\(.*\):0/'${1}':\1:1/'
+				echo "Activcated mod id ${1}"
+			else
+				echo "Mod id ${1} was already active"
+			fi
+		fi
+	done
 }
 
 fn_deactivate_mod(){
-	echo "Deactivcating mod id ${1}"
+	fn_get_mods
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ID} = ${1} ]]
+		then
+			if [[ ${ACTIVE} = "1" ]]
+			then
+				sed -i "${WORKSHOP_CFG}" -e 's/'${1}':\(.*\):1/'${1}':\1:0/'
+				echo "Dectivcated mod id ${1}"
+			else
+				echo "Mod id ${1} was already inactive"
+			fi
+		fi
+	done
 }
 
 fn_list_mods(){
 	fn_get_mods
 	spaces="                        "
-	echo -e "ID\t\tName\t\t\tStatus\tURL"
+	echo -e "ID\t\tName\t\t\tActive\tURL"
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
@@ -436,6 +469,7 @@ fn_mod_cmd(){
 			mod_command_line="${mod_command_line}@${modname};"
 		fi
 	done
+	mod_command_line="${mod_command_line}'"
 }
 
 fn_workshop_mods(){
@@ -450,7 +484,6 @@ fn_workshop_mods(){
 	fi
 	# Most mods require a valid Steam login. Not all will work with the anonymous user.
 	fn_steamlogin_dayz
-	fn_get_mods
 	# Options
 	case "${1}" in
 	activate)
@@ -472,7 +505,6 @@ fn_workshop_mods(){
 	update)
 		echo "Updating mods..."
 		fn_update_mods
-		fn_link_mods
 		;;
 	**)
 		fn_usage
@@ -488,7 +520,8 @@ fn_status(){
   INSTALLED="${NO}"
   LOGGED_IN="${NO}"
   RUNNING="${NO}"
-  MOD_INSTALLED="${yellow}0${default}"
+  fn_get_mods
+  MOD_INSTALLED="${green}${#workshopID[@]}${default}"
   MOD_LIST=""
   # DayZ Server files installation
   if [ -f "${SERVER_INSTALL_FILE}" ]
@@ -502,6 +535,8 @@ fn_status(){
     if grep -q anonymous "${STEAM_LOGIN}"
     then
       ANONYMOUS="(as anonymous)"
+    else
+      ANONYMOUS="(not anonymous)"
     fi
   fi
   # Running or not
@@ -509,6 +544,7 @@ fn_status(){
   then
     RUNNING="${YES}"
   fi
+  fn_mod_cmd
   # Number of mods plus the list denoting on or off
   echo -e "
 Status:
@@ -517,10 +553,15 @@ Status:
   Server files installed: ${INSTALLED}
   Mods installed: ${MOD_INSTALLED}${MOD_LIST}
   Server running: ${RUNNING}
+  Server command line:${dayzparameter}
+  Mod command line: ${mod_command_line}
 "
 }
 
 case "${1}" in
+  cmd)
+    fn_mod_cmd
+    ;;
   install)
     fn_loadconfig_dayz
     fn_install_dayz
