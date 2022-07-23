@@ -75,7 +75,7 @@ fi
 declare -a workshopID
 workshoplist=""
 workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
-mod_command_line="-mod='"
+mod_command_line="-mod="
 
 # Other stuff
 YES="${green}yes${default}"
@@ -191,15 +191,26 @@ fn_start_dayz(){
   # Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
   # safely shut the container down without killing the server within.
   printf "[ ${green}DayZ${default} ] Server starting...\n"
-  ./DayZServer ${dayzparameter} ${mod_command_line}
+  ./DayZServer "${mod_command_line}" ${dayzparameter}
   EXIT_CODE=$?
+  if [ -f ${SERVER_FILES}/restart ]
+  then
+    rm -f ${SERVER_FILES}/restart
+    EXIT_CODE=42
+  fi
   printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
   exit ${EXIT_CODE}
 }
 
+fn_restart(){
+	touch "${SERVER_FILES}/restart"
+	echo "Restarting DayZ server..."
+	kill -TERM $(pidof DayZServer)
+}
+
 fn_stop_dayz(){
-  echo "Stopping DayZ server..."
-  kill -TERM $(pidof DayZServer)
+	echo "Stopping DayZ server..."
+	kill -TERM $(pidof DayZServer)
 }
 
 fn_steam_login(){
@@ -329,58 +340,54 @@ fn_update_mods(){
 	echo
 }
 
-fn_link_mod(){
-	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
-	if [ ! -L "${SERVER_FILES}/@${MODNAME}" ]
-	then
-		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${MODNAME}"
-		echo "Created symlink for mod id ${1}"
-	else
-		echo "Symlink for mod id ${1} already exists"
-	fi
-
-#	find "${workshopfolder}/${1}" -depth -print -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
-
-	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1
-	then
-		echo "Copying key files..."
-		cp -vu "${workshopfolder}/*/Keys/*" "${SERVER_FILES}/keys/" 2> /dev/null
-#		cp -vu "${SERVER_FILES}/@*/{K,k}eys/*" "${SERVER_FILES}/keys/"
-	fi
-}
-
 fn_add_mod(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
 		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
-	else
-		echo -e "${green}The mod directory ${workshopfolder}/${1} doesn't exist...${default}"
 	fi
 	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
 		echo -e "${yellow}Warning: The mod symlink ${SERVER_FILES}/@${MODNAME} already exists!${default}"
-	else
-		echo -e "${green}The mod symlink ${SERVER_FILES}/@${MODNAME} doesn't exist...${default}"
 	fi
 	if grep -qP "\b${1}\b" "${WORKSHOP_CFG}"
 	then
-		echo "The mod with id ${1} is already installed"
+		echo "The mod with id ${1} is already in the workshop configuration."
 		return
 	fi
 	echo "Adding mod id ${1}"
 	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
 	fn_update_mods
-	fn_link_mod ${1}
-	if [ -d "${workshopfolder}/${1}" ]
+	# Make sure the install succeeded
+	if [ ! -d "${workshopfolder}/${1}" ]
 	then
-		sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
-		echo "Mod id ${1} - ${MODNAME} - added"
-	else
+		echo -e "${red}Mod installation failed: The mod directory ${workshopfolder}/${1} was not created!${default}"
 		echo "Installation failed! See above (You probably need to use a real Steam login)"
+		# The mod is added temporarily into the workshop config. Since the installation failed, reemove it instead of updating it.
 		head -n-1 "${WORKSHOP_CFG}" > /tmp/workshop.cfg.tmp
 		mv /tmp/workshop.cfg.tmp "${WORKSHOP_CFG}"
+		return
 	fi
+	# Get the name of the newly added addon
+	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+	# Symlink it
+	if [ ! -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${MODNAME}"
+		echo "Created symlink for mod id ${1}"
+	fi
+	# Lower case all the files in mod directories.
+	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	# Copy the key files
+	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1
+	then
+		echo "Copying key files..."
+		cp -vu "${workshopfolder}/*/keys/*" "${SERVER_FILES}/keys/" 2> /dev/null
+	fi
+	# Set the mod name in the workshop config file, as we don't know this at the start.
+	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
+	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
+
 }
 
 fn_remove_mod(){
@@ -469,7 +476,7 @@ fn_mod_cmd(){
 			mod_command_line="${mod_command_line}@${modname};"
 		fi
 	done
-	mod_command_line="${mod_command_line}'"
+	mod_command_line="${mod_command_line::-1}"
 }
 
 fn_workshop_mods(){
@@ -553,8 +560,8 @@ Status:
   Server files installed: ${INSTALLED}
   Mods installed: ${MOD_INSTALLED}${MOD_LIST}
   Server running: ${RUNNING}
-  Server command line:${dayzparameter}
-  Mod command line: ${mod_command_line}
+  Server parameter:${dayzparameter}
+  Mod parameter: ${mod_command_line}
 "
 }
 
@@ -572,6 +579,9 @@ case "${1}" in
     ;;
   rcon)
     fn_rcon "${2}"
+    ;;
+  restart)
+    fn_restart
     ;;
   start)
     fn_loadconfig_dayz
