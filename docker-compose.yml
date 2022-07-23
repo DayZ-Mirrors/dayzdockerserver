@@ -22,7 +22,12 @@ services:
 #      - 2303:2303/udp
 #      - 2304:2304/udp
 #      - 27016:27016/udp
+    # Restart the server if it should exit non zero.
+    # A zero exit means a normal shutdown.
     restart: on-failure
+    # Allows attaching a debugger from the host
+#    cap_add:
+#      - SYS_PTRACE
     volumes:
       - homedir:/home/user
       - ./files:/files
