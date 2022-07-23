@@ -10,6 +10,7 @@ that functionality but also add more features.
 As of DayZ release 1.15, a [Linux DayZ server](https://steamdb.info/app/1042420/) was made available in Dayz
 Experimental. This has not been officially released, so this will only run a DayZ Experimental server at the
 moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experimental) will be able to connect to it.
+The goal is to have a working implementation once the Linux server is officially released.
 
 This process will create a docker volume for the unprivileged user's home directory, which stores the DayZ server files.
 This volume can get quite large. It will require at least 2G of disk space for the default install. Much more with mods.
@@ -25,7 +26,6 @@ See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-d
 ```
 hostname = "Something other than Server Name";   // Server name
 ```
-A random RCON password will be generated and output to the log when the server is run.
 
 Build the Docker image:
 
