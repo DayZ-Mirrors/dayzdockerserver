@@ -35,7 +35,7 @@ docker compose build
 
 ### Steam Integration
 
-[SteamDMD](https://developer.valvesoftware.com/wiki/SteamCMD) is used to manage Steam downloads. A vanilla DayZ server
+[SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) is used to manage Steam downloads. A vanilla DayZ server
 can be installed with the `anonymous` Steam user, but most mods cannot. If the goal is to add mods, a real Steam login
 must be used. Login:
 
