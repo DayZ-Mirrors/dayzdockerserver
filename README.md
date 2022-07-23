@@ -80,10 +80,12 @@ on the next server startup:
 docker-compose run --rm main rm serverfiles/battleye/baserver_x64_active*
 ```
 ### Update the DayZ server files
-It's probably not a good idea to update the server files while it's running. Make sure it's down first, then run the
-command:
+It's probably not a good idea to update the server files while it's running. Make sure it's down first:
 ```
 docker-compose down
+```
+Then run the command:
+```
 docker-compose run --rm main dayzserver update
 ```
 Don't forget to [bring it back up](#run).
