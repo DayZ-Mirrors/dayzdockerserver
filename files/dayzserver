@@ -31,14 +31,19 @@ appid=1042420
 # DayZ Release SteamID. This is for mods, as only the release has them.
 dayz_id=221100
 
+# Base directories
+CFG_SRC_FILES="/files"
+SERVER_FILES="${HOME}/serverfiles"
+SERVER_PROFILE="${HOME}/profiles"
+
 # Command line argument variables
 # Server config file
 config=serverDZ.cfg
 # Server port
 port=2302
 rcon_port=2303
-# Server profile directory
-profile="-profiles=${HOME}/serverprofile/"
+# Server profile argument
+profile="-profiles=${SERVER_PROFILE}"
 # To log or not to log.
 # All possible logging on:
 #logs="-dologs -adminlog -netlog"
@@ -46,12 +51,7 @@ profile="-profiles=${HOME}/serverprofile/"
 logs="-nologs"
 
 # Put them all together
-dayzparameter=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${HOME}/serverfiles/battleye ${profile} ${logs}"
-
-# Base directories
-CFG_SRC_FILES="/files"
-SERVER_FILES="${HOME}/serverfiles"
-SERVER_PROFILE="${HOME}/serverprofile"
+dayzparameter=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye ${profile} ${logs}"
 
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
@@ -94,7 +94,7 @@ Options and arguments:
   rcon - Connect to the server using a python RCON client
   status - Shows the server's status as well as the state of the server files and mods (Needs install, update, etc.)
   stop - Stop the server
-  update - Update the DayZ server files
+  update - Update the DayZ server and configuration files
   workshop - Workshop Features
     activate id [id...] - Activate one or many installed DayZ Workshop item by id
     add id [id...] - Add one or many DayZ Workshop items by id. Added items are become active by default.
@@ -267,6 +267,7 @@ fn_install_dayz(){
 }
 
 fn_runupdate_dayz(){
+  fn_steamlogin_dayz
   if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
   then
     echo "========================================================================="
@@ -560,7 +561,7 @@ Status:
   Server files installed: ${INSTALLED}
   Mods installed: ${MOD_INSTALLED}${MOD_LIST}
   Server running: ${RUNNING}
-  Server parameter:${dayzparameter}
+  Default parameters:${dayzparameter}
   Mod parameter: ${mod_command_line}
 "
 }
@@ -594,6 +595,7 @@ case "${1}" in
     fn_stop_dayz
     ;;
   update)
+    fn_runupdate_dayz
     fn_loadconfig_dayz
     fn_update_dayz
     ;;
