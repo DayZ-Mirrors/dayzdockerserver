@@ -266,8 +266,7 @@ fn_install_dayz(){
 	fi
 }
 
-fn_runupdate_dayz(){
-  fn_steamlogin_dayz
+fn_config(){
   if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
   then
     echo "========================================================================="
@@ -281,7 +280,6 @@ fn_runupdate_dayz(){
       echo "NOT updating the server configuration file"
     fi
   fi
-  ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
 }
 
 fn_update_dayz(){
@@ -313,7 +311,8 @@ fn_update_dayz(){
 		printf "\thttps://steamdb.info/app/${appid}/\n"
 		printf "\nApplying update"
 		# run update
-		fn_runupdate_dayz
+		fn_steamlogin_dayz
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
 		fn_update_mods
 	else
 		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
@@ -525,41 +524,43 @@ fn_rcon(){
 }
 
 fn_status(){
-  INSTALLED="${NO}"
-  LOGGED_IN="${NO}"
-  RUNNING="${NO}"
-  fn_get_mods
-  MOD_INSTALLED="${green}${#workshopID[@]}${default}"
-  MOD_LIST=""
-  # DayZ Server files installation
-  if [ -f "${SERVER_INSTALL_FILE}" ]
-  then
-    INSTALLED="${YES}"
-  fi
-  # Logged into Steam
-  if [ -f "${STEAM_LOGIN}" ]
-  then
-    LOGGED_IN="${YES}"
-    if grep -q anonymous "${STEAM_LOGIN}"
-    then
-      ANONYMOUS="(as anonymous)"
-    else
-      ANONYMOUS="(not anonymous)"
-    fi
-  fi
-  # Running or not
-  if pidof DayZServer > /dev/null
-  then
-    RUNNING="${YES}"
-  fi
-  fn_mod_cmd
-  # Number of mods plus the list denoting on or off
-  echo -e "
+	INSTALLED="${NO}"
+	LOGGED_IN="${NO}"
+	RUNNING="${NO}"
+	fn_get_mods
+	MODS_INSTALLED="${green}${#workshopID[@]}${default}"
+	# DayZ Server files installation
+	if [ -f "${SERVER_INSTALL_FILE}" ]
+	then
+		INSTALLED="${YES}"
+	fi
+	# Logged into Steam
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		LOGGED_IN="${YES}"
+		if grep -q anonymous "${STEAM_LOGIN}"
+		then
+			ANONYMOUS="${yellow}(as anonymous)${default}"
+		else
+			ANONYMOUS="${green}(not anonymous)${default}"
+		fi
+	fi
+	# Running or not
+	if pidof DayZServer > /dev/null
+	then
+		RUNNING="${YES}"
+	fi
+	fn_mod_cmd
+	# Uptime
+	UPTIME=$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +%H:%M:%S)
+	# Number of mods plus the list denoting on or off
+	echo -e "
 Status:
 
+  Uptime: ${green}${UPTIME}${default}
   Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
   Server files installed: ${INSTALLED}
-  Mods installed: ${MOD_INSTALLED}${MOD_LIST}
+  Mods installed: ${MODS_INSTALLED}
   Server running: ${RUNNING}
   Default parameters:${dayzparameter}
   Mod parameter: ${mod_command_line}
@@ -570,6 +571,9 @@ case "${1}" in
   cmd)
     fn_mod_cmd
     ;;
+  config)
+    fn_config
+    ;;    
   install)
     fn_loadconfig_dayz
     fn_install_dayz
@@ -595,7 +599,6 @@ case "${1}" in
     fn_stop_dayz
     ;;
   update)
-    fn_runupdate_dayz
     fn_loadconfig_dayz
     fn_update_dayz
     ;;

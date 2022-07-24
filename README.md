@@ -152,8 +152,16 @@ the running container:
 docker compose exec main bash
 ```
 
+Or open a shell into a new container if the docker stack is not up:
+```
+docker compose run --rm main bash
+```
+
+All the files used by the server are in a docker volume. Any change made will be reflected upon the next container startup.
+
 Use this shell cautiously.
 
 ## TODO
 
 * Create some way to send messages to players on the server using RCON.
+* Implement multiple ids for mod commands.
