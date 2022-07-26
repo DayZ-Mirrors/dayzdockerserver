@@ -12,17 +12,17 @@ cyan="\e[36m"
 
 # Make sure to report and clean up on exit, as these files remain in the container's volume
 function report() {
-    echo
-    echo -e "${yellow}========================================== error.log =========================================="
-    find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== script*.log ========================================"
-    find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== *.RPT =============================================="
-    find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
-    echo
-    echo -e "${yellow}========================================== End crash log ======================================"
+	echo
+	echo -e "${yellow}========================================== error.log =========================================="
+	find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "${yellow}========================================== script*.log ========================================"
+	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "${yellow}========================================== *.RPT =============================================="
+	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "${yellow}========================================== End crash log ======================================"
 }
 
 # DayZ Experimental SteamID, because there is no release version of the Linux server yet
@@ -51,7 +51,7 @@ profile="-profiles=${SERVER_PROFILE}"
 logs="-nologs"
 
 # Put them all together
-dayzparameter=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye ${profile} ${logs}"
+parameters=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye ${profile} ${logs}"
 
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
@@ -81,7 +81,7 @@ mod_command_line="-mod="
 YES="${green}yes${default}"
 NO="${red}no${default}"
 
-fn_usage(){
+usage(){
   echo -e "
 ${red}Bad option or arguments! ${yellow}${*}${default}
 
@@ -92,7 +92,7 @@ Options and arguments:
   activate id [id...] - Activate one or many installed DayZ Workshop items by id
   add id [id...] - Add one or many DayZ Workshop items by id. Added items become active by default
   config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file.
-  deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the addon files but excludes from -mod=
+  deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the mod files but excludes from -mod=
   install - Install the DayZ server files
   list - List Workshop items and if they are active or not
   login - Login to Steam
@@ -105,184 +105,185 @@ ${default}"
   exit 1
 }
 
-fn_prompt_yn(){
-  echo -n "${1} (y|N) " >&2
-  read -s -n 1 a
-  a=$(echo ${a} | tr A-Z a-z)
-  echo
-  if [[ "${a}" = "y" ]]
-  then
-    return 0
-  else
-    return 1
-  fi
+prompt_yn(){
+	echo -n "${1} (y|N) " >&2
+	read -s -n 1 a
+	a=$(echo ${a} | tr A-Z a-z)
+	echo
+	if [[ "${a}" = "y" ]]
+	then
+		return 0
+	else
+		return 1
+	fi
 }
 
-fn_loadconfig_dayz(){
-  if [ ! -f "${SERVER_INSTALL_FILE}" ]
-  then
-    echo
-    echo -e "The DayZ server files are not installed. Run '${green}docker-compose run --rm main dayzserver install${default}'"
-    echo
-    exit 1
-  fi
-  # Handle the initial server configuration file
-  if [ ! -f ${SERVER_CFG_DST} ]
-  then
-    echo "Creating initial server configuration file"
-    cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-  fi
-  # battleye config and rconpassword setup
-  # The server creates a new file from this file, which it then uses.
-  # Let's make sure to delete it first
-  BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
-  ALT_BE_SERVER_FILE=$(find ${HOME}/serverfiles/battleye -name "beserver_x64_active*")
-  if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
-  then
-    passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
-    if [ "${passwd}" == "" ]; then
-      passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-    fi
-    if [ "${passwd}" == "" ]; then
-      printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
-      exit 1
-    else
-      cat > "${BE_SERVER_FILE}" <<EOF
+loadconfig(){
+	if [ ! -f "${SERVER_INSTALL_FILE}" ]
+	then
+		echo
+		echo -e "The DayZ server files are not installed. Run '${green}docker-compose run --rm main dayzserver install${default}'"
+		echo
+		exit 1
+	fi
+	# Handle the initial server configuration file
+	if [ ! -f ${SERVER_CFG_DST} ]
+	then
+		echo "Creating initial server configuration file"
+		cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	fi
+	# battleye config and rconpassword setup
+	# The server creates a new file from this file, which it then uses.
+	# Let's make sure to delete it first
+	BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
+	ALT_BE_SERVER_FILE=$(find ${HOME}/serverfiles/battleye -name "beserver_x64_active*")
+	if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
+	then
+		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
+		if [ "${passwd}" == "" ]
+		then
+			passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+		fi
+		if [ "${passwd}" == "" ]
+		then
+			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
+			exit 1
+		else
+			cat > "${BE_SERVER_FILE}" <<EOF
 RConPassword ${passwd}
 RestrictRCon 0
 RConPort ${rcon_port}
 EOF
-    fi
-    printf "[ ${cyan}INFO${default} ] New RCON password: ${yellow}${passwd}${default}\n"
-  else
-    if [ -f "${BE_SERVER_FILE}" ]
-    then
-      FILE="${BE_SERVER_FILE}"
-    elif [ -f "${ALT_BE_SERVER_FILE}" ]
-    then
-      FILE="${ALT_BE_SERVER_FILE}"
-    fi
-    passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
-#    printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
-  fi
-  cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
-  jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
-    '.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
-    /usr/local/py3rcon/configexample.json \
-    > ~/py3rcon.config.json
+		fi
+		printf "[ ${cyan}INFO${default} ] New RCON password: ${yellow}${passwd}${default}\n"
+	else
+		if [ -f "${BE_SERVER_FILE}" ]
+		then
+			FILE="${BE_SERVER_FILE}"
+		elif [ -f "${ALT_BE_SERVER_FILE}" ]
+		then
+			FILE="${ALT_BE_SERVER_FILE}"
+		fi
+		passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
+#		printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
+	fi
+	cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
+	jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
+		'.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
+		/usr/local/py3rcon/configexample.json \
+		> ~/py3rcon.config.json
 }
 
-fn_start_dayz(){
-  # Check for interactive shell
-  if [ -t 0 ]
-  then
-    echo
-    echo -e "Not starting the server in an interactive shell. Start the server using '${green}docker-compose up -d${default}'"
-    echo
-    exit
-  fi
-  # Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
-  trap '
-    report
-  ' EXIT
-  fn_mod_cmd
-  cd ${SERVER_FILES}
-  # Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
-  # safely shut the container down without killing the server within.
-  printf "[ ${green}DayZ${default} ] Server starting...\n"
-  ./DayZServer "${mod_command_line}" ${dayzparameter}
-  EXIT_CODE=$?
-  if [ -f ${SERVER_FILES}/restart ]
-  then
-    rm -f ${SERVER_FILES}/restart
-    EXIT_CODE=42
-  fi
-  printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
-  exit ${EXIT_CODE}
+start(){
+	# Check for interactive shell
+	if [ -t 0 ]
+	then
+		echo
+		echo -e "Not starting the server in an interactive shell. Start the server using '${green}docker-compose up -d${default}'"
+		echo
+		exit
+	fi
+	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
+	trap '
+		report
+	' EXIT
+	mod_cmd
+	cd ${SERVER_FILES}
+	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
+	# safely shut the container down without killing the server within.
+	printf "[ ${green}DayZ${default} ] Server starting...\n"
+	./DayZServer "${mod_command_line}" ${parameters}
+	EXIT_CODE=$?
+	if [ -f ${SERVER_FILES}/restart ]
+	then
+		rm -f ${SERVER_FILES}/restart
+		EXIT_CODE=42
+	fi
+	printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
+	exit ${EXIT_CODE}
 }
 
-fn_restart(){
+restart(){
 	touch "${SERVER_FILES}/restart"
 	echo "Restarting DayZ server..."
 	kill -TERM $(pidof DayZServer)
 }
 
-fn_stop_dayz(){
+stop(){
 	echo "Stopping DayZ server..."
 	kill -TERM $(pidof DayZServer)
 }
 
-fn_steam_login(){
-  if [ -f "${STEAM_LOGIN}" ]
-  then
-    if fn_prompt_yn "The steam login is already set. Reset it?"
-    then
-      rm -f "${STEAM_LOGIN}"
-    else
-      echo "Not reset."
-      exit 0
-    fi
-  fi
-  if [ ! -f "${STEAM_LOGIN}" ]
-  then
-    echo "Setting up Steam credentials"
-    echo -n "Steam Username (anonymous): "
-    read steamlogin
-    if [[ "${steamlogin}" = "" ]]
-    then
-      echo "Steam login set to 'anonymous'"
-      steamlogin="anonymous"
-    fi
-    echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN}"
-    ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
-  fi
+login(){
+	loadconfig
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		if prompt_yn "The steam login is already set. Reset it?"
+		then
+			rm -f "${STEAM_LOGIN}"
+		else
+			echo "Not reset."
+			exit 0
+		fi
+	fi
+	if [ ! -f "${STEAM_LOGIN}" ]
+	then
+		echo "Setting up Steam credentials"
+		echo -n "Steam Username (anonymous): "
+		read steamlogin
+		if [[ "${steamlogin}" = "" ]]
+		then
+			echo "Steam login set to 'anonymous'"
+			steamlogin="anonymous"
+		fi
+		echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN}"
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
+	fi
 }
 
-fn_steamlogin_dayz(){
-  if [ -f "${STEAM_LOGIN}" ]
-  then
-    source "${STEAM_LOGIN}"
-  else
-    echo "No cached Steam credentials. Please configure this now: "
-    fn_steam_login
-  fi
+dologin(){
+	loadconfig
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		source "${STEAM_LOGIN}"
+	else
+		echo "No cached Steam credentials. Please configure this now: "
+		login
+	fi
 }
 
-fn_runvalidate_dayz(){
-#	fn_loadconfig_dayz
-	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
-}
-
-fn_install_dayz(){
-	if [ ! -f "${SERVER_INSTALL_FILE}" ]; then
+install(){
+	loadconfig
+	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
+	then
 		mkdir -p "${SERVER_FILES}"
 		mkdir -p "${SERVER_PROFILE}"
 		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
-		fn_steamlogin_dayz
-		fn_runvalidate_dayz
+		dologin
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
 	else
 		printf "[ ${lightblue}DayZ${default} ] The Server is already installed.\n"
 	fi
 }
 
-fn_config(){
-  if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-  then
-    echo "========================================================================="
-    diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
-    echo "========================================================================="
-    if fn_prompt_yn "The new server configuration file differs from what's installed. Use it?"
-    then
-      echo "Updating the server configuration file"
-      cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-    else
-      echo "NOT updating the server configuration file"
-    fi
-  fi
+config(){
+	if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	then
+		echo "========================================================================="
+		diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
+		echo "========================================================================="
+		if prompt_yn "The new server configuration file differs from what's installed. Use it?"
+		then
+			echo "Updating the server configuration file"
+			cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+		else
+			echo "NOT updating the server configuration file"
+		fi
+	fi
 }
 
-fn_update_dayz(){
-	fn_steamlogin_dayz
+update(){
+	dologin
 	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${appid}".acf
 	printf "[ ... ] Checking for update:"
 	# gets currentbuild
@@ -310,9 +311,9 @@ fn_update_dayz(){
 		printf "\thttps://steamdb.info/app/${appid}/\n"
 		printf "\nApplying update"
 		# run update
-		fn_steamlogin_dayz
+		dologin
 		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
-		fn_update_mods
+		modupdate
 	else
 		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
 		printf "\nNo update available:\n"
@@ -322,7 +323,7 @@ fn_update_dayz(){
 	fi
 }
 
-fn_get_mods(){
+get_mods(){
 	mapfile -t workshopID < "${WORKSHOP_CFG}"
 	for i in "${workshopID[@]}"
 	do
@@ -333,13 +334,15 @@ fn_get_mods(){
 	done
 }
 
-fn_update_mods(){
-	fn_get_mods
+modupdate(){
+	get_mods
+	echo "Updating mods..."
+	dologin
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	echo
 }
 
-fn_add_mod(){
+add(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
@@ -356,7 +359,7 @@ fn_add_mod(){
 	fi
 	echo "Adding mod id ${1}"
 	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
-	fn_update_mods
+	modupdate
 	# Make sure the install succeeded
 	if [ ! -d "${workshopfolder}/${1}" ]
 	then
@@ -367,29 +370,26 @@ fn_add_mod(){
 		mv /tmp/workshop.cfg.tmp "${WORKSHOP_CFG}"
 		return
 	fi
-	# Get the name of the newly added addon
+	# Get the name of the newly added mod
 	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
 	# Symlink it
 	if [ ! -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
 		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${MODNAME}"
-		echo "Created symlink for mod id ${1}"
+		echo "Created symlink ${workshopfolder}/${1} ${SERVER_FILES}/@${MODNAME}"
 	fi
 	# Lower case all the files in mod directories.
 	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	# Copy the key files
-	if ls ${SERVER_FILES}/@* 1> /dev/null 2>&1
-	then
-		echo "Copying key files..."
-		cp -vu "${workshopfolder}/*/keys/*" "${SERVER_FILES}/keys/" 2> /dev/null
-	fi
+	echo "Copying key files..."
+	cp -v ${workshopfolder}/${1}/keys/* "${SERVER_FILES}/keys/"
 	# Set the mod name in the workshop config file, as we don't know this at the start.
 	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
 
 }
 
-fn_remove_mod(){
+remove(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
@@ -409,8 +409,8 @@ fn_remove_mod(){
 	echo "Mod id ${1} - ${MODNAME} - removed"
 }
 
-fn_activate_mod(){
-	fn_get_mods
+activate(){
+	get_mods
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
@@ -429,8 +429,8 @@ fn_activate_mod(){
 	done
 }
 
-fn_deactivate_mod(){
-	fn_get_mods
+deactivate(){
+	get_mods
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
@@ -449,8 +449,8 @@ fn_deactivate_mod(){
 	done
 }
 
-fn_list_mods(){
-	fn_get_mods
+list(){
+	get_mods
 	spaces="                        "
 	echo -e "ID\t\tName\t\t\tActive\tURL"
 	for i in "${workshopID[@]}"
@@ -462,8 +462,8 @@ fn_list_mods(){
 	done
 }
 
-fn_mod_cmd(){
-	fn_get_mods
+mod_cmd(){
+	get_mods
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
@@ -478,55 +478,15 @@ fn_mod_cmd(){
 	mod_command_line="${mod_command_line::-1}"
 }
 
-fn_workshop_mods(){
-	# Check usage
-	if [[ ${1} = "" ]]
-	then
-		fn_usage
-	fi
-	if [[ ${1} != "list" ]] && [[ ${2} = "" ]]
-	then
-		fn_usage
-	fi
-	# Most mods require a valid Steam login. Not all will work with the anonymous user.
-	fn_steamlogin_dayz
-	# Options
-	case "${1}" in
-	activate)
-		fn_activate_mod ${2}
-		;;
-	add)
-		fn_add_mod ${2}
-		;;
-	deactivate)
-		fn_deactivate_mod ${2}
-		;;
-	list)
-		fn_list_mods
-		;;
-
-	remove)
-		fn_remove_mod ${2}
-		;;
-	update)
-		echo "Updating mods..."
-		fn_update_mods
-		;;
-	**)
-		fn_usage
-		;;
-	esac
+rcon(){
+	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
 }
 
-fn_rcon(){
-  exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
-}
-
-fn_status(){
+status(){
 	INSTALLED="${NO}"
 	LOGGED_IN="${NO}"
 	RUNNING="${NO}"
-	fn_get_mods
+	get_mods
 	MODS_INSTALLED="${green}${#workshopID[@]}${default}"
 	# DayZ Server files installation
 	if [ -f "${SERVER_INSTALL_FILE}" ]
@@ -549,63 +509,77 @@ fn_status(){
 	then
 		RUNNING="${YES}"
 	fi
-	fn_mod_cmd
+	mod_cmd
 	# Uptime
 	UPTIME=$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +%H:%M:%S)
 	# Number of mods plus the list denoting on or off
 	echo -e "
 Status:
 
-  Uptime: ${green}${UPTIME}${default}
-  Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
-  Server files installed: ${INSTALLED}
-  Mods installed: ${MODS_INSTALLED}
-  Server running: ${RUNNING}
-  Default parameters:${dayzparameter}
-  Mod parameter: ${mod_command_line}
+Uptime: ${green}${UPTIME}${default}
+Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
+Server files installed: ${INSTALLED}
+Mods installed: ${MODS_INSTALLED}
+Server running: ${RUNNING}
+Default parameters:${parameters}
+Mod parameter: ${mod_command_line}
 "
 }
 
-case "${1}" in
-  cmd)
-    fn_mod_cmd
-    ;;
-  config)
-    fn_config
-    ;;    
-  install)
-    fn_loadconfig_dayz
-    fn_install_dayz
-    ;;
-  login)
-    fn_loadconfig_dayz
-    fn_steam_login
-    ;;
-  rcon)
-    fn_rcon "${2}"
-    ;;
-  restart)
-    fn_restart
-    ;;
-  start)
-    fn_loadconfig_dayz
-    fn_start_dayz
-    ;;
-  status)
-    fn_status
-    ;;
-  stop)
-    fn_stop_dayz
-    ;;
-  update)
-    fn_loadconfig_dayz
-    fn_update_dayz
-    ;;
-  workshop)
-    fn_loadconfig_dayz
-    fn_workshop_mods ${2} ${3} ${4}
-    ;;
-  **)
-    fn_usage "$*"
-  ;;
+C=${1}
+
+shift
+
+case "${C}" in
+	activate)
+		activate "${@}"
+		;;
+	add)
+		add "${@}"
+		;;
+	cmd)
+		mod_cmd "${@}"
+		;;
+	config)
+		config "${@}"
+		;;    
+	deactivate)
+		deactivate "${@}"
+		;;
+	install)
+		install "${@}"
+		;;
+	list)
+		list "${@}"
+		;;
+	login)
+		login "${@}"
+		;;
+	modupdate)
+		modupdate "${@}"
+		;;
+	rcon)
+		rcon "${@}"
+		;;
+	remove)
+		remove "${@}"
+		;;
+	restart)
+		restart "${@}"
+		;;
+	start)
+		start "${@}"
+		;;
+	status)
+		status "${@}"
+		;;
+	stop)
+		stop "${@}"
+		;;
+	update)
+		update "${@}"
+		;;
+	**)
+		usage "$*"
+	;;
 esac
