@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# If you want/need the server and rcon ports to be different, set them here.
+# The steam query port is set in serverDZ.cfg.
+
+# Server port
+port=2302
+rcon_port=2303
+
+# Don't change anything else.
+
 # Colors
 default="\e[0m"
 red="\e[31m"
@@ -10,53 +19,28 @@ blue="\e[34m"
 magenta="\e[35m"
 cyan="\e[36m"
 
-# Make sure to report and clean up on exit, as these files remain in the container's volume
-function report() {
-	echo
-	echo -e "${yellow}========================================== error.log =========================================="
-	find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
-	echo
-	echo -e "${yellow}========================================== script*.log ========================================"
-	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
-	echo
-	echo -e "${yellow}========================================== *.RPT =============================================="
-	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
-	echo
-	echo -e "${yellow}========================================== End crash log ======================================"
-}
+# DayZ Experimental server Steam app ID, because there is no release version of the Linux server yet
+#experimental_server_appid=1042420
 
-# DayZ Experimental SteamID, because there is no release version of the Linux server yet
-appid=1042420
+# DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
+# from this ID.
+release_server_appid=223350
 
-# DayZ Release SteamID. This is for mods, as only the release has them.
-dayz_id=221100
+# DayZ release client SteamID. This is for mods, as only the release client has them.
+release_client_appid=221100
 
 # Base directories
 CFG_SRC_FILES="/files"
 SERVER_FILES="${HOME}/serverfiles"
 SERVER_PROFILE="${HOME}/profiles"
 
-# Command line argument variables
-# Server config file
-config=serverDZ.cfg
-# Server port
-port=2302
-rcon_port=2303
-# Server profile argument
-profile="-profiles=${SERVER_PROFILE}"
-# To log or not to log.
-# All possible logging on:
-#logs="-dologs -adminlog -netlog"
-# No logs? This should read "-somelogs"
-logs="-nologs"
-
-# Put them all together
-parameters=" -config=${config} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye ${profile} ${logs}"
-
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
 SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
 SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
+
+# Command line parameters except mod, as that is handled separately.
+parameters="-config=${SERVER_CFG_FILE} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye -profiles=${SERVER_PROFILE} -nologs"
 
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
@@ -65,22 +49,24 @@ SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 STEAM_LOGIN="${HOME}/steamlogin"
 STEAMCMD=steamcmd
 
-# Workshop
+# Workshop. This file will store metadata about what mods are installed.
 WORKSHOP_CFG="${HOME}/workshop.cfg"
 if [ ! -f "${WORKSHOP_CFG}" ]
 then
 	touch "${WORKSHOP_CFG}"
 fi
 
+# An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
 declare -a workshopID
-workshoplist=""
-workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${dayz_id}"
-mod_command_line="-mod="
+workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
 
 # Other stuff
 YES="${green}yes${default}"
 NO="${red}no${default}"
 
+# Functions
+
+# Usage
 usage(){
   echo -e "
 ${red}Bad option or arguments! ${yellow}${*}${default}
@@ -89,22 +75,41 @@ Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
 
 Options and arguments:
 
-  activate id [id...] - Activate one or many installed DayZ Workshop items by id
+  a|activate id [id...] - Activate one or many installed DayZ Workshop items by id
   add id [id...] - Add one or many DayZ Workshop items by id. Added items become active by default
-  config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file.
-  deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the mod files but excludes from -mod=
-  install - Install the DayZ server files
-  list - List Workshop items and if they are active or not
-  login - Login to Steam
-  rcon - Connect to the server using a python RCON client
-  remove id [id...] - Remove all vestiges of one or many Workshop items by id.
-  status - Shows the server's status as well as the state of the server files and mods (Needs install, update, etc.)
+  c|config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file
+  d|deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the mod files but excludes from -mod=
+  i|install - Install the DayZ server files
+  l|list - List Workshop items and if they are active or not
+  g|login - Login to Steam
+  m|modupdate - Update the mod files
+  n|rcon - Connect to the server using a python RCON client
+  r|remove id [id...] - Remove all vestiges of one or many Workshop items by id
+  restart - Restart the server without restarting the container
+  t|status - Shows the server's status as well as the state of the server files and mods (Needs install, update, etc.)
   stop - Stop the server
-  update - Update the server files
+  u|update - Update the server files
 ${default}"
   exit 1
 }
 
+# Make sure to clean up and report on exit, as these files remain in the container's volume
+report() {
+	rm -f /tmp/mod_command_line /tmp/parameters
+	echo
+	echo -e "${yellow}========================================== error.log =========================================="
+	find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== script*.log ========================================"
+	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== *.RPT =============================================="
+	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== End crash log ======================================${default}"
+}
+
+# Convenience function 
 prompt_yn(){
 	echo -n "${1} (y|N) " >&2
 	read -s -n 1 a
@@ -118,7 +123,7 @@ prompt_yn(){
 	fi
 }
 
-loadconfig(){
+check_install(){
 	if [ ! -f "${SERVER_INSTALL_FILE}" ]
 	then
 		echo
@@ -126,6 +131,14 @@ loadconfig(){
 		echo
 		exit 1
 	fi
+}
+
+# Ensures all is installed and ready before allowing operations that depends on things being ready.
+# Installs the initial server config file from its template.
+# Handles the importing of changes to that template.
+# Installs the initial Battleye RCON config.
+loadconfig(){
+	check_install
 	# Handle the initial server configuration file
 	if [ ! -f ${SERVER_CFG_DST} ]
 	then
@@ -174,15 +187,8 @@ EOF
 		> ~/py3rcon.config.json
 }
 
+# Start the server in the foreground
 start(){
-	# Check for interactive shell
-	if [ -t 0 ]
-	then
-		echo
-		echo -e "Not starting the server in an interactive shell. Start the server using '${green}docker-compose up -d${default}'"
-		echo
-		exit
-	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
 		report
@@ -192,28 +198,41 @@ start(){
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
 	printf "[ ${green}DayZ${default} ] Server starting...\n"
-	./DayZServer "${mod_command_line}" ${parameters}
+	# Save the mod command line and parameters that were used to start the server, so status reflects the running server's
+	# actual status with those
+	echo ${mod_command_line} > /tmp/mod_command_line
+	echo ${parameters} > /tmp/parameters
+	./DayZServer ${mod_command_line} ${parameters}
 	EXIT_CODE=$?
 	if [ -f ${SERVER_FILES}/restart ]
 	then
 		rm -f ${SERVER_FILES}/restart
 		EXIT_CODE=42
 	fi
-	printf "[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
+	printf "\n[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
 	exit ${EXIT_CODE}
 }
 
+# Restarts the server by forcing an exit code other than 0, causing docker to restart the container.
 restart(){
 	touch "${SERVER_FILES}/restart"
 	echo "Restarting DayZ server..."
 	kill -TERM $(pidof DayZServer)
 }
 
+# Stops the server cleanly and exits 0, which will stop the container.
 stop(){
 	echo "Stopping DayZ server..."
 	kill -TERM $(pidof DayZServer)
 }
 
+# Forcibly kill the server, should it be necessary.
+force(){
+	echo "Forcibly stopping DayZ server..."
+	kill -KILL $(pidof DayZServer)
+}
+
+# Hanle the Steam login information.
 login(){
 	loadconfig
 	if [ -f "${STEAM_LOGIN}" ]
@@ -241,6 +260,7 @@ login(){
 	fi
 }
 
+# "Perform" the Steam login. This just sources the file with the Steam login name.
 dologin(){
 	loadconfig
 	if [ -f "${STEAM_LOGIN}" ]
@@ -252,6 +272,7 @@ dologin(){
 	fi
 }
 
+# Perform the installation of the server files.
 install(){
 	loadconfig
 	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
@@ -260,12 +281,13 @@ install(){
 		mkdir -p "${SERVER_PROFILE}"
 		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
 		dologin
-		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" validate +quit
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
 	else
 		printf "[ ${lightblue}DayZ${default} ] The Server is already installed.\n"
 	fi
 }
 
+# Handle any changes in the server config file by allowing them to be merged after viewing a diff.
 config(){
 	if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
 	then
@@ -282,20 +304,23 @@ config(){
 	fi
 }
 
+# Update the server files.
 update(){
 	dologin
-	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${appid}".acf
+	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${release_server_appid}".acf
 	printf "[ ... ] Checking for update:"
 	# gets currentbuild
 	currentbuild=$(grep buildid "${appmanifestfile}" | tr '[:blank:]"' ' ' | tr -s ' ' | cut -d \  -f3)
 	# Removes appinfo.vdf as a fix for not always getting up to date version info from SteamCMD
-	if [ -f "${HOME}/Steam/appcache/appinfo.vdf" ]; then
+	if [ -f "${HOME}/Steam/appcache/appinfo.vdf" ]
+	then
 		rm -f "${HOME}/Steam/appcache/appinfo.vdf"
 	fi
 	# check for new build
-	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${appid}" +app_info_print \
-	  "${appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
-	if [ -z "${availablebuild}" ]; then
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +app_info_print \
+	  "${release_server_appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	if [ -z "${availablebuild}" ]
+	then
 		printf "\r[ ${red}FAIL${default} ] Checking for update:\n"
 		printf "\r[ ${red}FAIL${default} ] Checking for update:: Not returning version info\n"
 		exit
@@ -303,45 +328,51 @@ update(){
 		printf "\r[ ${green}OK${default} ] Checking for update:"
 	fi
 	# compare builds
-	if [ "${currentbuild}" != "${availablebuild}" ]; then
+	if [ "${currentbuild}" != "${availablebuild}" ] || [[ ${1} = "force" ]]
+	then
 		printf "\r[ ${green}OK${default} ] Checking for update:: Update available\n"
 		printf "Update available:\n"
 		printf "\tCurrent build: ${red}${currentbuild}${default}\n"
 		printf "\tAvailable build: ${green}${availablebuild}${default}\n"
-		printf "\thttps://steamdb.info/app/${appid}/\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n"
 		printf "\nApplying update"
 		# run update
 		dologin
-		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${appid}" +quit
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
 		modupdate
 	else
 		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
 		printf "\nNo update available:\n"
 		printf "\tCurrent version: ${green}${currentbuild}${default}\n"
 		printf "\tAvailable version: ${green}${availablebuild}${default}\n"
-		printf "\thttps://steamdb.info/app/${appid}/\n\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n\n"
 	fi
 }
 
+# Assemble the workshop list variable
 get_mods(){
 	mapfile -t workshopID < "${WORKSHOP_CFG}"
+	workshoplist=""
 	for i in "${workshopID[@]}"
 	do
-		if [[ $i =~ ^[0-9] ]] && [ $(expr length $i) -gt 7 ]
-		then
-			workshoplist+=" +workshop_download_item "${dayz_id}" "$i""
-		fi
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "$i""
 	done
 }
 
+# Update mods
 modupdate(){
 	get_mods
 	echo "Updating mods..."
 	dologin
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	# Updated files come in with mixed cases. Fix that.
+	echo -n "Fixing file names..."
+	find "${workshopfolder}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	echo "done"
 	echo
 }
 
+# Add a mod
 add(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
@@ -372,23 +403,18 @@ add(){
 	fi
 	# Get the name of the newly added mod
 	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
-	# Symlink it
-	if [ ! -L "${SERVER_FILES}/@${MODNAME}" ]
-	then
-		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${MODNAME}"
-		echo "Created symlink ${workshopfolder}/${1} ${SERVER_FILES}/@${MODNAME}"
-	fi
+	symlink ${1} "${MODNAME}"
 	# Lower case all the files in mod directories.
 	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	# Copy the key files
-	echo "Copying key files..."
-	cp -v ${workshopfolder}/${1}/keys/* "${SERVER_FILES}/keys/"
+	copy_keys ${1}
 	# Set the mod name in the workshop config file, as we don't know this at the start.
 	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
 
 }
 
+# Remove a mod
 remove(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
@@ -409,61 +435,40 @@ remove(){
 	echo "Mod id ${1} - ${MODNAME} - removed"
 }
 
+# Activate / Deactivate a mod
 activate(){
+	W=${1}
 	get_mods
+	X=1
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
 		NAME=$(echo ${i} | cut -d: -f2)
 		ACTIVE=$(echo ${i} | cut -d: -f3)
-		if [[ ${ID} = ${1} ]]
+		if [[ ${ID} = ${1} ]] || [[ ${X} = ${1} ]]
 		then
 			if [[ ${ACTIVE} = "0" ]]
 			then
-				sed -i "${WORKSHOP_CFG}" -e 's/'${1}':\(.*\):0/'${1}':\1:1/'
-				echo "Activcated mod id ${1}"
+				sed -i "${WORKSHOP_CFG}" -e 's/'${ID}':\(.*\):0/'${ID}':\1:1/'
+				symlink ${ID} "${NAME}"
+				copy_keys ${ID}
+				echo "Activated mod id ${ID}"
 			else
-				echo "Mod id ${1} was already active"
+				echo "Mod id ${ID} was already active"
 			fi
 		fi
+		X=$((X+1))
 	done
+#	list
 }
 
-deactivate(){
-	get_mods
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		if [[ ${ID} = ${1} ]]
-		then
-			if [[ ${ACTIVE} = "1" ]]
-			then
-				sed -i "${WORKSHOP_CFG}" -e 's/'${1}':\(.*\):1/'${1}':\1:0/'
-				echo "Dectivcated mod id ${1}"
-			else
-				echo "Mod id ${1} was already inactive"
-			fi
-		fi
-	done
-}
-
+# List mods
 list(){
 	get_mods
+	X=1
 	spaces="                        "
-	echo -e "ID\t\tName\t\t\tActive\tURL"
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		printf "%s\t%.23s%s\t%s\thttps://steamcommunity.com/sharedfiles/filedetails/?id=%s\n" ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID}
-	done
-}
-
-mod_cmd(){
-	get_mods
+	echo -e "     ID          Name                     Active URL"
+	echo "---------------------------------------------------------------------------------------------------------------------"
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
@@ -471,23 +476,82 @@ mod_cmd(){
 		ACTIVE=$(echo ${i} | cut -d: -f3)
 		if [[ ${ACTIVE} = "1" ]]
 		then
-			modname=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${ID}/meta.cpp))
-			mod_command_line="${mod_command_line}@${modname};"
+			C="${green}"
+		else
+			C="${red}"
 		fi
+		printf "${C}%.3d  %s %.23s  %s %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID}
+		X=$((X+1))
 	done
-	mod_command_line="${mod_command_line::-1}"
 }
 
+# Copy mod keys
+copy_keys(){
+	echo "Copying key files..."
+	cp -v ${workshopfolder}/${1}/keys/* "${SERVER_FILES}/keys/"
+}
+
+# Symlink mods
+symlink(){
+	# Symlink it
+	if [ ! -L "${SERVER_FILES}/@${2}" ]
+	then
+		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${2}"
+		echo "Created symlink ${workshopfolder}/${1} ${SERVER_FILES}/@${2}"
+	else
+		echo "Symlink already existed"
+	fi
+}
+
+# Assemble the mod command line
+mod_cmd(){
+	get_mods
+	mod_command_line=""
+	for i in "${workshopID[@]}"
+	do
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ACTIVE} = "1" ]]
+		then
+			mod_command_line="${mod_command_line}@${NAME};"
+		fi
+	done
+	if [[ ${mod_command_line} != "" ]]
+	then
+		mod_command_line='-mod='${mod_command_line::-1}
+	fi
+}
+
+# Our internal RCON
 rcon(){
 	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
 }
 
+# Display the status of everything
 status(){
 	INSTALLED="${NO}"
 	LOGGED_IN="${NO}"
 	RUNNING="${NO}"
 	get_mods
-	MODS_INSTALLED="${green}${#workshopID[@]}${default}"
+
+	MODS_INSTALLED=""
+	A=0
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		if [[ ${ACTIVE} = "1" ]]
+		then
+			C="${green}"
+			A=$((A+1))
+		else
+			C="${red}"
+		fi
+		MODS_INSTALLED="${MODS_INSTALLED}  ${C}${NAME}${default}\n"
+	done
+	MODS_INSTALLED="Mods installed: ${green}${#workshopID[@]}${default} Active: ${green}${A}${default}\n${MODS_INSTALLED}"
+
 	# DayZ Server files installation
 	if [ -f "${SERVER_INSTALL_FILE}" ]
 	then
@@ -507,32 +571,30 @@ status(){
 	# Running or not
 	if pidof DayZServer > /dev/null
 	then
-		RUNNING="${YES}"
+		# Uptime
+		UPTIME=$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +%H:%M:%S)
+		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
+		# Current parameters
+		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
 	mod_cmd
-	# Uptime
-	UPTIME=$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +%H:%M:%S)
 	# Number of mods plus the list denoting on or off
 	echo -e "
-Status:
-
-Uptime: ${green}${UPTIME}${default}
 Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
 Server files installed: ${INSTALLED}
-Mods installed: ${MODS_INSTALLED}
-Server running: ${RUNNING}
-Default parameters:${parameters}
-Mod parameter: ${mod_command_line}
+${MODS_INSTALLED}Server running: ${RUNNING}
+Working parameters:${parameters}
+Working mod parameter: ${mod_command_line}
 "
 }
 
+# Capture the first argument and shift it off so we can pass $@ to every function
 C=${1}
-
 shift
 
 case "${C}" in
-	activate)
-		activate "${@}"
+	a|activate)
+		activate 1 "${@}"
 		;;
 	add)
 		add "${@}"
@@ -540,28 +602,31 @@ case "${C}" in
 	cmd)
 		mod_cmd "${@}"
 		;;
-	config)
+	c|config)
 		config "${@}"
 		;;    
-	deactivate)
-		deactivate "${@}"
+	d|deactivate)
+		activate 0 "${@}"
 		;;
-	install)
+	f|force)
+		force
+		;;
+	i|install)
 		install "${@}"
 		;;
-	list)
+	l|list)
 		list "${@}"
 		;;
 	login)
 		login "${@}"
 		;;
-	modupdate)
+	m|modupdate)
 		modupdate "${@}"
 		;;
-	rcon)
+	n|rcon)
 		rcon "${@}"
 		;;
-	remove)
+	r|remove)
 		remove "${@}"
 		;;
 	restart)
@@ -570,13 +635,13 @@ case "${C}" in
 	start)
 		start "${@}"
 		;;
-	status)
+	s|status)
 		status "${@}"
 		;;
 	stop)
 		stop "${@}"
 		;;
-	update)
+	u|update)
 		update "${@}"
 		;;
 	**)
