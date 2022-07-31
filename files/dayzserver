@@ -643,9 +643,6 @@ case "${C}" in
 	b|backup)
 		backup "${@}"
 		;;
-	cmd)
-		mod_cmd "${@}"
-		;;
 	c|config)
 		config "${@}"
 		;;    
