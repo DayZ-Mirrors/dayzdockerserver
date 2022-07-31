@@ -60,6 +60,13 @@ fi
 declare -a workshopID
 workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
 
+# Backups
+BACKUP_DIR="${HOME}/backup"
+if [ ! -d "${BACKUP_DIR}" ]
+then
+	mkdir -p "${BACKUP_DIR}"
+fi
+
 # Other stuff
 YES="${green}yes${default}"
 NO="${red}no${default}"
@@ -77,6 +84,7 @@ Options and arguments:
 
   a|activate id [id...] - Activate one or many installed DayZ Workshop items by id
   add id [id...] - Add one or many DayZ Workshop items by id. Added items become active by default
+  b|backup - Backup the mission storage files in all mission directories
   c|config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file
   d|deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the mod files but excludes from -mod=
   i|install - Install the DayZ server files
@@ -438,28 +446,37 @@ remove(){
 # Activate / Deactivate a mod
 activate(){
 	W=${1}
+	shift
+	WW=""
+	if [[ ${W} = 0 ]]
+	then
+		WW="de"
+	fi
 	get_mods
 	X=1
+	# Loop over mod list
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
 		NAME=$(echo ${i} | cut -d: -f2)
 		ACTIVE=$(echo ${i} | cut -d: -f3)
+		# Find mod by ID or index
 		if [[ ${ID} = ${1} ]] || [[ ${X} = ${1} ]]
 		then
-			if [[ ${ACTIVE} = "0" ]]
+			# Toggle state or report nothing burger
+			if [[ "${ACTIVE}" != "${W}" ]]
 			then
-				sed -i "${WORKSHOP_CFG}" -e 's/'${ID}':\(.*\):0/'${ID}':\1:1/'
-				symlink ${ID} "${NAME}"
-				copy_keys ${ID}
-				echo "Activated mod id ${ID}"
+				sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${NAME}:[0-1]/${ID}:${NAME}:${W}/"
+				symlink ${W} ${ID} "${NAME}"
+				copy_keys ${W} ${ID}
+				echo "Mod id ${ID} - ${WW}activated"
 			else
-				echo "Mod id ${ID} was already active"
+				echo -e "Mod id ${ID} - ${green}${NAME}${default} - is already ${WW}active"
 			fi
 		fi
 		X=$((X+1))
 	done
-#	list
+	list
 }
 
 # List mods
@@ -487,20 +504,29 @@ list(){
 
 # Copy mod keys
 copy_keys(){
-	echo "Copying key files..."
-	cp -v ${workshopfolder}/${1}/keys/* "${SERVER_FILES}/keys/"
+	if [[ ${1} = 1 ]]
+	then
+		echo "Copying key files..."
+		cp -v ${workshopfolder}/${2}/keys/* "${SERVER_FILES}/keys/"
+	fi
 }
 
 # Symlink mods
 symlink(){
+	W=${1}
+	shift
+	ID=${1}
+	NAME=${2}
 	# Symlink it
-	if [ ! -L "${SERVER_FILES}/@${2}" ]
+	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
 	then
-		ln -s ${workshopfolder}/${1} "${SERVER_FILES}/@${2}"
-		echo "Created symlink ${workshopfolder}/${1} ${SERVER_FILES}/@${2}"
-	else
-		echo "Symlink already existed"
+		ln -sv ${workshopfolder}/${ID} "${SERVER_FILES}/@${NAME}"
+#		echo "Created symlink ${workshopfolder}/${ID} ${SERVER_FILES}/@${NAME}"
+	elif [[ "${W}" = "0" ]]
+	then
+		rm -vf "${SERVER_FILES}/@${NAME}"
 	fi
+#	echo "Symlink ${SERVER_FILES}/@${NAME} managed"
 }
 
 # Assemble the mod command line
@@ -578,6 +604,8 @@ status(){
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
 	mod_cmd
+	# Map name
+#	MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
 	# Number of mods plus the list denoting on or off
 	echo -e "
 Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
@@ -586,6 +614,19 @@ ${MODS_INSTALLED}Server running: ${RUNNING}
 Working parameters:${parameters}
 Working mod parameter: ${mod_command_line}
 "
+}
+
+backup(){
+	cd "${SERVER_FILES}"/mpmissions
+	for i in $(find -type d -name storage_1)
+	do
+		echo "Backing up ${i}..."
+		D=$(date +'%Y-%m-%d-%H-%M-%S')
+		B="${BACKUP_DIR}/${i}-${D}"
+		mkdir -p "${B}"
+		cp -a "${i}" "${B}"
+		echo
+	done
 }
 
 # Capture the first argument and shift it off so we can pass $@ to every function
@@ -598,6 +639,9 @@ case "${C}" in
 		;;
 	add)
 		add "${@}"
+		;;
+	b|backup)
+		backup "${@}"
 		;;
 	cmd)
 		mod_cmd "${@}"
