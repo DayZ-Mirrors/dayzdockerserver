@@ -4,7 +4,7 @@ set -eE
 
 cd "$(dirname ${0})"
 
-D="../../serverfiles/mpmissions/dayzOffline.chernarusplus"
+D="${HOME}/serverfiles/mpmissions/dayzOffline.chernarusplus"
 
 echo
 if echo ${0} | grep -q "uninstall.sh"
