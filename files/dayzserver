@@ -82,19 +82,20 @@ Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
 
 Options and arguments:
 
-  a|activate id [id...] - Activate one or many installed DayZ Workshop items by id
-  add id [id...] - Add one or many DayZ Workshop items by id. Added items become active by default
+  a|activate id - Activate an installed DayZ Workshop items by id or index
+  add id - Add a DayZ Workshop item by id. Added items become active by default
   b|backup - Backup the mission storage files in all mission directories
   c|config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file
-  d|deactivate id [id...] - Deactivate one or many installed DayZ Workshop items by id - Keeps the mod files but excludes from -mod=
+  d|deactivate id - Deactivate an installed DayZ Workshop items by id or index - Keeps the mod files but excludes it from the mod parameter
+  f|force - Forcibly kill the server. Use only as a last resort if the server won't shut down
   i|install - Install the DayZ server files
-  l|list - List Workshop items and if they are active or not
-  g|login - Login to Steam
+  l|list - List Workshop items and their details
+  g|login - Login to Steam.
   m|modupdate - Update the mod files
   n|rcon - Connect to the server using a python RCON client
-  r|remove id [id...] - Remove all vestiges of one or many Workshop items by id
+  r|remove id - Remove all files and directories of a Workshop item by id or index
   restart - Restart the server without restarting the container
-  t|status - Shows the server's status as well as the state of the server files and mods (Needs install, update, etc.)
+  s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
   stop - Stop the server
   u|update - Update the server files
 ${default}"
@@ -560,24 +561,6 @@ status(){
 	RUNNING="${NO}"
 	get_mods
 
-	MODS_INSTALLED=""
-	A=0
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		if [[ ${ACTIVE} = "1" ]]
-		then
-			C="${green}"
-			A=$((A+1))
-		else
-			C="${red}"
-		fi
-		MODS_INSTALLED="${MODS_INSTALLED}  ${C}${NAME}${default}\n"
-	done
-	MODS_INSTALLED="Mods installed: ${green}${#workshopID[@]}${default} Active: ${green}${A}${default}\n${MODS_INSTALLED}"
-
 	# DayZ Server files installation
 	if [ -f "${SERVER_INSTALL_FILE}" ]
 	then
@@ -610,8 +593,14 @@ status(){
 	echo -e "
 Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
 Server files installed: ${INSTALLED}
-${MODS_INSTALLED}Server running: ${RUNNING}
-Working parameters:${parameters}
+Mods:
+"
+	
+	list
+	
+	echo -e "
+Server running: ${RUNNING}
+Working parameters: ${parameters}
 Working mod parameter: ${mod_command_line}
 "
 }
