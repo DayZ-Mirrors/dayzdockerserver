@@ -24,6 +24,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     libsdl2-2.0-0:i386 \
     libsdl2-2.0-0 \
     libcap2 \
+    libxml2-utils \
     locales \
     procps \
     python3-pip \
