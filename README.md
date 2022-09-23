@@ -124,7 +124,7 @@ docker compose exec main dayzserver stop
 Interactive interface for adding, listing, removing, and updating mods. 
 
 ```
-docker compose exec main dayzserver workshop activate id [id2...] | add id1 [id2...] | deactivate io1 [id2...] list | remove id [id2...] | update 
+docker compose exec main dayzserver activate id [id2...] | add id1 [id2...] | deactivate io1 [id2...] list | remove id [id2...] | update 
 ```
 
 Look for mods in the [DayZ Workshop](https://steamcommunity.com/app/221100/workshop/). Browse to one. In its URL will be
@@ -132,7 +132,7 @@ an `id` parameter. Here is the URL to SimpleAutoRun: https://steamcommunity.com/
 add it:
 
 ```
-docker compose exec main dayzserver workshop add 2264162971
+docker compose exec main dayzserver add 2264162971
 ```
 
 Adding and removing mods will add and remove their names from the `-mod=` parameter.
