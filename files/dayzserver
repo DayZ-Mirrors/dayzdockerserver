@@ -19,12 +19,11 @@ blue="\e[34m"
 magenta="\e[35m"
 cyan="\e[36m"
 
-# DayZ Experimental server Steam app ID, because there is no release version of the Linux server yet
-#experimental_server_appid=1042420
-
 # DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
 # from this ID.
-release_server_appid=223350
+#release_server_appid=223350
+# For now, use the experimental server app id
+release_server_appid=1042420
 
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
@@ -581,7 +580,12 @@ status(){
 	if pidof DayZServer > /dev/null
 	then
 		# Uptime
-		UPTIME=$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +%H:%M:%S)
+		D=$(date +%s)
+		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
+		DAYS=$(( (${D} - ${F}) / 86400 ))
+#		UPTIME=$(date --date="$(( ${D} - ${F} ))" +"${DAYS} days %H:%M:%S")
+		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +"%H hours %M minutes %S seconds")
+
 		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
 		# Current parameters
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
