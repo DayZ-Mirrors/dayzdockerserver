@@ -11,17 +11,20 @@ then
 	dayzserver backup
 	echo "Uninstalling mpmissions..."
 	echo
-	rm -rf ${HOME}/serverfiles/mpmissions/
-if echo ${0} | grep -q "update.sh"
+	rm -rf ${HOME}/serverfiles/mpmissions/empty.banov
+elif echo ${0} | grep -q "update.sh"
 then
 	echo "Updating mpmissions directory..."
 	echo
-	cd ${HOME}/serverfiles/mpmissions
-	git pull https://github.com/KubeloLive/Banov
+	cd /tmp
+	git clone https://github.com/KubeloLive/Banov 2> /dev/null 1> /dev/null
+	cp -a Banov/empty.banov ${HOME}/serverfiles/mpmissions
+	rm -rf Banov
 else
-	echo "Installing mpmissions directory..."
+	echo "Installing mpmissions files..."
 	echo
-	cd ${HOME}/serverfiles/mpmissions
-	git clone https://github.com/KubeloLive/Banov
+	cd /tmp
+	git clone https://github.com/KubeloLive/Banov 2> /dev/null 1> /dev/null
+	cp -a Banov/empty.banov ${HOME}/serverfiles/mpmissions
+	rm -rf Banov
 fi
-echo
