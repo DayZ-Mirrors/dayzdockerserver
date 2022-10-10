@@ -20,7 +20,7 @@ magenta="\e[35m"
 cyan="\e[36m"
 
 # DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
-# from this ID.
+# from this ID
 #release_server_appid=223350
 # For now, use the experimental server app id
 release_server_appid=1042420
@@ -92,7 +92,7 @@ Options and arguments:
   g|login - Login to Steam.
   m|modupdate - Update the mod files
   n|rcon - Connect to the server using a python RCON client
-  r|remove id - Remove all files and directories of a Workshop item by id or index
+  r|remove id - Remove all files and directories of a Workshop item by id
   restart - Restart the server without restarting the container
   s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
   stop - Stop the server
@@ -106,18 +106,18 @@ report() {
 	rm -f /tmp/mod_command_line /tmp/parameters
 	echo
 	echo -e "${yellow}========================================== error.log =========================================="
-	find "${HOME}" -name error.log -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	find "${HOME}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== script*.log ========================================"
-	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail {} \; -exec rm -f {} \;
+	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== *.RPT =============================================="
-	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail {} \; -exec rm -f {} \;
+	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
-	echo -e "========================================== End crash log ======================================${default}"
+	echo -e "========================================== End log ======================================${default}"
 }
 
-# Convenience function 
+# Convenience function
 prompt_yn(){
 	echo -n "${1} (y|N) " >&2
 	read -s -n 1 a
@@ -146,7 +146,7 @@ check_install(){
 # Handles the importing of changes to that template.
 # Installs the initial Battleye RCON config.
 loadconfig(){
-	check_install
+#	check_install
 	# Handle the initial server configuration file
 	if [ ! -f ${SERVER_CFG_DST} ]
 	then
@@ -325,8 +325,8 @@ update(){
 		rm -f "${HOME}/Steam/appcache/appinfo.vdf"
 	fi
 	# check for new build
-	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +app_info_print \
-	  "${release_server_appid}" +quit | sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +quit | \
+		sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
 	if [ -z "${availablebuild}" ]
 	then
 		printf "\r[ ${red}FAIL${default} ] Checking for update:\n"
@@ -363,8 +363,16 @@ get_mods(){
 	workshoplist=""
 	for i in "${workshopID[@]}"
 	do
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "$i""
+		ID=$(echo ${i} | cut -d: -f1)
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
 	done
+}
+
+get_mod_name(){
+	if [ -d "${workshopfolder}/${1}" ]
+	then
+		grep name ${workshopfolder}/${1}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g'
+	fi
 }
 
 # Update mods
@@ -374,7 +382,7 @@ modupdate(){
 	dologin
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	# Updated files come in with mixed cases. Fix that.
-	echo -n "Fixing file names..."
+	echo -ne "\nFixing file names..."
 	find "${workshopfolder}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	echo "done"
 	echo
@@ -385,7 +393,7 @@ add(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
-		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+		MODNAME=$(get_mod_name ${1})
 	fi
 	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
@@ -398,7 +406,8 @@ add(){
 	fi
 	echo "Adding mod id ${1}"
 	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
-	modupdate
+	dologin
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +workshop_download_item "${release_client_appid}" "${1}" +quit
 	# Make sure the install succeeded
 	if [ ! -d "${workshopfolder}/${1}" ]
 	then
@@ -410,8 +419,8 @@ add(){
 		return
 	fi
 	# Get the name of the newly added mod
-	MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
-	symlink ${1} "${MODNAME}"
+	MODNAME=$(get_mod_name ${1})
+	symlink 1 ${1} "${MODNAME}"
 	# Lower case all the files in mod directories.
 	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	# Copy the key files
@@ -426,7 +435,7 @@ add(){
 remove(){
 	if [ -d "${workshopfolder}/${1}" ]
 	then
-		MODNAME=$(cut -d '"' -f 2 <<< $(grep name ${workshopfolder}/${1}/meta.cpp))
+		MODNAME=$(get_mod_name ${1})
 		echo "Removing directory ${workshopfolder}/${1}"
 		rm -rf "${workshopfolder}/${1}"
 	fi
@@ -438,9 +447,9 @@ remove(){
 	if grep -q ${1} "${WORKSHOP_CFG}"
 	then
 		echo "Removing workshop file entry"
-		sed -i "${WORKSHOP_CFG}" -e "/${1}:/d" 
+		sed -i "${WORKSHOP_CFG}" -e "/${1}:/d"
 	fi
-	echo "Mod id ${1} - ${MODNAME} - removed"
+	echo -e "Mod id ${1} - ${red}${MODNAME}${default} - removed"
 }
 
 # Activate / Deactivate a mod
@@ -484,20 +493,21 @@ list(){
 	get_mods
 	X=1
 	spaces="                        "
-	echo -e "     ID          Name                     Active URL"
-	echo "---------------------------------------------------------------------------------------------------------------------"
+	echo -e "     ID         Name                      Active URL                                                                Size"
+	echo "------------------------------------------------------------------------------------------------------------------------"
 	for i in "${workshopID[@]}"
 	do
 		ID=$(echo ${i} | cut -d: -f1)
 		NAME=$(echo ${i} | cut -d: -f2)
 		ACTIVE=$(echo ${i} | cut -d: -f3)
+		SIZE=$(du -sh ${SERVER_FILES}/steamapps/workshop/content/221100/${ID} | awk '{print $1}')
 		if [[ ${ACTIVE} = "1" ]]
 		then
 			C="${green}"
 		else
 			C="${red}"
 		fi
-		printf "${C}%.3d  %s %.23s  %s %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID}
+		printf "${C}%.3d  %s %.23s  %s %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID} ${SIZE}
 		X=$((X+1))
 	done
 }
@@ -514,19 +524,16 @@ copy_keys(){
 # Symlink mods
 symlink(){
 	W=${1}
-	shift
-	ID=${1}
-	NAME=${2}
+	ID=${2}
+	NAME=${3}
 	# Symlink it
 	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
 	then
 		ln -sv ${workshopfolder}/${ID} "${SERVER_FILES}/@${NAME}"
-#		echo "Created symlink ${workshopfolder}/${ID} ${SERVER_FILES}/@${NAME}"
 	elif [[ "${W}" = "0" ]]
 	then
 		rm -vf "${SERVER_FILES}/@${NAME}"
 	fi
-#	echo "Symlink ${SERVER_FILES}/@${NAME} managed"
 }
 
 # Assemble the mod command line
@@ -599,9 +606,9 @@ Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
 Server files installed: ${INSTALLED}
 Mods:
 "
-	
+
 	list
-	
+
 	echo -e "
 Server running: ${RUNNING}
 Working parameters: ${parameters}
@@ -617,7 +624,7 @@ backup(){
 		D=$(date +'%Y-%m-%d-%H-%M-%S')
 		B="${BACKUP_DIR}/${i}-${D}"
 		mkdir -p "${B}"
-		cp -a "${i}" "${B}"
+		cp -a "${i}/*" "${B}"
 		echo
 	done
 }
@@ -638,7 +645,7 @@ case "${C}" in
 		;;
 	c|config)
 		config "${@}"
-		;;    
+		;;
 	d|deactivate)
 		activate 0 "${@}"
 		;;
