@@ -137,8 +137,6 @@ docker compose exec main dayzserver add 2264162971
 
 Adding and removing mods will add and remove their names from the `-mod=` parameter.
 
-Note multiple ids may be specified to both add and remove.
-
 Optionally, to avoid re-downloading large mods, the `activate` and `deactivate` workshop commands will
 simply disable the mod but keep its files. Keep in mind that mod updates will also update deactivated 
 mods.
