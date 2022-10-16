@@ -119,12 +119,21 @@ Don't forget to [bring it back up](#run).
 docker compose exec main dayzserver stop
 ```
 
-### Workshop - Add / List / Remove / Update mods
-
-Interactive interface for adding, listing, removing, and updating mods. 
+The server doesn't always exit when stopping it (SIGINT). When this happens, it's necessary to force stop it (SIGKILL):
 
 ```
-docker compose exec main dayzserver activate id [id2...] | add id1 [id2...] | deactivate io1 [id2...] list | remove id [id2...] | update 
+docker compose exec main dayzserver force
+```
+
+When the server does not exit cleanly, i.e. exit code 0, the container also stops. Otherwise, the server will be started again.
+
+### Workshop - Add / List / Remove / Update mods
+
+Interactive interface for managing mods. 
+
+```
+docker compose exec main dayzserver activate id | add id1 | deactivate id | list | modupdate | remove id
+docker compose exec main dayzserver a id | add id1 | d id | l | m | r id
 ```
 
 Look for mods in the [DayZ Workshop](https://steamcommunity.com/app/221100/workshop/). Browse to one. In its URL will be
@@ -140,6 +149,8 @@ Adding and removing mods will add and remove their names from the `-mod=` parame
 Optionally, to avoid re-downloading large mods, the `activate` and `deactivate` workshop commands will
 simply disable the mod but keep its files. Keep in mind that mod updates will also update deactivated 
 mods.
+
+The above is a bad example, as SimpleAutorun depends on Community Framework, which must also be installed, as well as made to load first.
 
 ### Looking under the hood
 
