@@ -125,7 +125,7 @@ The server doesn't always exit when stopping it (SIGINT). When this happens, it'
 docker compose exec main dayzserver force
 ```
 
-When the server does not exit cleanly, i.e. exit code 0, the container also stops. Otherwise, the server will be started again.
+When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be restarted.
 
 ### Workshop - Add / List / Remove / Update mods
 
