@@ -39,7 +39,7 @@ SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
 SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
 
 # Command line parameters except mod, as that is handled separately.
-parameters="-config=${SERVER_CFG_FILE} -port=${port} -freezecheck -fps=60 -BEpath=${SERVER_FILES}/battleye -profiles=${SERVER_PROFILE} -nologs"
+parameters="-config=${SERVER_CFG_FILE} -port=${port} -freezecheck -BEpath=${SERVER_FILES}/battleye -profiles=${SERVER_PROFILE} -nologs"
 
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
@@ -424,7 +424,7 @@ add(){
 	# Lower case all the files in mod directories.
 	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	# Copy the key files
-	copy_keys ${1}
+	copy_keys 1 ${1}
 	# Set the mod name in the workshop config file, as we don't know this at the start.
 	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
@@ -623,8 +623,7 @@ backup(){
 		echo "Backing up ${i}..."
 		D=$(date +'%Y-%m-%d-%H-%M-%S')
 		B="${BACKUP_DIR}/${i}-${D}"
-		mkdir -p "${B}"
-		cp -a "${i}/*" "${B}"
+		cp -a "${i}" "${B}"
 		echo
 	done
 }
