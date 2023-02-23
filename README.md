@@ -15,11 +15,21 @@ The goal is to have a working implementation once the Linux server is officially
 
 This process will create a docker volume for the unprivileged user's home directory, which stores the DayZ server files.
 This volume can get quite large. It will require at least 2G of disk space for the default install. Much more with mods.
+Some map mods are as large as 10G. Make sure you have that much disk space in the location where docker stores its
+volumes, usually `/var/lib/docker/volumes`.
 
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)
-are installed.
+are properly installed. This means setting it up so it runs as your user. Make sure you're running thees commands as
+your user, in your home directory.
+
+Clone the repo, and change into the newly created directory:
+
+```
+git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
+cd dayzdockerserver
+```
 
 Edit `files/serverDZ.cfg` and set the values of any variables there. 
 See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-documentation/):
@@ -77,7 +87,20 @@ Tail the log:
 ```
 docker compose logs -f
 ```
-  
+## Stop
+
+To stop the DayZ server:
+```
+docker compose exec main dz stop
+```
+
+If it exits cleanly, the container will also stop. Otherwise the server will restart
+
+To stop the container:
+```
+docker compose down
+```
+
 ## Manage
 
 The following management commands presume the server has been brought [up](#run).
@@ -127,6 +150,9 @@ docker compose exec main dayzserver force
 ```
 
 When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be restarted.
+
+NOTE: As DayZ Experimental 1.19, the server is known to not exit upon SIGINT when mods are installed. This makes force stopping the server
+required. This is not a clean exit, and will cause the server to restart. Manually take the server [down](#down) to stop the container.
 
 ### Workshop - Add / List / Remove / Update mods
 
