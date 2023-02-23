@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eE
+
 # If you want/need the server and rcon ports to be different, set them here.
 # The steam query port is set in serverDZ.cfg.
 
@@ -428,11 +430,14 @@ add(){
 	# Set the mod name in the workshop config file, as we don't know this at the start.
 	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
-
+	checkTypesXML ${1} install
+	checkInstall ${1} install
 }
 
 # Remove a mod
 remove(){
+	checkTypesXML ${1} uninstall
+	checkInstall ${1} uninstall
 	if [ -d "${workshopfolder}/${1}" ]
 	then
 		MODNAME=$(get_mod_name ${1})
@@ -460,6 +465,7 @@ activate(){
 	if [[ ${W} = 0 ]]
 	then
 		WW="de"
+		UU="un"
 	fi
 	get_mods
 	X=1
@@ -479,6 +485,8 @@ activate(){
 				symlink ${W} ${ID} "${NAME}"
 				copy_keys ${W} ${ID}
 				echo "Mod id ${ID} - ${WW}activated"
+				checkTypesXML ${ID} ${UU}install
+				checkInstall ${ID} ${UU}install
 			else
 				echo -e "Mod id ${ID} - ${green}${NAME}${default} - is already ${WW}active"
 			fi
@@ -555,6 +563,29 @@ mod_cmd(){
 	fi
 }
 
+checkTypesXML(){
+	# See if this mod has an extras/types.xml. If so, manage it.
+	if [ -f "${workshopfolder}/${1}/extras/types.xml" ]
+	then
+		echo -n "The mod id ${1} has an extras/types.xml. "
+		if [[ ${2} = "install" ]]
+		then
+			echo "Merging to missions..."
+		else
+			echo "Restoring original types.xml..."
+		fi
+		/files/mods/types.sh ${1} ${2}
+	fi
+}
+
+checkInstall(){
+	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
+	if [ -f /files/mods/${1}/${2}.sh ]
+	then
+		echo "An ${2}.sh was found for mod id ${1}. Running..."
+		/files/mods/${1}/${2}.sh
+	fi
+}
 # Our internal RCON
 rcon(){
 	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
@@ -623,6 +654,7 @@ backup(){
 		echo "Backing up ${i}..."
 		D=$(date +'%Y-%m-%d-%H-%M-%S')
 		B="${BACKUP_DIR}/${i}-${D}"
+		mkdir -p ${B}
 		cp -a "${i}" "${B}"
 		echo
 	done
@@ -630,7 +662,9 @@ backup(){
 
 # Capture the first argument and shift it off so we can pass $@ to every function
 C=${1}
-shift
+shift || {
+	usage
+}
 
 case "${C}" in
 	a|activate)
@@ -684,7 +718,7 @@ case "${C}" in
 	u|update)
 		update "${@}"
 		;;
-	**)
+	*)
 		usage "$*"
 	;;
 esac
