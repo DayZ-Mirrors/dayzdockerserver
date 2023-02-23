@@ -649,14 +649,13 @@ Working mod parameter: ${mod_command_line}
 
 backup(){
 	cd "${SERVER_FILES}"/mpmissions
-	for i in $(find -type d -name storage_1)
+	DATE=$(date +'%Y-%m-%d-%H-%M-%S')
+	for i in $(ls)
 	do
-		echo "Backing up ${i}..."
-		D=$(date +'%Y-%m-%d-%H-%M-%S')
-		B="${BACKUP_DIR}/${i}-${D}"
+		B="${BACKUP_DIR}/${DATE}/"
+		echo "Backing up ${i} to ${B}..."
 		mkdir -p ${B}
 		cp -a "${i}" "${B}"
-		echo
 	done
 }
 
