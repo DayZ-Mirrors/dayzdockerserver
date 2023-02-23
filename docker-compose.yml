@@ -22,15 +22,14 @@ services:
 #      - 2303:2303/udp
 #      - 2304:2304/udp
 #      - 27016:27016/udp
-    # Restart the server if it should exit non zero.
-    # A zero exit means a normal shutdown.
-    restart: on-failure
+    # Always restart, unless stopped
+    restart: unless-stopped
     # Allows attaching a debugger from the host
 #    cap_add:
 #      - SYS_PTRACE
     # Do nothing instead of starting the server, which is the default.
     # Helpful for development or debugging.
-#    command: tail -f /dev/null	
+#    command: tail -f /dev/null
     volumes:
       - homedir:/home/user
       - ./files:/files
