@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eE
+set -eEa
 
 # If you want/need the server and rcon ports to be different, set them here.
 # The steam query port is set in serverDZ.cfg.
@@ -299,10 +299,10 @@ install(){
 
 # Handle any changes in the server config file by allowing them to be merged after viewing a diff.
 config(){
-	if ! diff -q "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	if ! diff -q "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}"
 	then
 		echo "========================================================================="
-		diff -Nau --color "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}" || echo ""
+		diff -Nau --color "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}" | more
 		echo "========================================================================="
 		if prompt_yn "The new server configuration file differs from what's installed. Use it?"
 		then
@@ -311,6 +311,8 @@ config(){
 		else
 			echo "NOT updating the server configuration file"
 		fi
+	else
+		echo "No differences found between ${SERVER_CFG_SRC} and ${SERVER_CFG_DST}"
 	fi
 }
 
@@ -484,9 +486,9 @@ activate(){
 				sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${NAME}:[0-1]/${ID}:${NAME}:${W}/"
 				symlink ${W} ${ID} "${NAME}"
 				copy_keys ${W} ${ID}
-				echo "Mod id ${ID} - ${WW}activated"
 				checkTypesXML ${ID} ${UU}install
 				checkInstall ${ID} ${UU}install
+				echo "Mod id ${ID} - ${WW}activated"
 			else
 				echo -e "Mod id ${ID} - ${green}${NAME}${default} - is already ${WW}active"
 			fi
@@ -525,7 +527,8 @@ copy_keys(){
 	if [[ ${1} = 1 ]]
 	then
 		echo "Copying key files..."
-		cp -v ${workshopfolder}/${2}/keys/* "${SERVER_FILES}/keys/"
+		cp -v ${workshopfolder}/${2}/keys/* "${SERVER_FILES}/keys/" || \
+		cp -v ${workshopfolder}/${2}/key/* "${SERVER_FILES}/keys/" # Because mod authors can't stick to one way of doing things...
 	fi
 }
 
@@ -572,9 +575,21 @@ checkTypesXML(){
 		then
 			echo "Merging to missions..."
 		else
-			echo "Restoring original types.xml..."
+			echo "Removing contents from missions..."
 		fi
 		/files/mods/types.sh ${1} ${2}
+	fi
+	# Also see if there's a symlink to some other file that serves the same purpose, but named differently
+	if [ -s "/files/mods/${1}/types.xml" ]
+	then
+		echo -n "The mod id ${1} has a types.xml symlink. "
+		if [[ ${2} = "install" ]]
+		then
+			echo "Merging to missions..."
+		else
+			echo "Removing contents from missions..."
+		fi
+		/files/mods/types.sh ${1} ${2} /files/mods/${1}/types.xml
 	fi
 }
 
