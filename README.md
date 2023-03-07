@@ -21,7 +21,7 @@ volumes, usually `/var/lib/docker/volumes`.
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)
-are properly installed. This means setting it up so it runs as your user. Make sure you're running thees commands as
+are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as
 your user, in your home directory.
 
 Clone the repo, and change into the newly created directory:
