@@ -22,10 +22,11 @@ magenta="\e[35m"
 cyan="\e[36m"
 
 # DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
-# from this ID
-#release_server_appid=223350
+# from this ID. Let's find out!
+release_server_appid=223350
+
 # For now, use the experimental server app id
-release_server_appid=1042420
+#release_server_appid=1042420
 
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
@@ -293,7 +294,7 @@ install(){
 		dologin
 		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
 	else
-		printf "[ ${lightblue}DayZ${default} ] The Server is already installed.\n"
+		printf "[ ${lightblue}DayZ${default} ] The server is already installed.\n"
 	fi
 }
 
@@ -384,6 +385,7 @@ modupdate(){
 	get_mods
 	echo "Updating mods..."
 	dologin
+#	echo ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	# Updated files come in with mixed cases. Fix that.
 	echo -ne "\nFixing file names..."
@@ -567,30 +569,22 @@ mod_cmd(){
 }
 
 checkTypesXML(){
-	# See if this mod has an extras/types.xml. If so, manage it.
-	if [ -f "${workshopfolder}/${1}/extras/types.xml" ]
-	then
-		echo -n "The mod id ${1} has an extras/types.xml. "
-		if [[ ${2} = "install" ]]
+	# See if this mod has a types.xml. If so, manage it.
+	for path in "${workshopfolder}/${1}/extras" "${workshopfolder}/${1}" "/files/mods/${1}"
+	do
+		if [ -f "${path}/types.xml" ]
 		then
-			echo "Merging to missions..."
-		else
-			echo "Removing contents from missions..."
+			echo -n "The mod id ${1} has a types.xml: ${path}/types.xml. "
+			if [[ ${2} = "install" ]]
+			then
+				echo "Merging to missions..."
+			else
+				echo "Removing contents from missions..."
+			fi
+			/files/mods/types.sh ${1} ${2} ${path}/types.xml
+			break
 		fi
-		/files/mods/types.sh ${1} ${2}
-	fi
-	# Also see if there's a symlink to some other file that serves the same purpose, but named differently
-	if [ -s "/files/mods/${1}/types.xml" ]
-	then
-		echo -n "The mod id ${1} has a types.xml symlink. "
-		if [[ ${2} = "install" ]]
-		then
-			echo "Merging to missions..."
-		else
-			echo "Removing contents from missions..."
-		fi
-		/files/mods/types.sh ${1} ${2} /files/mods/${1}/types.xml
-	fi
+	done
 }
 
 checkInstall(){
@@ -600,6 +594,14 @@ checkInstall(){
 		echo "An ${2}.sh was found for mod id ${1}. Running..."
 		/files/mods/${1}/${2}.sh
 	fi
+	# A generic map install script. Presumes a git repo as the source
+	if [ -f /files/mods/${1}/install.env ]
+	then
+		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
+		source /files/mods/${1}/install.env
+		/files/mods/install.sh ${1} ${2}
+	fi
+
 }
 # Our internal RCON
 rcon(){
@@ -658,8 +660,9 @@ Mods:
 	echo -e "
 Server running: ${RUNNING}
 Working parameters: ${parameters}
-Working mod parameter: ${mod_command_line}
-"
+Working mod parameter: ${mod_command_line}"
+	MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
+	echo "Map: ${MAP}"
 }
 
 backup(){
