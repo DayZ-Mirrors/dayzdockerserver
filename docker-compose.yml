@@ -11,6 +11,9 @@ services:
 
   main:
     build: .
+    volumes:
+      - homedir:/home/user
+      - ./files:/files
     # To have the server show up in the LAN tab of the DayZ launcher,
     # it must run under host mode.
     network_mode: host
@@ -27,9 +30,11 @@ services:
     # Allows attaching a debugger from the host
 #    cap_add:
 #      - SYS_PTRACE
+    # Allows core files to be created within the container. These are VERY LARGE! Enable only for debugging!
+#    ulimits:
+#      core:
+#        soft: -1
+#        hard: -1
     # Do nothing instead of starting the server, which is the default.
     # Helpful for development or debugging.
 #    command: tail -f /dev/null
-    volumes:
-      - homedir:/home/user
-      - ./files:/files
