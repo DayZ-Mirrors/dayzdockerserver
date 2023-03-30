@@ -13,9 +13,9 @@ RUN echo 'deb http://deb.debian.org/debian bullseye-backports main non-free' >> 
 
 # Install _only_ the necessary packages
 RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
-    nano \
     curl \
     ca-certificates \
+    gdb \
     git \
     jq \
     lib32gcc-s1 \
@@ -26,6 +26,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     libcap2 \
     libxml2-utils \
     locales \
+    nano \
     procps \
     python3-pip \
     wget \

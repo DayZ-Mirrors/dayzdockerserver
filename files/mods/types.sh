@@ -31,7 +31,7 @@ do
 	else
 		# Add the contents of extras/types.xml to every db/types.xml in all
 		# mission directories
-		xmllint --noout ${TYPES_FILE} && {
+		xmllint --noout ${TYPES_FILE} 2> /dev/null && {
 			echo -e "${green}${TYPES_FILE} passes XML lint test!"
 			echo -e "Merging to $file...${default}"
 			# Chop the bottom tag from the destination file
@@ -43,7 +43,7 @@ do
 			# Concatenate the two files back into the source file
 			cat /tmp/types-dst.xml /tmp/types-src.xml > /tmp/types.xml
 
-			xmllint --noout /tmp/types.xml && {
+			xmllint --noout /tmp/types.xml 2> /dev/null && {
 				cp -v /tmp/types.xml ${file}
 			} || {
 				# Try again, but chop the top 3 tags, hopefully xml and types, from the source file...
