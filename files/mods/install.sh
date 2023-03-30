@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eEx
+set -eE
 
 source /files/mods/${1}/install.env
 
