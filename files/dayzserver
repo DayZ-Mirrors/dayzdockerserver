@@ -23,10 +23,10 @@ cyan="\e[36m"
 
 # DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
 # from this ID. Let's find out!
-release_server_appid=223350
+#release_server_appid=223350
 
 # For now, use the experimental server app id
-#release_server_appid=1042420
+release_server_appid=1042420
 
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
