@@ -36,6 +36,8 @@ CFG_SRC_FILES="/files"
 SERVER_FILES="${HOME}/serverfiles"
 SERVER_PROFILE="${HOME}/profiles"
 
+mkdir -p ${SERVER_FILES}/battleye ${SERVER_PROFILE}
+
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
 SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
