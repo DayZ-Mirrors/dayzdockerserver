@@ -17,6 +17,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     ca-certificates \
     gdb \
     git \
+    gwenhywfar-tools \
     jq \
     lib32gcc-s1 \
     lib32stdc++6 \
@@ -52,9 +53,8 @@ ENV PATH /usr/games:/files:${PATH}
 # Setup a non-privileged user
 RUN groupadd user && \
     useradd -l -g user user && \
-    mkdir /home/user && \
-    chown user:user /home/user
-
+    mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /profiles /mods && \
+    chown -R user:user /home/user /serverfiles /profiles /mods
 # Use our non-privileged user
 USER user
 
@@ -62,4 +62,4 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-CMD ["dayzserver", "start"]
+CMD ["server.sh"]

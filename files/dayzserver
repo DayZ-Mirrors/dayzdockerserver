@@ -33,8 +33,8 @@ release_client_appid=221100
 
 # Base directories
 CFG_SRC_FILES="/files"
-SERVER_FILES="${HOME}/serverfiles"
-SERVER_PROFILE="${HOME}/profiles"
+SERVER_FILES="/serverfiles"
+SERVER_PROFILE="/profiles"
 
 mkdir -p ${SERVER_FILES}/battleye ${SERVER_PROFILE}
 
@@ -111,13 +111,13 @@ report() {
 	rm -f /tmp/mod_command_line /tmp/parameters
 	echo
 	echo -e "${yellow}========================================== error.log =========================================="
-	find "${HOME}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	find "${SERVER_PROFILE}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== script*.log ========================================"
-	find "${HOME}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	find "${SERVER_PROFILE}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== *.RPT =============================================="
-	find "${HOME}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== End log ======================================${default}"
 }
@@ -161,8 +161,8 @@ loadconfig(){
 	# battleye config and rconpassword setup
 	# The server creates a new file from this file, which it then uses.
 	# Let's make sure to delete it first
-	BE_SERVER_FILE="${HOME}/serverfiles/battleye/beserver_x64.cfg"
-	ALT_BE_SERVER_FILE=$(find ${HOME}/serverfiles/battleye -name "beserver_x64_active*")
+	BE_SERVER_FILE="${SERVER_FILES}/battleye/beserver_x64.cfg"
+	ALT_BE_SERVER_FILE=$(find ${SERVER_FILES}/battleye -name "beserver_x64_active*")
 	if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
 	then
 		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
@@ -364,7 +364,7 @@ update(){
 	fi
 }
 
-# Assemble the workshop list variable
+# Assemble the workshop variables
 get_mods(){
 	mapfile -t workshopID < "${WORKSHOP_CFG}"
 	workshoplist=""
@@ -375,16 +375,47 @@ get_mods(){
 	done
 }
 
+get_mod_id_by_index(){
+	# If we were passed a valid mod id, just return it
+	if [[ -d "${workshopdir}/${1}" ]]
+	then
+		echo ${1}
+		return
+	fi
+	X=1
+	# Loop over mod list
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		if [[ ${X} = ${1} ]]
+		then
+			echo ${ID}
+			return
+		fi
+		X=$((X+1))
+	done
+}
+
+# Get mod name by ID or index
 get_mod_name(){
+	# Check for an ID
 	if [ -d "${workshopfolder}/${1}" ]
 	then
-		grep name ${workshopfolder}/${1}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g'
+		ID=${1}
+	else
+		ID=$(get_mod_id_by_index ${1})
 	fi
+	if ! [ -d "${workshopfolder}/${ID}" ]
+	then
+		echo "Mod ID ${1} doesn't exist" >&2
+		exit 1
+	fi
+	NAME=$(grep name ${workshopfolder}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
+	echo ${NAME}
 }
 
 # Update mods
 modupdate(){
-	get_mods
 	echo "Updating mods..."
 	dologin
 #	echo ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
@@ -436,31 +467,32 @@ add(){
 	# Set the mod name in the workshop config file, as we don't know this at the start.
 	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
-	checkTypesXML ${1} install
+	checkXML ${1} install
 	checkInstall ${1} install
 }
 
 # Remove a mod
 remove(){
-	checkTypesXML ${1} uninstall
-	checkInstall ${1} uninstall
-	if [ -d "${workshopfolder}/${1}" ]
+	ID=$(get_mod_id_by_index ${1})
+	MODNAME=$(get_mod_name ${1})
+	checkXML ${ID} uninstall
+	checkInstall ${ID} uninstall
+	if [ -d "${workshopfolder}/${ID}" ]
 	then
-		MODNAME=$(get_mod_name ${1})
-		echo "Removing directory ${workshopfolder}/${1}"
-		rm -rf "${workshopfolder}/${1}"
+		echo "Removing directory ${workshopfolder}/${ID}"
+		rm -rf "${workshopfolder}/${ID}"
 	fi
 	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
 		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
-		rm -f "${SERVER_FILES}/@${MODNAME}"
+		rm -vf "${SERVER_FILES}/@${MODNAME}"
 	fi
-	if grep -q ${1} "${WORKSHOP_CFG}"
+	if grep -q ${ID} "${WORKSHOP_CFG}"
 	then
 		echo "Removing workshop file entry"
-		sed -i "${WORKSHOP_CFG}" -e "/${1}:/d"
+		sed -i "${WORKSHOP_CFG}" -e "/${ID}:/d"
 	fi
-	echo -e "Mod id ${1} - ${red}${MODNAME}${default} - removed"
+	echo -e "Mod id ${ID} - ${red}${MODNAME}${default} - removed"
 }
 
 # Activate / Deactivate a mod
@@ -468,46 +500,40 @@ activate(){
 	W=${1}
 	shift
 	WW=""
+	COLOR="${green}"
 	if [[ ${W} = 0 ]]
 	then
 		WW="de"
 		UU="un"
+		COLOR="${red}"
 	fi
-	get_mods
-	X=1
-	# Loop over mod list
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		# Find mod by ID or index
-		if [[ ${ID} = ${1} ]] || [[ ${X} = ${1} ]]
-		then
-			# Toggle state or report nothing burger
-			if [[ "${ACTIVE}" != "${W}" ]]
-			then
-				sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${NAME}:[0-1]/${ID}:${NAME}:${W}/"
-				symlink ${W} ${ID} "${NAME}"
-				copy_keys ${W} ${ID}
-				checkTypesXML ${ID} ${UU}install
-				checkInstall ${ID} ${UU}install
-				echo "Mod id ${ID} - ${WW}activated"
-			else
-				echo -e "Mod id ${ID} - ${green}${NAME}${default} - is already ${WW}active"
-			fi
-		fi
-		X=$((X+1))
-	done
+	ID=$(get_mod_id_by_index ${1})
+	MODNAME=$(get_mod_name ${1})
+	# Toggle state or report nothing burger
+	if [[ "${ACTIVE}" != "${W}" ]]
+	then
+		sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${MODNAME}:[0-1]/${ID}:${MODNAME}:${W}/"
+		symlink ${W} ${ID} "${MODNAME}"
+		copy_keys ${W} ${ID}
+		checkInstall ${ID} ${UU}install
+		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
+	else
+		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
+	fi
 	list
 }
 
 # List mods
 list(){
+	# The state may have changed since we started
 	get_mods
+	if [[ "${workshopID[@]}" = "" ]]
+	then
+		return
+	fi
 	X=1
 	spaces="                        "
-	echo -e "     ID         Name                      Active URL                                                                Size"
+	echo -e "\n     ID         Name                      Active URL                                                                Size"
 	echo "------------------------------------------------------------------------------------------------------------------------"
 	for i in "${workshopID[@]}"
 	do
@@ -531,8 +557,7 @@ copy_keys(){
 	if [[ ${1} = 1 ]]
 	then
 		echo "Copying key files..."
-		cp -v ${workshopfolder}/${2}/keys/* "${SERVER_FILES}/keys/" || \
-		cp -v ${workshopfolder}/${2}/key/* "${SERVER_FILES}/keys/" # Because mod authors can't stick to one way of doing things...
+		find "${workshopfolder}/${2}" -name "*.bikey" -exec cp "{}" "${SERVER_FILES}/keys/" \;
 	fi
 }
 
@@ -553,7 +578,6 @@ symlink(){
 
 # Assemble the mod command line
 mod_cmd(){
-	get_mods
 	mod_command_line=""
 	for i in "${workshopID[@]}"
 	do
@@ -570,23 +594,42 @@ mod_cmd(){
 	fi
 }
 
-checkTypesXML(){
-	# See if this mod has a types.xml. If so, manage it.
-	for path in "${workshopfolder}/${1}/extras" "${workshopfolder}/${1}" "/files/mods/${1}"
-	do
-		if [ -f "${path}/types.xml" ]
-		then
-			echo -n "The mod id ${1} has a types.xml: ${path}/types.xml. "
-			if [[ ${2} = "install" ]]
+checkXML(){
+	# See if we have a template for it
+	if [ -f "/files/mods/${1}/types.env" ]
+	then
+		echo "Found a templatate for mod ID ${1}, merging..."
+		source "/files/mods/${1}/types.env"
+		for xml in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+		do
+			NAME=$(echo ${xml} | tr A-Z a-z)
+			if echo ${!xml} | grep -q http
 			then
-				echo "Merging to missions..."
+				echo "${NAME} file is remote, downloading..."
+				curl -o ${workshopfolder}/${1}/${NAME}.xml ${!xml}
 			else
-				echo "Removing contents from missions..."
+				echo "${NAME} file is in the mod, copying..."
+				cp -vf ${!xml} ${workshopfolder}/${1}/${NAME}.xml
 			fi
-			/files/mods/types.sh ${1} ${2} ${path}/types.xml
-			break
-		fi
-	done
+		done
+#	else
+		# See if this mod has a types.xml in the "standard" locations
+#		for path in "${workshopfolder}/${1}/extras" "${workshopfolder}/${1}"
+#		do
+#			if [ -f "${path}/types.xml" ]
+#			then
+#				echo -n "The mod id ${1} has a types.xml: ${path}/types.xml. "
+#				if [[ ${2} = "install" ]]
+#				then
+#					echo "Merging to missions..."
+#				else
+#					echo "Removing contents from missions..."
+#				fi
+#				/files/mods/types.sh ${1} ${2} ${path}/types.xml
+#				break
+#			fi
+#		done
+	fi
 }
 
 checkInstall(){
@@ -615,7 +658,6 @@ status(){
 	INSTALLED="${NO}"
 	LOGGED_IN="${NO}"
 	RUNNING="${NO}"
-	get_mods
 
 	# DayZ Server files installation
 	if [ -f "${SERVER_INSTALL_FILE}" ]
@@ -648,23 +690,38 @@ status(){
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
 	mod_cmd
+	MAP="none"
 	# Map name
-#	MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
+	if [[ -f ${SERVER_CFG_DST} ]]
+	then
+		MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
+	fi
 	# Number of mods plus the list denoting on or off
-	echo -e "
+	echo -ne "
 Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
-Server files installed: ${INSTALLED}
-Mods:
-"
-
-	list
-
-	echo -e "
+Server files installed: ${INSTALLED}"
+	if [[ "${INSTALLED}" = "${NO}" ]]
+	then
+		echo
+		echo
+		exit 0
+	fi
+	echo -ne "
+Mods: "
+	MODS=$(list)
+	if [[ ${MODS} == "" ]]
+	then
+		echo -n "none"
+	fi
+	echo -e "${MODS}
 Server running: ${RUNNING}
 Working parameters: ${parameters}
 Working mod parameter: ${mod_command_line}"
-	MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
-	echo "Map: ${MAP}"
+	if [[ "${INSTALLED}" = "${YES}" ]]
+	then
+		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
+		echo "Map: ${MAP}"
+	fi
 }
 
 backup(){
@@ -684,6 +741,8 @@ C=${1}
 shift || {
 	usage
 }
+
+get_mods
 
 case "${C}" in
 	a|activate)
