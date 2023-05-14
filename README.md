@@ -18,6 +18,22 @@ This volume can get quite large. It will require at least 2G of disk space for t
 Some map mods are as large as 10G. Make sure you have that much disk space in the location where docker stores its
 volumes, usually `/var/lib/docker/volumes`.
 
+## TL;DR for this branch and release DayZ server
+
+```shell
+git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
+cd dayzdockerserver
+git checkout volume-refactor
+docker compose up -d --build
+docker compose exec main bash
+dz login # Use a real login, as anonymous cannot download mods
+dz install
+cd /serverfiles
+mv DayZServer DayZServer.release
+wget https://cdn.discordapp.com/attachments/491622000935305217/1105089599983853698/DayZServer
+chmod 755 DayZServer 
+dz start # Will start a vanilla Chernarus map
+```
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)

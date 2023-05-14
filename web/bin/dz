@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+
+source /files/dz-common
+
+# Workshop. This file will store metadata about what mods are installed.
+WORKSHOP_CFG="${SERVER_FILES}/workshop.cfg"
+if [ ! -f "${WORKSHOP_CFG}" ]
+then
+	touch "${WORKSHOP_CFG}"
+fi
+
+# An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
+declare -a workshopID
+workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+
+# Functions
+
+# Usage
+usage(){
+  echo -e "
+${red}Bad option or arguments! ${yellow}${*}${default}
+
+Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
+
+Options and arguments:
+
+  add id - Add a DayZ Workshop item by id. Added items become active by default
+  i|install - Install the DayZ server files
+  l|list - List Workshop items and their details
+  g|login - Login to Steam.
+  m|modupdate - Update the mod files
+  r|remove id - Remove all files and directories of a Workshop item by id
+  s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
+  u|update - Update the server files
+${default}"
+  exit 1
+}
+
+# Handle the Steam login information.
+login(){
+	loadconfig
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		if prompt_yn "The steam login is already set. Reset it?"
+		then
+			rm -f "${STEAM_LOGIN}"
+		else
+			echo "Not reset."
+			exit 0
+		fi
+	fi
+	if [ ! -f "${STEAM_LOGIN}" ]
+	then
+		echo "Setting up Steam credentials"
+		echo -n "Steam Username (anonymous): "
+		read steamlogin
+		if [[ "${steamlogin}" = "" ]]
+		then
+			echo "Steam login set to 'anonymous'"
+			steamlogin="anonymous"
+		fi
+		echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN}"
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
+	fi
+}
+
+# "Perform" the Steam login. This just sources the file with the Steam login name.
+dologin(){
+	loadconfig
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		source "${STEAM_LOGIN}"
+	else
+		echo "No cached Steam credentials. Please configure this now: "
+		login
+	fi
+}
+
+# Perform the installation of the server files.
+install(){
+	loadconfig
+	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
+	then
+		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
+		dologin
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
+	else
+		printf "[ ${lightblue}DayZ${default} ] The server is already installed.\n"
+	fi
+}
+
+# Make sure to clean up and report on exit, as these files remain in the container's volume
+report() {
+	rm -f /tmp/mod_command_line /tmp/parameters
+	echo
+	echo -e "${yellow}========================================== error.log =========================================="
+	find "${SERVER_PROFILE}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== script*.log ========================================"
+	find "${SERVER_PROFILE}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== *.RPT =============================================="
+	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== End log ======================================${default}"
+}
+
+# Update the server files.
+update(){
+	dologin
+	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${release_server_appid}".acf
+	printf "[ ... ] Checking for update:"
+	# gets currentbuild
+	currentbuild=$(grep buildid "${appmanifestfile}" | tr '[:blank:]"' ' ' | tr -s ' ' | cut -d \  -f3)
+	# Removes appinfo.vdf as a fix for not always getting up to date version info from SteamCMD
+	if [ -f "${HOME}/Steam/appcache/appinfo.vdf" ]
+	then
+		rm -f "${HOME}/Steam/appcache/appinfo.vdf"
+	fi
+	# check for new build
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +quit | \
+		sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	if [ -z "${availablebuild}" ]
+	then
+		printf "\r[ ${red}FAIL${default} ] Checking for update:\n"
+		printf "\r[ ${red}FAIL${default} ] Checking for update:: Not returning version info\n"
+		exit
+	else
+		printf "\r[ ${green}OK${default} ] Checking for update:"
+	fi
+	# compare builds
+	if [ "${currentbuild}" != "${availablebuild}" ] || [[ ${1} = "force" ]]
+	then
+		printf "\r[ ${green}OK${default} ] Checking for update:: Update available\n"
+		printf "Update available:\n"
+		printf "\tCurrent build: ${red}${currentbuild}${default}\n"
+		printf "\tAvailable build: ${green}${availablebuild}${default}\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n"
+		printf "\nApplying update"
+		# run update
+		dologin
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
+		modupdate
+	else
+		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
+		printf "\nNo update available:\n"
+		printf "\tCurrent version: ${green}${currentbuild}${default}\n"
+		printf "\tAvailable version: ${green}${availablebuild}${default}\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n\n"
+	fi
+}
+
+# Update mods
+modupdate(){
+	echo "Updating mods..."
+	dologin
+#	echo ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	# Updated files come in with mixed cases. Fix that.
+	echo -ne "\nFixing file names..."
+	find "${workshopfolder}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	echo "done"
+	echo
+}
+
+# List mods
+list(){
+	# The state may have changed since we started
+	get_mods
+	if [[ "${workshopID[@]}" = "" ]]
+	then
+		return
+	fi
+	X=1
+	spaces="                        "
+	echo -e "\n     ID         Name                      Active URL                                                                Size"
+	echo "------------------------------------------------------------------------------------------------------------------------"
+	for i in "${workshopID[@]}"
+	do
+		ID=$(echo ${i} | cut -d: -f1)
+		NAME=$(echo ${i} | cut -d: -f2)
+		ACTIVE=$(echo ${i} | cut -d: -f3)
+		SIZE=$(du -sh ${SERVER_FILES}/steamapps/workshop/content/221100/${ID} | awk '{print $1}')
+		if [[ ${ACTIVE} = "1" ]]
+		then
+			C="${green}"
+		else
+			C="${red}"
+		fi
+		printf "${C}%.3d  %s %.23s  %s %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID} ${SIZE}
+		X=$((X+1))
+	done
+}
+
+# Display the status of the provisioning container
+status(){
+	INSTALLED="${NO}"
+	LOGGED_IN="${NO}"
+	RUNNING="${NO}"
+
+	# DayZ Server files installation
+	if [ -f "${SERVER_INSTALL_FILE}" ]
+	then
+		INSTALLED="${YES}"
+	fi
+	# Logged into Steam
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		LOGGED_IN="${YES}"
+		if grep -q anonymous "${STEAM_LOGIN}"
+		then
+			ANONYMOUS="${yellow}(as anonymous)${default}"
+		else
+			ANONYMOUS="${green}(not anonymous)${default}"
+		fi
+	fi
+	# Running or not
+	if pidof DayZServer > /dev/null
+	then
+		# Uptime
+		D=$(date +%s)
+		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
+		DAYS=$(( (${D} - ${F}) / 86400 ))
+#		UPTIME=$(date --date="$(( ${D} - ${F} ))" +"${DAYS} days %H:%M:%S")
+		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +"%H hours %M minutes %S seconds")
+
+		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
+		# Current parameters
+		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
+	fi
+	mod_cmd
+	MAP="none"
+	# Map name
+	if [[ -f ${SERVER_CFG_DST} ]]
+	then
+		MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
+	fi
+	# Number of mods plus the list denoting on or off
+	echo -ne "
+Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
+Server files installed: ${INSTALLED}"
+	if [[ "${INSTALLED}" = "${NO}" ]]
+	then
+		echo
+		echo
+		exit 0
+	fi
+	echo -ne "
+Mods: "
+	MODS=$(list)
+	if [[ ${MODS} == "" ]]
+	then
+		echo -n "none"
+	fi
+	echo -e "${MODS}
+Server running: ${RUNNING}
+Working parameters: ${parameters}
+Working mod parameter: ${mod_command_line}"
+	if [[ "${INSTALLED}" = "${YES}" ]]
+	then
+		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
+		echo "Map: ${MAP}"
+	fi
+}
+
+# Capture the first argument and shift it off so we can pass $@ to every function
+C=${1}
+shift || {
+	usage
+}
+
+get_mods
+
+case "${C}" in
+	add)
+		add "${@}"
+		;;
+	i|install)
+		install "${@}"
+		;;
+	l|list)
+		list "${@}"
+		;;
+	login)
+		login "${@}"
+		;;
+	m|modupdate)
+		modupdate "${@}"
+		;;
+	r|remove)
+		remove "${@}"
+		;;
+	s|status)
+		status "${@}"
+		;;
+	u|update)
+		update "${@}"
+		;;
+	*)
+		usage "$*"
+	;;
+esac

@@ -1,46 +1,15 @@
 #!/usr/bin/env bash
 
-set -eEa
+source /files/dz-common
 
-# If you want/need the server and rcon ports to be different, set them here.
-# The steam query port is set in serverDZ.cfg.
-
-# Server port
-port=2302
-rcon_port=2303
-
-# Don't change anything else.
-
-# Colors
-default="\e[0m"
-red="\e[31m"
-green="\e[32m"
-yellow="\e[93m"
-lightblue="\e[94m"
-blue="\e[34m"
-magenta="\e[35m"
-cyan="\e[36m"
-
-# DayZ release server Steam app ID. Presumably once the Linux server is released, the binaries will come
-# from this ID. Let's find out!
-#release_server_appid=223350
-
-# For now, use the experimental server app id
-release_server_appid=1042420
-
-# DayZ release client SteamID. This is for mods, as only the release client has them.
-release_client_appid=221100
-
-# Base directories
-CFG_SRC_FILES="/files"
-SERVER_FILES="/serverfiles"
+# Server container base directories
 SERVER_PROFILE="/profiles"
 
-mkdir -p ${SERVER_FILES}/battleye ${SERVER_PROFILE}
+mkdir -p ${SERVER_PROFILE}/battleye
 
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
-SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
+SERVER_CFG_DST="${SERVER_PROFILE}/${SERVER_CFG_FILE}"
 SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
 
 # Command line parameters except mod, as that is handled separately.
@@ -48,10 +17,6 @@ parameters="-config=${SERVER_CFG_FILE} -port=${port} -freezecheck -BEpath=${SERV
 
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
-
-# Steam files
-STEAM_LOGIN="${HOME}/steamlogin"
-STEAMCMD=steamcmd
 
 # Workshop. This file will store metadata about what mods are installed.
 WORKSHOP_CFG="${HOME}/workshop.cfg"
@@ -71,10 +36,6 @@ then
 	mkdir -p "${BACKUP_DIR}"
 fi
 
-# Other stuff
-YES="${green}yes${default}"
-NO="${red}no${default}"
-
 # Functions
 
 # Usage
@@ -87,23 +48,31 @@ Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
 Options and arguments:
 
   a|activate id - Activate an installed DayZ Workshop items by id or index
-  add id - Add a DayZ Workshop item by id. Added items become active by default
   b|backup - Backup the mission storage files in all mission directories
   c|config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file
   d|deactivate id - Deactivate an installed DayZ Workshop items by id or index - Keeps the mod files but excludes it from the mod parameter
   f|force - Forcibly kill the server. Use only as a last resort if the server won't shut down
-  i|install - Install the DayZ server files
   l|list - List Workshop items and their details
-  g|login - Login to Steam.
-  m|modupdate - Update the mod files
   n|rcon - Connect to the server using a python RCON client
-  r|remove id - Remove all files and directories of a Workshop item by id
   restart - Restart the server without restarting the container
   s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
   stop - Stop the server
-  u|update - Update the server files
 ${default}"
   exit 1
+}
+
+# Manage the mod symlink
+symlink(){
+	W=${1}
+	ID=${2}
+	NAME=${3}
+	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
+	then
+		ln -sv ${workshopfolder}/${ID} "${SERVER_FILES}/@${NAME}"
+	elif [[ "${W}" = "0" ]]
+	then
+		rm -vf "${SERVER_FILES}/@${NAME}"
+	fi
 }
 
 # Make sure to clean up and report on exit, as these files remain in the container's volume
@@ -120,30 +89,6 @@ report() {
 	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== End log ======================================${default}"
-}
-
-# Convenience function
-prompt_yn(){
-	echo -n "${1} (y|N) " >&2
-	read -s -n 1 a
-	a=$(echo ${a} | tr A-Z a-z)
-	echo
-	if [[ "${a}" = "y" ]]
-	then
-		return 0
-	else
-		return 1
-	fi
-}
-
-check_install(){
-	if [ ! -f "${SERVER_INSTALL_FILE}" ]
-	then
-		echo
-		echo -e "The DayZ server files are not installed. Run '${green}docker-compose run --rm main dayzserver install${default}'"
-		echo
-		exit 1
-	fi
 }
 
 # Ensures all is installed and ready before allowing operations that depends on things being ready.
@@ -245,61 +190,6 @@ force(){
 	kill -KILL $(pidof DayZServer)
 }
 
-# Hanle the Steam login information.
-login(){
-	loadconfig
-	if [ -f "${STEAM_LOGIN}" ]
-	then
-		if prompt_yn "The steam login is already set. Reset it?"
-		then
-			rm -f "${STEAM_LOGIN}"
-		else
-			echo "Not reset."
-			exit 0
-		fi
-	fi
-	if [ ! -f "${STEAM_LOGIN}" ]
-	then
-		echo "Setting up Steam credentials"
-		echo -n "Steam Username (anonymous): "
-		read steamlogin
-		if [[ "${steamlogin}" = "" ]]
-		then
-			echo "Steam login set to 'anonymous'"
-			steamlogin="anonymous"
-		fi
-		echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN}"
-		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
-	fi
-}
-
-# "Perform" the Steam login. This just sources the file with the Steam login name.
-dologin(){
-	loadconfig
-	if [ -f "${STEAM_LOGIN}" ]
-	then
-		source "${STEAM_LOGIN}"
-	else
-		echo "No cached Steam credentials. Please configure this now: "
-		login
-	fi
-}
-
-# Perform the installation of the server files.
-install(){
-	loadconfig
-	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
-	then
-		mkdir -p "${SERVER_FILES}"
-		mkdir -p "${SERVER_PROFILE}"
-		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
-		dologin
-		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
-	else
-		printf "[ ${lightblue}DayZ${default} ] The server is already installed.\n"
-	fi
-}
-
 # Handle any changes in the server config file by allowing them to be merged after viewing a diff.
 config(){
 	if ! diff -q "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}"
@@ -316,51 +206,6 @@ config(){
 		fi
 	else
 		echo "No differences found between ${SERVER_CFG_SRC} and ${SERVER_CFG_DST}"
-	fi
-}
-
-# Update the server files.
-update(){
-	dologin
-	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${release_server_appid}".acf
-	printf "[ ... ] Checking for update:"
-	# gets currentbuild
-	currentbuild=$(grep buildid "${appmanifestfile}" | tr '[:blank:]"' ' ' | tr -s ' ' | cut -d \  -f3)
-	# Removes appinfo.vdf as a fix for not always getting up to date version info from SteamCMD
-	if [ -f "${HOME}/Steam/appcache/appinfo.vdf" ]
-	then
-		rm -f "${HOME}/Steam/appcache/appinfo.vdf"
-	fi
-	# check for new build
-	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +quit | \
-		sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
-	if [ -z "${availablebuild}" ]
-	then
-		printf "\r[ ${red}FAIL${default} ] Checking for update:\n"
-		printf "\r[ ${red}FAIL${default} ] Checking for update:: Not returning version info\n"
-		exit
-	else
-		printf "\r[ ${green}OK${default} ] Checking for update:"
-	fi
-	# compare builds
-	if [ "${currentbuild}" != "${availablebuild}" ] || [[ ${1} = "force" ]]
-	then
-		printf "\r[ ${green}OK${default} ] Checking for update:: Update available\n"
-		printf "Update available:\n"
-		printf "\tCurrent build: ${red}${currentbuild}${default}\n"
-		printf "\tAvailable build: ${green}${availablebuild}${default}\n"
-		printf "\thttps://steamdb.info/app/${release_server_appid}/\n"
-		printf "\nApplying update"
-		# run update
-		dologin
-		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
-		modupdate
-	else
-		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
-		printf "\nNo update available:\n"
-		printf "\tCurrent version: ${green}${currentbuild}${default}\n"
-		printf "\tAvailable version: ${green}${availablebuild}${default}\n"
-		printf "\thttps://steamdb.info/app/${release_server_appid}/\n\n"
 	fi
 }
 
@@ -414,87 +259,6 @@ get_mod_name(){
 	echo ${NAME}
 }
 
-# Update mods
-modupdate(){
-	echo "Updating mods..."
-	dologin
-#	echo ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
-	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
-	# Updated files come in with mixed cases. Fix that.
-	echo -ne "\nFixing file names..."
-	find "${workshopfolder}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
-	echo "done"
-	echo
-}
-
-# Add a mod
-add(){
-	if [ -d "${workshopfolder}/${1}" ]
-	then
-		echo -e "${yellow}Warning: The mod directory ${workshopfolder}/${1} already exists!${default}"
-		MODNAME=$(get_mod_name ${1})
-	fi
-	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
-	then
-		echo -e "${yellow}Warning: The mod symlink ${SERVER_FILES}/@${MODNAME} already exists!${default}"
-	fi
-	if grep -qP "\b${1}\b" "${WORKSHOP_CFG}"
-	then
-		echo "The mod with id ${1} is already in the workshop configuration."
-		return
-	fi
-	echo "Adding mod id ${1}"
-	echo "${1}:MODNAME:1" >> ${WORKSHOP_CFG}
-	dologin
-	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +workshop_download_item "${release_client_appid}" "${1}" +quit
-	# Make sure the install succeeded
-	if [ ! -d "${workshopfolder}/${1}" ]
-	then
-		echo -e "${red}Mod installation failed: The mod directory ${workshopfolder}/${1} was not created!${default}"
-		echo "Installation failed! See above (You probably need to use a real Steam login)"
-		# The mod is added temporarily into the workshop config. Since the installation failed, reemove it instead of updating it.
-		head -n-1 "${WORKSHOP_CFG}" > /tmp/workshop.cfg.tmp
-		mv /tmp/workshop.cfg.tmp "${WORKSHOP_CFG}"
-		return
-	fi
-	# Get the name of the newly added mod
-	MODNAME=$(get_mod_name ${1})
-	symlink 1 ${1} "${MODNAME}"
-	# Lower case all the files in mod directories.
-	find "${workshopfolder}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
-	# Copy the key files
-	copy_keys 1 ${1}
-	# Set the mod name in the workshop config file, as we don't know this at the start.
-	sed -i "${WORKSHOP_CFG}" -e "s/${1}:MODNAME/${1}:${MODNAME}/"
-	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
-	checkXML ${1} install
-	checkInstall ${1} install
-}
-
-# Remove a mod
-remove(){
-	ID=$(get_mod_id_by_index ${1})
-	MODNAME=$(get_mod_name ${1})
-	checkXML ${ID} uninstall
-	checkInstall ${ID} uninstall
-	if [ -d "${workshopfolder}/${ID}" ]
-	then
-		echo "Removing directory ${workshopfolder}/${ID}"
-		rm -rf "${workshopfolder}/${ID}"
-	fi
-	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
-	then
-		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
-		rm -vf "${SERVER_FILES}/@${MODNAME}"
-	fi
-	if grep -q ${ID} "${WORKSHOP_CFG}"
-	then
-		echo "Removing workshop file entry"
-		sed -i "${WORKSHOP_CFG}" -e "/${ID}:/d"
-	fi
-	echo -e "Mod id ${ID} - ${red}${MODNAME}${default} - removed"
-}
-
 # Activate / Deactivate a mod
 activate(){
 	W=${1}
@@ -513,9 +277,6 @@ activate(){
 	if [[ "${ACTIVE}" != "${W}" ]]
 	then
 		sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${MODNAME}:[0-1]/${ID}:${MODNAME}:${W}/"
-		symlink ${W} ${ID} "${MODNAME}"
-		copy_keys ${W} ${ID}
-		checkInstall ${ID} ${UU}install
 		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
 	else
 		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
@@ -550,30 +311,6 @@ list(){
 		printf "${C}%.3d  %s %.23s  %s %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ACTIVE} ${ID} ${SIZE}
 		X=$((X+1))
 	done
-}
-
-# Copy mod keys
-copy_keys(){
-	if [[ ${1} = 1 ]]
-	then
-		echo "Copying key files..."
-		find "${workshopfolder}/${2}" -name "*.bikey" -exec cp "{}" "${SERVER_FILES}/keys/" \;
-	fi
-}
-
-# Symlink mods
-symlink(){
-	W=${1}
-	ID=${2}
-	NAME=${3}
-	# Symlink it
-	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
-	then
-		ln -sv ${workshopfolder}/${ID} "${SERVER_FILES}/@${NAME}"
-	elif [[ "${W}" = "0" ]]
-	then
-		rm -vf "${SERVER_FILES}/@${NAME}"
-	fi
 }
 
 # Assemble the mod command line
@@ -632,22 +369,6 @@ checkXML(){
 	fi
 }
 
-checkInstall(){
-	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
-	if [ -f /files/mods/${1}/${2}.sh ]
-	then
-		echo "An ${2}.sh was found for mod id ${1}. Running..."
-		/files/mods/${1}/${2}.sh
-	fi
-	# A generic map install script. Presumes a git repo as the source
-	if [ -f /files/mods/${1}/install.env ]
-	then
-		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
-		source /files/mods/${1}/install.env
-		/files/mods/install.sh ${1} ${2}
-	fi
-
-}
 # Our internal RCON
 rcon(){
 	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json

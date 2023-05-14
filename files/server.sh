@@ -6,7 +6,7 @@ then
 	echo "Creating .bashrc..."
 	cat > .bashrc <<EOF
 alias ls='ls --color'
-export PS1="${debian_chroot:+($debian_chroot)}\u@dayzdockerserver:\w\$ "
+export PS1="${debian_chroot:+($debian_chroot)}\u@dz-server:\w\$ "
 EOF
 fi
 
