@@ -89,22 +89,6 @@ install(){
 	fi
 }
 
-# Make sure to clean up and report on exit, as these files remain in the container's volume
-report() {
-	rm -f /tmp/mod_command_line /tmp/parameters
-	echo
-	echo -e "${yellow}========================================== error.log =========================================="
-	find "${SERVER_PROFILE}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
-	echo
-	echo -e "========================================== script*.log ========================================"
-	find "${SERVER_PROFILE}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
-	echo
-	echo -e "========================================== *.RPT =============================================="
-	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
-	echo
-	echo -e "========================================== End log ======================================${default}"
-}
-
 # Update the server files.
 update(){
 	dologin
@@ -192,7 +176,7 @@ list(){
 	done
 }
 
-# Display the status of the provisioning container
+# Display the status of everything
 status(){
 	INSTALLED="${NO}"
 	LOGGED_IN="${NO}"
@@ -214,28 +198,6 @@ status(){
 			ANONYMOUS="${green}(not anonymous)${default}"
 		fi
 	fi
-	# Running or not
-	if pidof DayZServer > /dev/null
-	then
-		# Uptime
-		D=$(date +%s)
-		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
-		DAYS=$(( (${D} - ${F}) / 86400 ))
-#		UPTIME=$(date --date="$(( ${D} - ${F} ))" +"${DAYS} days %H:%M:%S")
-		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +"%H hours %M minutes %S seconds")
-
-		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
-		# Current parameters
-		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
-	fi
-	mod_cmd
-	MAP="none"
-	# Map name
-	if [[ -f ${SERVER_CFG_DST} ]]
-	then
-		MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
-	fi
-	# Number of mods plus the list denoting on or off
 	echo -ne "
 Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
 Server files installed: ${INSTALLED}"
@@ -245,6 +207,7 @@ Server files installed: ${INSTALLED}"
 		echo
 		exit 0
 	fi
+	# Mods
 	echo -ne "
 Mods: "
 	MODS=$(list)
@@ -252,15 +215,7 @@ Mods: "
 	then
 		echo -n "none"
 	fi
-	echo -e "${MODS}
-Server running: ${RUNNING}
-Working parameters: ${parameters}
-Working mod parameter: ${mod_command_line}"
-	if [[ "${INSTALLED}" = "${YES}" ]]
-	then
-		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
-		echo "Map: ${MAP}"
-	fi
+	echo -e "${MODS}"
 }
 
 # Capture the first argument and shift it off so we can pass $@ to every function

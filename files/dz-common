@@ -35,18 +35,10 @@ release_client_appid=221100
 CFG_SRC_FILES="/files"
 SERVER_FILES="/serverfiles"
 
-# Server container base directories
-SERVER_PROFILE="/profiles"
-
-mkdir -p ${SERVER_FILES}/battleye
-
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
 SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
 SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
-
-# Command line parameters except mod, as that is handled separately.
-parameters="-config=${SERVER_CFG_FILE} -port=${port} -freezecheck -BEpath=${SERVER_FILES}/battleye -profiles=${SERVER_PROFILE} -nologs"
 
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
@@ -65,13 +57,6 @@ fi
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
 declare -a workshopID
 workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
-
-# Backups
-BACKUP_DIR="${HOME}/backup"
-if [ ! -d "${BACKUP_DIR}" ]
-then
-	mkdir -p "${BACKUP_DIR}"
-fi
 
 # Other stuff
 YES="${green}yes${default}"
