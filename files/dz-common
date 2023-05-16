@@ -104,17 +104,6 @@ check_install(){
 	fi
 }
 
-# Assemble the workshop variables
-get_mods(){
-	mapfile -t workshopID < "${WORKSHOP_CFG}"
-	workshoplist=""
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-	done
-}
-
 get_mod_id_by_index(){
 	# If we were passed a valid mod id, just return it
 	if [[ -d "${workshopdir}/${1}" ]]
