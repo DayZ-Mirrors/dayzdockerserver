@@ -6,7 +6,7 @@ set -eE
 
 ID=${1}
 MODE=${2}
-TYPES_FILE="${workshopfolder}/${ID}/extras/types.xml"
+TYPES_FILE="${WORKSHOP_DIR}/${ID}/extras/types.xml"
 
 if [[ ${3} != "" ]]
 then

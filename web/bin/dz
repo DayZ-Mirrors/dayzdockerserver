@@ -2,16 +2,8 @@
 
 source /files/dz-common
 
-# Workshop. This file will store metadata about what mods are installed.
-WORKSHOP_CFG="${SERVER_FILES}/workshop.cfg"
-if [ ! -f "${WORKSHOP_CFG}" ]
-then
-	touch "${WORKSHOP_CFG}"
-fi
-
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
-declare -a workshopID
-workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
 
 workshoplist=""
 
@@ -38,63 +30,8 @@ ${default}"
   exit 1
 }
 
-# Ensures all is installed and ready before allowing operations that depends on things being ready.
-# Installs the initial server config file from its template.
-# Handles the importing of changes to that template.
-# Installs the initial Battleye RCON config.
-loadconfig(){
-#	check_install
-	# Handle the initial server configuration file
-	if [ ! -f ${SERVER_CFG_DST} ]
-	then
-		echo "Creating initial server configuration file"
-		cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
-	fi
-	# battleye config and rconpassword setup
-	# The server creates a new file from this file, which it then uses.
-	# Let's make sure to delete it first
-	BE_SERVER_FILE="${SERVER_FILES}/battleye/beserver_x64.cfg"
-	ALT_BE_SERVER_FILE=$(find ${SERVER_FILES}/battleye -name "beserver_x64_active*")
-	if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
-	then
-		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
-		if [ "${passwd}" == "" ]
-		then
-			passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
-		fi
-		if [ "${passwd}" == "" ]
-		then
-			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
-			exit 1
-		else
-			cat > "${BE_SERVER_FILE}" <<EOF
-RConPassword ${passwd}
-RestrictRCon 0
-RConPort ${rcon_port}
-EOF
-		fi
-		printf "[ ${cyan}INFO${default} ] New RCON password: ${yellow}${passwd}${default}\n"
-	else
-		if [ -f "${BE_SERVER_FILE}" ]
-		then
-			FILE="${BE_SERVER_FILE}"
-		elif [ -f "${ALT_BE_SERVER_FILE}" ]
-		then
-			FILE="${ALT_BE_SERVER_FILE}"
-		fi
-		passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
-#		printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
-	fi
-	cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
-	jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
-		'.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
-		/usr/local/py3rcon/configexample.json \
-		> ~/py3rcon.config.json
-}
-
 # Handle the Steam login information.
 login(){
-	loadconfig
 	if [ -f "${STEAM_LOGIN}" ]
 	then
 		if prompt_yn "The steam login is already set. Reset it?"
@@ -122,7 +59,6 @@ login(){
 
 # "Perform" the Steam login. This just sources the file with the Steam login name.
 dologin(){
-	loadconfig
 	if [ -f "${STEAM_LOGIN}" ]
 	then
 		source "${STEAM_LOGIN}"
@@ -134,7 +70,6 @@ dologin(){
 
 # Perform the installation of the server files.
 install(){
-	loadconfig
 	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
 	then
 		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
@@ -198,43 +133,9 @@ modupdate(){
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	# Updated files come in with mixed cases. Fix that.
 	echo -ne "\nFixing file names..."
-	find "${workshopfolder}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	find "${WORKSHOP_DIR}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	echo "done"
 	echo
-}
-
-# List mods
-list(){
-	mapfile -t workshopID < "${WORKSHOP_CFG}"
-	workshoplist=""
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-	done
-	if [[ "${workshopID[@]}" = "" ]]
-	then
-		return
-	fi
-	X=1
-	spaces="                        "
-	echo -e "\n     ID         Name                             URL                                                                Size"
-	echo "------------------------------------------------------------------------------------------------------------------------"
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		NAME=$(echo ${i} | cut -d: -f2)
-#		ACTIVE=$(echo ${i} | cut -d: -f3)
-		SIZE=$(du -sh ${SERVER_FILES}/steamapps/workshop/content/221100/${ID} | awk '{print $1}')
-#		if [[ ${ACTIVE} = "1" ]]
-#		then
-			C="${green}"
-#		else
-#			C="${red}"
-#		fi
-		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
-		X=$((X+1))
-	done
 }
 
 # Display the status of everything

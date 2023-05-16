@@ -31,14 +31,9 @@ release_server_appid=223350
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
 
-# Main container base directories
-CFG_SRC_FILES="/files"
+# Common container base directories
+FILES="/files"
 SERVER_FILES="/serverfiles"
-
-# Server configuration file
-SERVER_CFG_FILE="serverDZ.cfg"
-SERVER_CFG_DST="${SERVER_FILES}/${SERVER_CFG_FILE}"
-SERVER_CFG_SRC="${CFG_SRC_FILES}/${SERVER_CFG_FILE}"
 
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
@@ -47,38 +42,14 @@ SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 STEAM_LOGIN="${HOME}/steamlogin"
 STEAMCMD=steamcmd
 
-# Workshop. This file will store metadata about what mods are installed.
-WORKSHOP_CFG="${HOME}/workshop.cfg"
-if [ ! -f "${WORKSHOP_CFG}" ]
-then
-	touch "${WORKSHOP_CFG}"
-fi
-
-# An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
-declare -a workshopID
-workshopfolder="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+# Workshop files (mods)
+WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
 
 # Other stuff
 YES="${green}yes${default}"
 NO="${red}no${default}"
 
 # Functions
-
-checkInstall(){
-	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
-	if [ -f /files/mods/${1}/${2}.sh ]
-	then
-		echo "An ${2}.sh was found for mod id ${1}. Running..."
-		/files/mods/${1}/${2}.sh
-	fi
-	# A generic map install script. Presumes a git repo as the source
-	if [ -f /files/mods/${1}/install.env ]
-	then
-		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
-		source /files/mods/${1}/install.env
-		/files/mods/install.sh ${1} ${2}
-	fi
-}
 
 # Convenience function
 prompt_yn(){
@@ -94,31 +65,37 @@ prompt_yn(){
 	fi
 }
 
-check_install(){
-	if [ ! -f "${SERVER_INSTALL_FILE}" ]
+check_mod_install(){
+	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
+	if [ -f ${FILES}/mods/${1}/${2}.sh ]
 	then
-		echo
-		echo -e "The DayZ server files are not installed. Run '${green}docker-compose run --rm main dayzserver install${default}'"
-		echo
-		exit 1
+		echo "An ${2}.sh was found for mod id ${1}. Running..."
+		${FILES}/mods/${1}/${2}.sh
+	fi
+	# A generic map install script. Presumes a git repo as the source
+	if [ -f ${FILES}/mods/${1}/install.env ]
+	then
+		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
+		source ${FILES}/mods/${1}/install.env
+		${FILES}/mods/install.sh ${1} ${2}
 	fi
 }
 
 get_mod_id_by_index(){
 	# If we were passed a valid mod id, just return it
-	if [[ -d "${workshopdir}/${1}" ]]
+	if [[ -d "${WORKSHOP_DIR}/${1}" ]]
 	then
-		echo ${1}
+		echo -n ${1}
 		return
 	fi
 	X=1
-	# Loop over mod list
-	for i in "${workshopID[@]}"
+	# Loop over mods
+	for dir in $(ls -tr ${WORKSHOP_DIR})
 	do
-		ID=$(echo ${i} | cut -d: -f1)
+	  ID=${dir}
 		if [[ ${X} = ${1} ]]
 		then
-			echo ${ID}
+			echo -n ${ID}
 			return
 		fi
 		X=$((X+1))
@@ -127,18 +104,31 @@ get_mod_id_by_index(){
 
 # Get mod name by ID or index
 get_mod_name(){
-	# Check for an ID
-	if [ -d "${workshopfolder}/${1}" ]
-	then
-		ID=${1}
-	else
-		ID=$(get_mod_id_by_index ${1})
-	fi
-	if ! [ -d "${workshopfolder}/${ID}" ]
+	ID=$(get_mod_id_by_index ${1})
+	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
 	then
 		echo "Mod ID ${1} doesn't exist" >&2
 		exit 1
 	fi
-	NAME=$(grep name ${workshopfolder}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
-	echo ${NAME}
+	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
+	echo -n ${NAME}
+}
+
+# List mods
+list(){
+	workshoplist=""
+	X=1
+  C="${green}"
+	spaces="                        "
+  echo -e "\n     ID         Name                             URL                                                                Size"
+  echo "------------------------------------------------------------------------------------------------------------------------"
+	for dir in $(ls -tr ${WORKSHOP_DIR})
+	do
+	  ID=${dir}
+	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | sed -r 's/\s+//g')
+		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
+		X=$((X+1))
+	done
 }

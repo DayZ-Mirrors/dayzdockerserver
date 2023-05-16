@@ -36,7 +36,7 @@ services:
       - homedir_server:/home/user
       - serverfiles:/serverfiles:ro
       - mods:/serverfiles/steamapps/workshop/content:ro
-      - mpmissions:/serverfiles/mpmissions
+      - mpmissions:/serverfiles/mpmissions:ro
       - profiles:/profiles
       - ./files:/files
       - ./server/bin/dz:/usr/local/bin/dz
