@@ -23,6 +23,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     nano \
     procps \
     python3-pip \
+    strace \
     wget
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
@@ -43,8 +44,8 @@ RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 # Setup a non-privileged user
 RUN groupadd user && \
     useradd -l -g user user && \
-    mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /profiles /mods && \
-    chown -R user:user /home/user /serverfiles /profiles /mods
+    mkdir -p /home/user /serverfiles/mpmissions /mods /mpmissions /profiles && \
+    chown -R user:user /home/user /serverfiles /mods /mpmissions /profiles
 
 # Use our non-privileged user
 USER user

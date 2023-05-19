@@ -18,18 +18,10 @@ parameters="-config=${SERVER_CFG_DST} -port=${port} -freezecheck -BEpath=${SERVE
 # Used to check if dayZ is installed
 SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 
-# Workshop. This file will store metadata about what mods are in use in this server instance
-WORKSHOP_CFG="${SERVER_PROFILE}/workshop.cfg"
-if [ ! -f "${WORKSHOP_CFG}" ]
-then
-	touch "${WORKSHOP_CFG}"
-fi
-
-INSTALLED_MODS="${SERVER_FILES}/workshop.cfg"
-
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
-declare -a workshopID
-WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+#WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+WORKSHOP_DIR="/mods/${release_client_appid}"
+mod_command_line=""
 
 # Backups
 BACKUP_DIR="${HOME}/backup"
@@ -56,7 +48,7 @@ Options and arguments:
   f|force - Forcibly kill the server. Use only as a last resort if the server won't shut down
   l|list - List Workshop items and their details
   n|rcon - Connect to the server using a python RCON client
-  restart - Restart the server without restarting the container
+  r|restart - Restart the server without restarting the container
   s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
   stop - Stop the server
 ${default}"
@@ -119,17 +111,19 @@ EOF
 		> ~/py3rcon.config.json
 }
 
-# Manage the mod symlink
-symlink(){
-	W=${1}
-	ID=${2}
-	NAME=${3}
-	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
+get_mods(){
+	workshoplist=""
+	mod_command_line=""
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		mod_command_line+="@${MODNAME};"
+  done
+	if [[ ${mod_command_line} != "" ]]
 	then
-		ln -sv ${WORKSHOP_DIR}/${ID} "${SERVER_FILES}/@${NAME}"
-	elif [[ "${W}" = "0" ]]
-	then
-		rm -vf "${SERVER_FILES}/@${NAME}"
+		mod_command_line="-mod=${mod_command_line::-1}"
 	fi
 }
 
@@ -155,7 +149,7 @@ start(){
 	trap '
 		report
 	' EXIT
-	mod_cmd
+	get_mods
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
@@ -164,7 +158,7 @@ start(){
 	# actual status with those
 	echo ${mod_command_line} > /tmp/mod_command_line
 	echo ${parameters} > /tmp/parameters
-	./DayZServer ${mod_command_line} ${parameters}
+	./DayZServer "${mod_command_line}" ${parameters}
 	EXIT_CODE=$?
 	if [ -f ${SERVER_FILES}/restart ]
 	then
@@ -213,42 +207,15 @@ config(){
 	fi
 }
 
-# Assemble the workshop variables
-get_installed_mods(){
-	mapfile -t installedModsID < "${INSTALLED_MODS}"
-	workshoplist=""
-	for i in "${installedModsID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-	done
-}
-
-get_mods(){
-	mapfile -t workshopID < "${WORKSHOP_CFG}"
-	workshoplist=""
-	for i in "${workshopID[@]}"
-	do
-		ID=$(echo ${i} | cut -d: -f1)
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-	done
-}
-
 get_mod_id_by_index(){
-	# If we were passed a valid mod id, just return it
-	if [[ -d "${workshopdir}/${1}" ]]
-	then
-		echo ${1}
-		return
-	fi
 	X=1
-	# Loop over mod list
-	for i in "${workshopID[@]}"
+	# Loop over mods
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
 	do
-		ID=$(echo ${i} | cut -d: -f1)
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		if [[ ${X} = ${1} ]]
 		then
-			echo ${ID}
+			echo -n ${ID}
 			return
 		fi
 		X=$((X+1))
@@ -258,19 +225,13 @@ get_mod_id_by_index(){
 # Get mod name by ID or index
 get_mod_name(){
 	# Check for an ID
-	if [ -d "${WORKSHOP_DIR}/${1}" ]
-	then
-		ID=${1}
-	else
-		ID=$(get_mod_id_by_index ${1})
-	fi
 	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
 	then
 		echo "Mod ID ${1} doesn't exist" >&2
 		exit 1
 	fi
 	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
-	echo ${NAME}
+	echo -n ${NAME}
 }
 
 # Activate / Deactivate a mod
@@ -285,35 +246,20 @@ activate(){
 		UU="un"
 		COLOR="${red}"
 	fi
-	ID=$(get_mod_id_by_index ${1})
-	MODNAME=$(get_mod_name ${1})
+	ID=$(get_mod_id_by_index2 ${1})
+	MODNAME=$(get_mod_name ${ID})
 	# Toggle state or report nothing burger
-	if [[ "${ACTIVE}" != "${W}" ]]
+	pushd "${SERVER_PROFILE}" > /dev/null
+	if [ -L "${SERVER_PROFILE}/@${MODNAME}" ]
 	then
-		sed -i "${WORKSHOP_CFG}" -e "s/${ID}:${MODNAME}:[0-1]/${ID}:${MODNAME}:${W}/"
-		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
+	  rm -vf "${SERVER_PROFILE}/@${MODNAME}"
 	else
-		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
+	  ln -s "${WORKSHOP_DIR}/${ID}" "${SERVER_PROFILE}/@${MODNAME}"
+#		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
 	fi
-	list
-}
-
-# Assemble the mod command line
-mod_cmd(){
-	mod_command_line=""
-	for i in "${workshopID[@]}"
-	do
-		NAME=$(echo ${i} | cut -d: -f2)
-		ACTIVE=$(echo ${i} | cut -d: -f3)
-		if [[ ${ACTIVE} = "1" ]]
-		then
-			mod_command_line="${mod_command_line}@${NAME};"
-		fi
-	done
-	if [[ ${mod_command_line} != "" ]]
-	then
-		mod_command_line='-mod='${mod_command_line::-1}
-	fi
+	echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
+	popd > /dev/null
+	status
 }
 
 checkXML(){
@@ -359,6 +305,29 @@ rcon(){
 	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
 }
 
+# List mods
+activelist(){
+	X=1
+  C="${green}"
+	spaces="                        "
+	have=no
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
+	  if [[ ${have} = "no" ]]
+	  then
+	    have="yes"
+      echo -e "\n     ID         Name                             URL                                                                Size"
+      echo "------------------------------------------------------------------------------------------------------------------------"
+    fi
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+	  MODNAME=$(get_mod_name ${ID})
+		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
+		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
+		X=$((X+1))
+	done
+	echo
+}
+
 # Display the status of everything
 status(){
   loadconfig
@@ -385,8 +354,6 @@ status(){
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
 
-	mod_cmd
-
 	MAP="none"
 	# Map name
 	if [[ -f ${SERVER_CFG_DST} ]]
@@ -402,9 +369,10 @@ Server files installed: ${INSTALLED}"
 		echo
 		exit 0
 	fi
+	get_mods
 	echo -ne "
-Mods: "
-	MODS=$(list)
+Active mods: "
+  activelist
 	if [[ ${MODS} == "" ]]
 	then
 		echo -n "none"
@@ -418,6 +386,7 @@ Working mod parameter: ${mod_command_line}"
 		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
 		echo "Map: ${MAP}"
 	fi
+	echo
 }
 
 backup(){
@@ -437,8 +406,6 @@ C=${1}
 shift || {
 	usage
 }
-
-get_mods
 
 case "${C}" in
 	a|activate)
@@ -477,7 +444,7 @@ case "${C}" in
 	r|remove)
 		remove "${@}"
 		;;
-	restart)
+	r|restart)
 		restart "${@}"
 		;;
 	start)

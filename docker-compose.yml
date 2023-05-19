@@ -22,7 +22,7 @@ services:
       - homedir_main:/home/user
       - serverfiles:/serverfiles
       - mods:/serverfiles/steamapps/workshop/content
-      - mpmissions:/serverfiles/mpmissions
+      - mods:/mods
       - ./files:/files
       - ./web/bin/dz:/usr/local/bin/dz
       - ./web:/web
@@ -34,9 +34,9 @@ services:
     build: server
     volumes:
       - homedir_server:/home/user
-      - serverfiles:/serverfiles:ro
-      - mods:/serverfiles/steamapps/workshop/content:ro
-      - mpmissions:/serverfiles/mpmissions:ro
+      - serverfiles:/serverfiles
+      - mods:/mods
+      - mpmissions:/serverfiles/mpmissions
       - profiles:/profiles
       - ./files:/files
       - ./server/bin/dz:/usr/local/bin/dz

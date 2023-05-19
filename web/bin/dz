@@ -3,7 +3,7 @@
 source /files/dz-common
 
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
-WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+WORKSHOP_DIR="/mods/${release_client_appid}"
 
 workshoplist=""
 
@@ -18,16 +18,94 @@ Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
 
 Options and arguments:
 
-  add id - Add a DayZ Workshop item by id. Added items become active by default
+  a|add id - Add a DayZ Workshop item by id. Added items become active by default
   i|install - Install the DayZ server files
-  l|list - List Workshop items and their details
   g|login - Login to Steam.
   m|modupdate - Update the mod files
   r|remove id - Remove all files and directories of a Workshop item by id
-  s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
+  s|status - Shows Steam login status, if base files are installed, installed mods
   u|update - Update the server files
 ${default}"
   exit 1
+}
+
+# "Manage" XML files.
+xml(){
+  /files/mods/xml.sh ${1}
+}
+
+# Copy mod keys
+copy_keys(){
+	if [[ ${1} = 1 ]]
+	then
+		echo "Copying key files..."
+		find ${WORKSHOP_DIR}/${2} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
+	fi
+}
+
+# Manage the mod symlink
+symlink(){
+	W=${1}
+	ID=${2}
+	NAME=${3}
+	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
+	then
+		ln -sv ${WORKSHOP_DIR}/${ID} "${SERVER_FILES}/@${NAME}"
+	elif [[ "${W}" = "0" ]]
+	then
+		rm -vf "${SERVER_FILES}/@${NAME}"
+	fi
+}
+
+# Add a mod
+add(){
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo -e "${yellow}Warning: The mod directory ${WORKSHOP_DIR}/${1} already exists!${default}"
+		MODNAME=$(get_mod_name ${1})
+	fi
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo -e "${yellow}Warning: The mod symlink ${SERVER_FILES}/@${MODNAME} already exists!${default}"
+	fi
+	echo "Adding mod id ${1}"
+	dologin
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +workshop_download_item "${release_client_appid}" "${1}" +quit
+	# Make sure the install succeeded
+	if [ ! -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo -e "${red}Mod installation failed: The mod directory ${WORKSHOP_DIR}/${1} was not created!${default}"
+		echo "Installation failed! See above (You probably need to use a real Steam login)"
+		return
+	fi
+	# Get the name of the newly added mod
+	MODNAME=$(get_mod_name ${1})
+	symlink 1 ${1} "${MODNAME}"
+	# Lower case all the files in mod directories.
+	find "${WORKSHOP_DIR}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	# Copy the key files
+	copy_keys 1 ${1}
+	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
+#	checkTypesXML ${1} install
+#	checkInstall ${1} install
+}
+
+# Remove a mod
+remove(){
+#	checkTypesXML ${1} uninstall
+#	checkInstall ${1} uninstall
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		MODNAME=$(get_mod_name ${1})
+		echo "Removing directory ${WORKSHOP_DIR}/${1}"
+		rm -rf "${WORKSHOP_DIR}/${1}"
+	fi
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
+		rm -f "${SERVER_FILES}/@${MODNAME}"
+	fi
+	echo -e "Mod id ${1} - ${red}${MODNAME}${default} - removed"
 }
 
 # Handle the Steam login information.
@@ -125,11 +203,28 @@ update(){
 	fi
 }
 
+get_mods(){
+	workshoplist=""
+	mod_command_line=""
+  for link in $(ls -tdr ${SERVER_FILES}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | cut -d/ -f7)
+		MODNAME=$(get_mod_name ${ID})
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		mod_command_line+="@${MODNAME};"
+  done
+	if [[ ${mod_command_line} != "" ]]
+	then
+		mod_command_line='-mod='${mod_command_line::-1}
+	fi
+}
+
+
 # Update mods
 modupdate(){
 	echo "Updating mods..."
 	dologin
-#	echo ${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	get_mods
 	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
 	# Updated files come in with mixed cases. Fix that.
 	echo -ne "\nFixing file names..."
@@ -187,16 +282,13 @@ shift || {
 }
 
 case "${C}" in
-	add)
+	a|add)
 		add "${@}"
 		;;
 	i|install)
 		install "${@}"
 		;;
-	l|list)
-		list "${@}"
-		;;
-	login)
+	g|login)
 		login "${@}"
 		;;
 	m|modupdate)
@@ -210,6 +302,9 @@ case "${C}" in
 		;;
 	u|update)
 		update "${@}"
+		;;
+	x|xml)
+		xml "${@}"
 		;;
 	*)
 		usage "$*"

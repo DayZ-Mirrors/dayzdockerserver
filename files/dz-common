@@ -81,9 +81,9 @@ check_mod_install(){
 	fi
 }
 
-get_mod_id_by_index(){
+get_mod_id_by_index2(){
 	# If we were passed a valid mod id, just return it
-	if [[ -d "${WORKSHOP_DIR}/${1}" ]]
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
 	then
 		echo -n ${1}
 		return
@@ -104,7 +104,7 @@ get_mod_id_by_index(){
 
 # Get mod name by ID or index
 get_mod_name(){
-	ID=$(get_mod_id_by_index ${1})
+	ID=$(get_mod_id_by_index2 ${1})
 	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
 	then
 		echo "Mod ID ${1} doesn't exist" >&2
@@ -116,19 +116,19 @@ get_mod_name(){
 
 # List mods
 list(){
-	workshoplist=""
 	X=1
   C="${green}"
 	spaces="                        "
-  echo -e "\n     ID         Name                             URL                                                                Size"
+  echo "Installed mods:"
+  echo -e "     ID         Name                             URL                                                                Size"
   echo "------------------------------------------------------------------------------------------------------------------------"
 	for dir in $(ls -tr ${WORKSHOP_DIR})
 	do
 	  ID=${dir}
 	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | sed -r 's/\s+//g')
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
 		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
+	echo
 }
