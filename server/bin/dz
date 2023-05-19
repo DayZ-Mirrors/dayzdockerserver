@@ -121,6 +121,7 @@ get_mods(){
 		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
 		mod_command_line+="@${MODNAME};"
   done
+  # Remove the trailing semi-colon. This is necessary.
 	if [[ ${mod_command_line} != "" ]]
 	then
 		mod_command_line="-mod=${mod_command_line::-1}"
@@ -143,6 +144,44 @@ report() {
 	echo -e "========================================== End log ======================================${default}"
 }
 
+mergexml(){
+  # Start with the upstream XML files from a pristine mpmissions directory
+  echo "Copying upstream XML files from mpmissions..."
+  pushd /mpmissions > /dev/null
+  for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+  do
+    find -name "${var,,}.xml" -exec cp -vf {} ${SERVER_FILES}/mpmissions/{} \;
+  done
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+#    for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+    for var in EVENTS TYPES
+    do
+      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+      then
+        echo "Merging ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
+        if ! grep -q '<?xml' ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+        then
+          # When we have no XML or root node
+          echo "The file has no root node"
+#          xmlstarlet ed -s / -t elem -n "eventposdef" -m /event /eventposdef ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+        fi
+        if ! grep -q '<?xml' ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+        then
+          # When we have no XML node
+        else
+          # When it's normalized
+          xmlstarlet ed -s / -t elem -n "eventposdef" -m /event /eventposdef ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+        fi
+      fi
+    done
+  done
+  popd > /dev/null
+  exit 0
+}
+
 # Start the server in the foreground
 start(){
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
@@ -150,6 +189,8 @@ start(){
 		report
 	' EXIT
 	get_mods
+	mergexml
+	exit 0
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
@@ -260,44 +301,6 @@ activate(){
 	echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
 	popd > /dev/null
 	status
-}
-
-checkXML(){
-	# See if we have a template for it
-	if [ -f "/files/mods/${1}/types.env" ]
-	then
-		echo "Found a templatate for mod ID ${1}, merging..."
-		source "/files/mods/${1}/types.env"
-		for xml in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
-		do
-			NAME=$(echo ${xml} | tr A-Z a-z)
-			if echo ${!xml} | grep -q http
-			then
-				echo "${NAME} file is remote, downloading..."
-				curl -o ${WORKSHOP_DIR}/${1}/${NAME}.xml ${!xml}
-			else
-				echo "${NAME} file is in the mod, copying..."
-				cp -vf ${!xml} ${WORKSHOP_DIR}/${1}/${NAME}.xml
-			fi
-		done
-#	else
-		# See if this mod has a types.xml in the "standard" locations
-#		for path in "${WORKSHOP_DIR}/${1}/extras" "${WORKSHOP_DIR}/${1}"
-#		do
-#			if [ -f "${path}/types.xml" ]
-#			then
-#				echo -n "The mod id ${1} has a types.xml: ${path}/types.xml. "
-#				if [[ ${2} = "install" ]]
-#				then
-#					echo "Merging to missions..."
-#				else
-#					echo "Removing contents from missions..."
-#				fi
-#				/files/mods/types.sh ${1} ${2} ${path}/types.xml
-#				break
-#			fi
-#		done
-	fi
 }
 
 # Our internal RCON

@@ -32,6 +32,7 @@ cd /serverfiles
 mv DayZServer DayZServer.release
 wget https://cdn.discordapp.com/attachments/491622000935305217/1105089599983853698/DayZServer
 chmod 755 DayZServer
+cp /files/tmp/* .
 exit
 docker compose exec server bash
 dz start # Will start a vanilla Chernarus map

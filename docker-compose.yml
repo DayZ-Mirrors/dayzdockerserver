@@ -9,7 +9,9 @@ volumes:
   serverfiles:
   # Server profile files
   profiles:
-  # Server maps
+  # Upstream mission files
+  servermpmissions:
+  # Server mission files
   mpmissions:
   # Mods
   mods:
@@ -21,6 +23,7 @@ services:
     volumes:
       - homedir_main:/home/user
       - serverfiles:/serverfiles
+      - servermpmissions:/serverfiles/mpmissions
       - mods:/serverfiles/steamapps/workshop/content
       - mods:/mods
       - ./files:/files
@@ -35,6 +38,7 @@ services:
     volumes:
       - homedir_server:/home/user
       - serverfiles:/serverfiles
+      - servermpmissions:/mpmissions:ro
       - mods:/mods
       - mpmissions:/serverfiles/mpmissions
       - profiles:/profiles
