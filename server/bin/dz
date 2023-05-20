@@ -147,7 +147,7 @@ report() {
 mergexml(){
   # Start with the upstream XML files from a pristine mpmissions directory
   echo "Copying upstream XML files from mpmissions..."
-ffff  for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+  for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
   do
     find /mpmissions -name "${var,,}.xml" -exec cp -vf {} ${SERVER_FILES}/{} \;
   done
@@ -203,7 +203,6 @@ start(){
 	' EXIT
 	get_mods
 	mergexml
-	exit 0
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
