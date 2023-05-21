@@ -4,6 +4,7 @@ source /files/dz-common
 
 # Server container base directories
 SERVER_PROFILE="/profiles"
+MPMISSIONS="${SERVER_FILES}/mpmissions"
 
 mkdir -p ${SERVER_PROFILE}/battleye
 
@@ -15,11 +16,7 @@ SERVER_CFG_SRC="${FILES}/${SERVER_CFG_FILE}"
 # Command line parameters except mod, as that is handled separately.
 parameters="-config=${SERVER_CFG_DST} -port=${port} -freezecheck -BEpath=${SERVER_PROFILE}/battleye -profiles=${SERVER_PROFILE} -nologs"
 
-# Used to check if dayZ is installed
-SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
-
-# An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
-#WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
+# Where mods are installed.
 WORKSHOP_DIR="/mods/${release_client_appid}"
 mod_command_line=""
 
@@ -145,50 +142,54 @@ report() {
 }
 
 mergexml(){
-  # Start with the upstream XML files from a pristine mpmissions directory
-  echo "Copying upstream XML files from mpmissions..."
-  for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
-  do
-    find /mpmissions -name "${var,,}.xml" -exec cp -vf {} ${SERVER_FILES}/{} \;
-  done
+  # First copy the pristine files from upstream
+  echo "Copying pristine versions of cfgeconomycore.xml and cfgeventspawns.xml..."
+  find /mpmissions -name cfgeconomycore.xml -exec cp {} ${SERVER_FILES}{} \;
+#  find /mpmissions -name cfgeventspawns.xml -exec cp {} ${SERVER_FILES}{} \;
+
+  # Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding and make a single XML
+  # file for the ones that can go into it.
   for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
   do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-		MODNAME=$(get_mod_name ${ID})
-		# Going to have to maintain a matrix of file names -> root node -> child node permutations
-    for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+    # Going to have to maintain a matrix of file names -> root node -> child node permutations
+    C=""
+    for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
     do
       var=$(echo ${i} | cut -d: -f1)
       CHECK=$(echo ${i} | cut -d: -f2)
       CHILD=$(echo ${i} | cut -d: -f3)
       if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
       then
-        echo "Merging ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
-        cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml /tmp/x
-
-        if ! grep -q '<'${CHECK}'>' /tmp/x
-        then
-          echo "    - has no root node <${CHECK}>. fixing..."
-          xmlstarlet ed -s / -t elem -n "${CHECK}" -m /${CHILD} /${CHECK} /tmp/x > /tmp/y
-          mv /tmp/y /tmp/x
-        fi
-
-        if ! grep -q '<?xml' /tmp/x
-        then
-          echo "    - has no XML node, fixing..."
-          xmlstarlet fo /tmp/x > /tmp/y
-          mv /tmp/y /tmp/x
-        fi
-
-        xmllint --noout /tmp/x || {
-          echo "The final file failed lint tests, aborting..."
-          exit 1
-        }
-
-        # At this point it's normalized. Merge to the mpmissions file.
-        echo "  - merging to mpmissions..."
-#        xmlstarlet ed -s / -t elem -n "eventposdef" -m /event /eventposdef ${WORKSHOP_DIR}/${ID}/${var,,}.xml
-
+        FOUND=1
+        echo "Adding ${WORKSHOP_DIR}/${ID}/${var,,}.xml to cfgeconomycore..."
+        for dir in $(ls ${MPMISSIONS})
+         do
+           mkdir -pv ${MPMISSIONS}/${dir}/${ID}
+           cp -v ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${dir}/${ID}/${var,,}.xml
+        done
+        C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
+      fi
+    done
+    if [[ ${C} != "" ]]
+    then
+      # Merge into every mpmissions file
+      find ${MPMISSIONS} -name cfgeconomycore.xml -exec \
+        xmlstarlet ed -L -s / -t elem -n ce \
+          -a /ce -t attr -n folder -v "${ID}" \
+          ${C} \
+          -m /ce /economycore {} \;
+    fi
+    # These still have to be merged into the upstream file
+    for i in "CFGEVENTSPAWNS:eventposdef:event"
+    do
+      var=$(echo ${i} | cut -d: -f1)
+      CHECK=$(echo ${i} | cut -d: -f2)
+      CHILD=$(echo ${i} | cut -d: -f3)
+      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+      then
+        echo "Merging ${var,,}.xml..."
+#        xmlstarlet ed -L -s / -t name event
       fi
     done
   done
@@ -201,7 +202,7 @@ start(){
 		report
 	' EXIT
 	get_mods
-	mergexml
+#	mergexml
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
@@ -404,7 +405,7 @@ Working mod parameter: ${mod_command_line}"
 }
 
 backup(){
-	cd "${SERVER_FILES}"/mpmissions
+  cd ${MPMISSIONS}
 	DATE=$(date +'%Y-%m-%d-%H-%M-%S')
 	for i in $(ls)
 	do

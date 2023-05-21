@@ -25,6 +25,7 @@ Options and arguments:
   r|remove id - Remove all files and directories of a Workshop item by id
   s|status - Shows Steam login status, if base files are installed, installed mods
   u|update - Update the server files
+  x|xml id - Get and normalize XML files from a mod's template by id (Presumes template exists)
 ${default}"
   exit 1
 }
@@ -32,6 +33,7 @@ ${default}"
 # "Manage" XML files.
 xml(){
   /files/mods/xml.sh ${1}
+  mergexml ${1}
 }
 
 # Copy mod keys
@@ -55,6 +57,41 @@ symlink(){
 	then
 		rm -vf "${SERVER_FILES}/@${NAME}"
 	fi
+}
+
+mergexml(){
+  ID=${1}
+  # Going to have to maintain a matrix of file names -> root node -> child node permutations
+  for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+  do
+    var=$(echo ${i} | cut -d: -f1)
+    CHECK=$(echo ${i} | cut -d: -f2)
+    CHILD=$(echo ${i} | cut -d: -f3)
+    if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+    then
+      echo "Normalizing ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
+      cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml /tmp/x
+      if ! grep -q '<'${CHECK}'>' /tmp/x
+      then
+        echo "    - has no root node <${CHECK}>. fixing..."
+        xmlstarlet ed -s / -t elem -n "${CHECK}" -m /${CHILD} /${CHECK} /tmp/x > /tmp/y
+        mv /tmp/y /tmp/x
+      fi
+      if ! grep -q '<?xml' /tmp/x
+      then
+        echo "    - has no XML node, fixing..."
+        xmlstarlet fo /tmp/x > /tmp/y
+        mv /tmp/y /tmp/x
+      fi
+      xmllint --noout /tmp/x || {
+        echo "The final file failed lint tests, aborting..."
+        exit 1
+      }
+      # Keep the normalized version in the /mods directory, where they should have been from the start
+      cp /tmp/x ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+    fi
+  done
+  exit 0
 }
 
 # Add a mod
@@ -86,6 +123,7 @@ add(){
 	# Copy the key files
 	copy_keys 1 ${1}
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
+	mergexml ${ID}
 #	checkTypesXML ${1} install
 #	checkInstall ${1} install
 }

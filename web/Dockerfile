@@ -32,7 +32,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     python3-pip \
     wget \
     rename \
-    steamcmd
+    steamcmd \
+    xmlstarlet
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1

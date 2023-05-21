@@ -3,7 +3,7 @@ version: "3.3"
 volumes:
   # For steamcmd files and resource files used by the scripts
   homedir_main:
-  # For workshop.cfg, for now
+  # For Steam, for now
   homedir_server:
   # Where the server files will be installed
   serverfiles:
