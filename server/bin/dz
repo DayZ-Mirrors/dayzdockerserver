@@ -202,7 +202,7 @@ start(){
 		report
 	' EXIT
 	get_mods
-#	mergexml
+	mergexml
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
