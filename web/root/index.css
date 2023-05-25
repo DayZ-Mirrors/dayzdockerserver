@@ -1,0 +1,30 @@
+body {
+    padding-top: 50px;
+    background-color: black;
+}
+.green {
+    color: green;
+    font-weight: bolder;
+}
+.yellow {
+    color: yellow;
+    font-weight: bolder;
+}
+.darkgrey {
+    background-color: darkgray;
+    font-weight: bolder;
+    margin-bottom: 10px;
+}
+
+.modInfo {
+    background-color: aliceblue;
+}
+
+.simulink {
+    cursor: pointer;
+    text-underline: blue;
+}
+
+th, td {
+    padding-right: 10px
+}
