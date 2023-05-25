@@ -48,8 +48,8 @@ const template = `
                 </table>
             </div>
             <div class="col-9 modInfo" v-if="modInfo != ''">
-                <div class="text-center col-2">
-                    <h2>{{ modInfo.name }}</h2>                    
+                <div class="text-center col-12">
+                    <h2>{{ modInfo.name }} mod info:</h2>                    
                 </div>
                 <div class="row">
                     <div class="col-2">
@@ -63,7 +63,12 @@ const template = `
                             Custom XML files:
                             <ul>
                                 <li v-for="info in modInfo.customXML">
-                                    <a class="simulink" @click="getXMLInfo(modInfo.id,info.name)">{{ info.name }}</a>
+                                    <a
+                                        :class="'simulink xmlfile ' + info.name"
+                                        @click="getXMLInfo(modInfo.id,info.name)"
+                                    >
+                                        {{ info.name }}
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -88,6 +93,7 @@ export default {
             mods: [],
             modInfo: "",
             version: "Unknown",
+            XMLFile: "",
             XMLInfo: "",
         }
     },
@@ -105,10 +111,13 @@ export default {
                 })
         },
         getXMLInfo(modId, file) {
+            for (const e of document.getElementsByClassName("selected")) e.classList.remove("selected")
             fetch('/mod/' + modId + '/' + file)
                 .then(response => response.text())
                 .then(response => {
+                    this.XMLFile = file
                     this.XMLInfo = response
+                    for (const e of document.getElementsByClassName(file)) e.classList.add("selected")
                 })
                 .catch((error) => {
                     console.error(error)
