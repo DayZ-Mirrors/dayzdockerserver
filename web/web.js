@@ -137,6 +137,13 @@ app.get(('/search/:searchString'), (req, res) => {
     })
 })
 
+// Install a mod
+app.get(('/install/:modId'), (req, res) => {
+    const modId = req.params["modId"]
+    // Shell out to steamcmd, monitor the process, and display the output as it runs
+    res.send(modId + " was installed")
+})
+
 /*
  Get the status of things:
  If the base files are installed, the version of the server, a list of mods, etc.

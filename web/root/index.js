@@ -6,7 +6,7 @@ const template = `
 		    </div>
 		    <div class="col-3 form-control-lg">
                 <form @submit="handleSubmit">
-                    <input name="search" placeholder="Search mods...">
+                    <input name="search" placeholder="Search mods..." autofocus>
                 </form>
 		    </div>
             <div class="col-2">
@@ -34,7 +34,6 @@ const template = `
                     </tr>
                     <template
                         v-for="mod in mods"
-                        :key="index"
                     >
                     <tr>
                         <td>
@@ -60,6 +59,7 @@ const template = `
                         <th>Size</th>
                         <th>Last Updated</th>
                         <th>Subscriptions</th>
+                        <th></th>
                     </tr>
                     <tr v-for="result in searchResults">
                         <td>
@@ -67,13 +67,17 @@ const template = `
                                 target="_blank"
                                 :href="'https://steamcommunity.com/sharedfiles/filedetails/?id=' + result.publishedfileid"
                             >
-                                <img data-bs-toggle="tooltip" data-bs-placement="right" :title="result.short_description" width="160" height="90" :src="result.preview_url">
+                                <img data-bs-toggle="tooltip" data-bs-placement="left" :title="result.short_description" width="160" height="90" :src="result.preview_url">
                             </a>
                         </td>
                         <td>{{ result.title }}</td>                        
-                        <td>{{ result.file_size }}</td>                        
-                        <td>{{ new Date(result.time_updated * 1000) }}</td>
-                        <td>{{ result.lifetime_subscriptions }}</td>                   
+                        <td>{{ BKMG(result.file_size) }}</td>                        
+                        <td>{{ new Date(result.time_updated * 1000).toLocaleDateString("en-us") }}</td>
+                        <td>{{ result.lifetime_subscriptions }}</td>
+                        <td>
+                            <button v-if="mods.find(o => o.id == result.publishedfileid)" @click="removeMod(result.publishedfileid)" type="button" class="btn btn-danger">Remove</button>
+                            <button v-else @click="installMod(result.publishedfileid)" type="button" class="btn btn-success">Install</button>
+                        </td>                   
                     </tr>                
                 </table>
             </div>
@@ -180,6 +184,25 @@ export default {
                     console.error(error)
                     this.fetchError = error.message
                 })
+        },
+        installMod(modId) {
+            fetch('/install/' + modId)
+                .then(response => response.text())
+                .then(response => {
+                    console.log(response)
+                })
+                .catch((error) => {
+                    console.error(error)
+                    this.fetchError = error.message
+                })
+        },
+        BKMG(val) {
+            const units = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+            let l = 0, n = parseInt(val, 10) || 0
+            while(n >= 1024 && ++l){
+                n = n/1024
+            }
+            return(n.toFixed(n < 10 && l > 0 ? 1 : 0) + ' ' + units[l])
         }
     },
     mounted() {
