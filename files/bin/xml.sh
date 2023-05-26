@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# A generic script to manage merging mod XML files to mpmissions XML files
+# A generic script that retrieves XML files from mods, either upstream in remote endpoints, or
+# locally from the downloaded mod directory
 
 set -eE
 

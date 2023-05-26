@@ -1,8 +1,13 @@
 const template = `
 	<div class="container-fluid">
 		<div class="row jumbotron darkgrey">
-		    <div class="col-10">
+		    <div class="col-7">
 		        <h1>DayZ Docker Server</h1>
+		    </div>
+		    <div class="col-3 text-center">
+		        <form @submit="handleSubmit">
+		            <input size="30" name="search" placeholder="Search for workshop mods...">
+		        </form>		        
 		    </div>
             <div class="col-2">
                 <div>
@@ -46,6 +51,11 @@ const template = `
                     </tr>
                     </template>
                 </table>
+            </div>
+            <div class="col-9 modInfo" v-if="searchResults != ''">
+                <div v-for="result in this.searchResults.response.publishedfiledetails">
+                    {{ result.publishedfileid }} - {{ result.title }}
+                </div>
             </div>
             <div class="col-9 modInfo" v-if="modInfo != ''">
                 <div class="text-center col-12">
@@ -92,6 +102,7 @@ export default {
             installed: false,
             mods: [],
             modInfo: "",
+            searchResults: [],
             version: "Unknown",
             XMLFile: "",
             XMLInfo: "",
@@ -104,6 +115,7 @@ export default {
                 .then(response => {
                     this.modInfo = response
                     this.XMLInfo = ""
+                    this.searchResults = ""
                 })
                 .catch((error) => {
                     console.error(error)
@@ -118,6 +130,20 @@ export default {
                     this.XMLFile = file
                     this.XMLInfo = response
                     for (const e of document.getElementsByClassName(file)) e.classList.add("selected")
+                })
+                .catch((error) => {
+                    console.error(error)
+                    this.fetchError = error.message
+                })
+        },
+        handleSubmit(e) {
+            e.preventDefault()
+            fetch('/search/' + e.target.search.value)
+                .then(response => response.json())
+                .then(response => {
+                    this.modInfo = ""
+                    this.searchResults = response
+                    this.XMLInfo = ""
                 })
                 .catch((error) => {
                     console.error(error)

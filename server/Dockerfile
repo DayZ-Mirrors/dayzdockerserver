@@ -36,7 +36,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 # Add our scripts directory to PATH
-ENV PATH /files:${PATH}
+ENV PATH /files/bin:/server:${PATH}
 
 # Add py3rcon
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
@@ -54,4 +54,4 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-CMD ["server.sh"]
+CMD ["start.sh"]

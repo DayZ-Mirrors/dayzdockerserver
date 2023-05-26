@@ -1,6 +1,7 @@
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
+import https from 'https'
 
 const app = express()
 
@@ -45,6 +46,7 @@ const config = {
     installFile: serverFiles + "/DayZServer",
     modDir: modDir + "/" + client_appid,
     port: 8000,
+    steamAPIKey: process.env["STEAMAPIKEY"]
 }
 
 const getDirSize = (dirPath) => {
@@ -93,18 +95,6 @@ const getMods = () => {
 
 app.use(express.static('root'))
 
-app.get('/status', (req, res) => {
-    // FIXME! Group these into a Promise.All()
-    const installed = fs.existsSync(config.installFile)
-    const mods = getMods()
-    const ret = {
-        "installed": installed,
-        "version": "1.20.bogus",
-        "mods": mods
-    }
-    res.send(ret)
-})
-
 app.route('/mod/:modId')
     .get((req, res) => {
         // Get mod metadata by ID
@@ -133,6 +123,34 @@ app.route('/mod/:modId/:file')
         const contents = fs.readFileSync(config.modDir + d + modId + d + file)
         res.send(contents)
     })
+
+app.get(('/search/:searchString'), (req, res) => {
+    const searchString = req.params["searchString"]
+    const url = "https://api.steampowered.com/IPublishedFileService/QueryFiles/v1/?numperpage=1000&appid=221100&return_short_description=true&strip_description_bbcode=true&key=" + config.steamAPIKey + "&search_text=" + searchString
+    https.get(url, resp => {
+        let data = '';
+        resp.on('data', chunk => {
+            data += chunk;
+        });
+        resp.on('end', () => {
+            res.send(JSON.parse(data))
+        })
+    }).on('error', err => {
+        console.log(err.message)
+    })
+})
+
+app.get('/status', (req, res) => {
+    // FIXME! Group these into a Promise.All()
+    const installed = fs.existsSync(config.installFile)
+    const mods = getMods()
+    const ret = {
+        "installed": installed,
+        "version": "1.20.bogus",
+        "mods": mods
+    }
+    res.send(ret)
+})
 
 app.listen(config.port, () => {
     console.log(`Listening on port ${config.port}`)

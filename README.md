@@ -18,7 +18,6 @@ This volume can get quite large. It will require at least 2G of disk space for t
 Some map mods are as large as 10G. Make sure you have that much disk space in the location where docker stores its
 volumes, usually `/var/lib/docker/volumes`.
 
-```
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)

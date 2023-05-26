@@ -12,5 +12,8 @@
   "dependencies": {
     "express": "^4.18.2"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
 }

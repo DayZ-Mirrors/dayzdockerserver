@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /files/dz-common
+source dz-common
 
 # Server container base directories
 SERVER_PROFILE="/profiles"

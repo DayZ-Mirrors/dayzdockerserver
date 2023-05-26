@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /files/dz-common
+source dz-common
 
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
 WORKSHOP_DIR="/mods/${release_client_appid}"

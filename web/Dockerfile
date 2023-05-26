@@ -46,7 +46,7 @@ ENV LC_ALL en_US.UTF-8
 
 # Steamcmd needs its path added, as it ends up in /usr/games.
 # Our server script is bind mounted in /files in docker-compose.
-ENV PATH /usr/games:/files:${PATH}
+ENV PATH /usr/games:/files/bin:/web:${PATH}
 
 # Install nodejs
 RUN mkdir /usr/local/nvm
@@ -62,7 +62,7 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash 
     && nvm use default
 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
-ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH:/work/bin
+ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 # Add py3rcon
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
@@ -80,4 +80,4 @@ USER user
 WORKDIR /home/user
 
 # Run the web server
-CMD ["webserver.sh"]
+CMD ["start.sh"]

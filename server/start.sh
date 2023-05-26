@@ -12,4 +12,4 @@ tail -f /dev/null
 exit 0
 
 # Otherwise, start the server normally
-/files/dayzserver start
+dz start
