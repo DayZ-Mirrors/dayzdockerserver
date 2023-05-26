@@ -8,8 +8,8 @@ EOF
 
 # Uncomment the line below to run things manually in the container, then run:
 # docker compose exec main bash
-tail -f /dev/null
-exit 0
+#tail -f /dev/null
+#exit 0
 
 # Otherwise, start the server normally
 dz start
