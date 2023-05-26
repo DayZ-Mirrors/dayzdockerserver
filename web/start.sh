@@ -13,4 +13,4 @@ fi
 cd /web
 npm i
 export DEBUG='express:*'
-npx nodemon index.js
+npx nodemon web.js

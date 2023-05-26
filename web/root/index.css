@@ -1,5 +1,5 @@
 body {
-    padding-top: 50px;
+    padding-top: 10px;
     background-color: black;
 }
 .green {
@@ -18,6 +18,10 @@ body {
 
 .modInfo {
     background-color: aliceblue;
+}
+
+.result {
+    padding: 5px;
 }
 
 .selected {

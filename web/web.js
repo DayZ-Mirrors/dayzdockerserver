@@ -30,6 +30,9 @@ const client_appid = "221100"
 const modDir = "/mods"
 const serverFiles = "/serverfiles"
 
+/*
+ File path delimiter
+ */
 const d = '/'
 
 /*
@@ -95,35 +98,29 @@ const getMods = () => {
 
 app.use(express.static('root'))
 
-app.route('/mod/:modId')
-    .get((req, res) => {
-        // Get mod metadata by ID
-        const modId = req.params["modId"]
-        const modDir = config.modDir + d + modId
-        const customXML = getCustomXML(modId)
-        const ret = {
-            id: modId,
-            name: getModNameById(modId),
-            size: getDirSize(modDir),
-            customXML: customXML
-        }
-        res.send(ret)
-    })
-    .post((req, res) => {
-        // Add a mod by ID
-    })
-    .put((req, res) => {
-        // Update a mod by ID
-    })
+// Get mod metadata by ID
+app.get('/mod/:modId', (req, res) => {
+    const modId = req.params["modId"]
+    const modDir = config.modDir + d + modId
+    const customXML = getCustomXML(modId)
+    const ret = {
+        id: modId,
+        name: getModNameById(modId),
+        size: getDirSize(modDir),
+        customXML: customXML
+    }
+    res.send(ret)
+})
 
-app.route('/mod/:modId/:file')
-    .get((req, res) => {
-        const modId = req.params["modId"]
-        const file = req.params["file"]
-        const contents = fs.readFileSync(config.modDir + d + modId + d + file)
-        res.send(contents)
-    })
+// Get a mod's XML file
+app.get('/mod/:modId/:file', (req, res) => {
+    const modId = req.params["modId"]
+    const file = req.params["file"]
+    const contents = fs.readFileSync(config.modDir + d + modId + d + file)
+    res.send(contents)
+})
 
+// Search for a mod
 app.get(('/search/:searchString'), (req, res) => {
     const searchString = req.params["searchString"]
     const url = "https://api.steampowered.com/IPublishedFileService/QueryFiles/v1/?numperpage=1000&appid=221100&return_short_description=true&strip_description_bbcode=true&key=" + config.steamAPIKey + "&search_text=" + searchString
@@ -140,8 +137,12 @@ app.get(('/search/:searchString'), (req, res) => {
     })
 })
 
+/*
+ Get the status of things:
+ If the base files are installed, the version of the server, a list of mods, etc.
+ */
 app.get('/status', (req, res) => {
-    // FIXME! Group these into a Promise.All()
+    // FIXME Async/await this stuff...
     const installed = fs.existsSync(config.installFile)
     const mods = getMods()
     const ret = {

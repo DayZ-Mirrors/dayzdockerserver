@@ -4,10 +4,10 @@ const template = `
 		    <div class="col-7">
 		        <h1>DayZ Docker Server</h1>
 		    </div>
-		    <div class="col-3 text-center">
-		        <form @submit="handleSubmit">
-		            <input size="30" name="search" placeholder="Search for workshop mods...">
-		        </form>		        
+		    <div class="col-3 form-control-lg">
+                <form @submit="handleSubmit">
+                    <input name="search" placeholder="Search mods...">
+                </form>
 		    </div>
             <div class="col-2">
                 <div>
@@ -53,9 +53,29 @@ const template = `
                 </table>
             </div>
             <div class="col-9 modInfo" v-if="searchResults != ''">
-                <div v-for="result in this.searchResults.response.publishedfiledetails">
-                    {{ result.publishedfileid }} - {{ result.title }}
-                </div>
+                <table>
+                    <tr>
+                        <th>Steam Link</th>
+                        <th>Title</th>
+                        <th>Size</th>
+                        <th>Last Updated</th>
+                        <th>Subscriptions</th>
+                    </tr>
+                    <tr v-for="result in searchResults">
+                        <td>
+                            <a
+                                target="_blank"
+                                :href="'https://steamcommunity.com/sharedfiles/filedetails/?id=' + result.publishedfileid"
+                            >
+                                <img data-bs-toggle="tooltip" data-bs-placement="right" :title="result.short_description" width="160" height="90" :src="result.preview_url">
+                            </a>
+                        </td>
+                        <td>{{ result.title }}</td>                        
+                        <td>{{ result.file_size }}</td>                        
+                        <td>{{ new Date(result.time_updated * 1000) }}</td>
+                        <td>{{ result.lifetime_subscriptions }}</td>                   
+                    </tr>                
+                </table>
             </div>
             <div class="col-9 modInfo" v-if="modInfo != ''">
                 <div class="text-center col-12">
@@ -90,7 +110,6 @@ const template = `
             </div>
         </div>
 	</div>
-</template>
 `
 
 export default {
@@ -142,8 +161,20 @@ export default {
                 .then(response => response.json())
                 .then(response => {
                     this.modInfo = ""
-                    this.searchResults = response
                     this.XMLInfo = ""
+                    // const sortField = "time_updated"
+                    const sortField = "lifetime_subscriptions"
+                    response.response.publishedfiledetails.sort((a, b) =>
+                        a[sortField] < b[sortField] ? 1 : -1
+                    )
+                    this.searchResults = response.response.publishedfiledetails
+                })
+                .then(() => {
+                    // Enable all tooltips
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                    tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    })
                 })
                 .catch((error) => {
                     console.error(error)
@@ -169,3 +200,9 @@ export default {
             })
     }
 }
+
+/*
+
+{ "result": 1, "publishedfileid": "2489240546", "creator": "76561199068873691", "creator_appid": 221100, "consumer_appid": 221100, "consumer_shortcutid": 0, "filename": "", "file_size": "276817803", "preview_file_size": "27678", "preview_url": "https://steamuserimages-a.akamaihd.net/ugc/2011465736408144669/A7137390FBB9F4F94E0BFE5389932F6DE7AB7B87/", "url": "", "hcontent_file": "4050838808220661564", "hcontent_preview": "2011465736408144669", "title": "LastDayZ_Helis", "short_description": "The author of the helicopter mod https://sibnic.info on the site you can download the latest version of free helicopters, If you need help with installation, go to discord https://sibnic.info/discord", "time_created": 1621186063, "time_updated": 1684985831, "visibility": 0, "flags": 5632, "workshop_file": false, "workshop_accepted": false, "show_subscribe_all": false, "num_comments_public": 0, "banned": false, "ban_reason": "", "banner": "76561197960265728", "can_be_deleted": true, "app_name": "DayZ", "file_type": 0, "can_subscribe": true, "subscriptions": 7935, "favorited": 3, "followers": 0, "lifetime_subscriptions": 22759, "lifetime_favorited": 5, "lifetime_followers": 0, "lifetime_playtime": "0", "lifetime_playtime_sessions": "0", "views": 535, "num_children": 0, "num_reports": 0, "tags": [ { "tag": "Animation", "display_name": "Animation" }, { "tag": "Environment", "display_name": "Environment" }, { "tag": "Sound", "display_name": "Sound" }, { "tag": "Vehicle", "display_name": "Vehicle" }, { "tag": "Mod", "display_name": "Mod" } ], "language": 0, "maybe_inappropriate_sex": false, "maybe_inappropriate_violence": false, "revision_change_number": "14", "revision": 1, "ban_text_check_result": 5 }
+
+ */
