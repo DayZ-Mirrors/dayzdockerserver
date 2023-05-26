@@ -1,0 +1,350 @@
+#!/usr/bin/env bash
+
+source dz-common
+
+# An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
+WORKSHOP_DIR="/mods/${release_client_appid}"
+
+workshoplist=""
+
+# Functions
+
+# Usage
+usage(){
+  echo -e "
+${red}Bad option or arguments! ${yellow}${*}${default}
+
+Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
+
+Options and arguments:
+
+  a|add id - Add a DayZ Workshop item by id. Added items become active by default
+  i|install - Install the DayZ server files
+  g|login - Login to Steam.
+  m|modupdate - Update the mod files
+  r|remove id - Remove all files and directories of a Workshop item by id
+  s|status - Shows Steam login status, if base files are installed, installed mods
+  u|update - Update the server files
+  x|xml id - Get and normalize XML files from a mod's template by id (Presumes template exists)
+${default}"
+  exit 1
+}
+
+# "Manage" XML files.
+xml(){
+  /files/mods/xml.sh ${1}
+  mergexml ${1}
+}
+
+# Copy mod keys
+copy_keys(){
+	if [[ ${1} = 1 ]]
+	then
+		echo "Copying key files..."
+		find ${WORKSHOP_DIR}/${2} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
+	fi
+}
+
+# Manage the mod symlink
+symlink(){
+	W=${1}
+	ID=${2}
+	NAME=${3}
+	if [ ! -L "${SERVER_FILES}/@${NAME}" ] && [[ ${W} = 1 ]]
+	then
+		ln -sv ${WORKSHOP_DIR}/${ID} "${SERVER_FILES}/@${NAME}"
+	elif [[ "${W}" = "0" ]]
+	then
+		rm -vf "${SERVER_FILES}/@${NAME}"
+	fi
+}
+
+mergexml(){
+  ID=${1}
+  # Going to have to maintain a matrix of file names -> root node -> child node permutations
+  for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+  do
+    var=$(echo ${i} | cut -d: -f1)
+    CHECK=$(echo ${i} | cut -d: -f2)
+    CHILD=$(echo ${i} | cut -d: -f3)
+    if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+    then
+      echo "Normalizing ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
+      cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml /tmp/x
+      if ! grep -q '<'${CHECK}'>' /tmp/x
+      then
+        echo "    - has no root node <${CHECK}>. fixing..."
+        xmlstarlet ed -s / -t elem -n "${CHECK}" -m /${CHILD} /${CHECK} /tmp/x > /tmp/y
+        mv /tmp/y /tmp/x
+      fi
+      if ! grep -q '<?xml' /tmp/x
+      then
+        echo "    - has no XML node, fixing..."
+        xmlstarlet fo /tmp/x > /tmp/y
+        mv /tmp/y /tmp/x
+      fi
+      xmllint --noout /tmp/x || {
+        echo "The final file failed lint tests, aborting..."
+        exit 1
+      }
+      # Keep the normalized version in the /mods directory, where they should have been from the start
+      cp /tmp/x ${WORKSHOP_DIR}/${ID}/${var,,}.xml
+    fi
+  done
+  exit 0
+}
+
+# Add a mod
+add(){
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo -e "${yellow}Warning: The mod directory ${WORKSHOP_DIR}/${1} already exists!${default}"
+		MODNAME=$(get_mod_name ${1})
+	fi
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo -e "${yellow}Warning: The mod symlink ${SERVER_FILES}/@${MODNAME} already exists!${default}"
+	fi
+	echo "Adding mod id ${1}"
+	dologin
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +workshop_download_item "${release_client_appid}" "${1}" +quit
+	# Make sure the install succeeded
+	if [ ! -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo -e "${red}Mod installation failed: The mod directory ${WORKSHOP_DIR}/${1} was not created!${default}"
+		echo "Installation failed! See above (You probably need to use a real Steam login)"
+		return
+	fi
+	# Get the name of the newly added mod
+	MODNAME=$(get_mod_name ${1})
+	symlink 1 ${1} "${MODNAME}"
+	# Lower case all the files in mod directories.
+	find "${WORKSHOP_DIR}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	# Copy the key files
+	copy_keys 1 ${1}
+	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
+	mergexml ${ID}
+#	checkTypesXML ${1} install
+#	checkInstall ${1} install
+}
+
+# Remove a mod
+remove(){
+#	checkTypesXML ${1} uninstall
+#	checkInstall ${1} uninstall
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		MODNAME=$(get_mod_name ${1})
+		echo "Removing directory ${WORKSHOP_DIR}/${1}"
+		rm -rf "${WORKSHOP_DIR}/${1}"
+	fi
+	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
+	then
+		echo "Removing symlink ${SERVER_FILES}/@${MODNAME}"
+		rm -f "${SERVER_FILES}/@${MODNAME}"
+	fi
+	echo -e "Mod id ${1} - ${red}${MODNAME}${default} - removed"
+}
+
+# Handle the Steam login information.
+login(){
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		if prompt_yn "The steam login is already set. Reset it?"
+		then
+			rm -f "${STEAM_LOGIN}"
+		else
+			echo "Not reset."
+			exit 0
+		fi
+	fi
+	if [ ! -f "${STEAM_LOGIN}" ]
+	then
+		echo "Setting up Steam credentials"
+		echo -n "Steam Username (anonymous): "
+		read steamlogin
+		if [[ "${steamlogin}" = "" ]]
+		then
+			echo "Steam login set to 'anonymous'"
+			steamlogin="anonymous"
+		fi
+		echo "steamlogin=${steamlogin}" > "${STEAM_LOGIN}"
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +quit
+	fi
+}
+
+# "Perform" the Steam login. This just sources the file with the Steam login name.
+dologin(){
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		source "${STEAM_LOGIN}"
+	else
+		echo "No cached Steam credentials. Please configure this now: "
+		login
+	fi
+}
+
+# Perform the installation of the server files.
+install(){
+	if [ ! -f "${SERVER_INSTALL_FILE}" ] || [[ ${1} = "force" ]]
+	then
+		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
+		dologin
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
+	else
+		printf "[ ${lightblue}DayZ${default} ] The server is already installed.\n"
+	fi
+}
+
+# Update the server files.
+update(){
+	dologin
+	appmanifestfile=${SERVER_FILES}/steamapps/appmanifest_"${release_server_appid}".acf
+	printf "[ ... ] Checking for update:"
+	# gets currentbuild
+	currentbuild=$(grep buildid "${appmanifestfile}" | tr '[:blank:]"' ' ' | tr -s ' ' | cut -d \  -f3)
+	# Removes appinfo.vdf as a fix for not always getting up to date version info from SteamCMD
+	if [ -f "${HOME}/Steam/appcache/appinfo.vdf" ]
+	then
+		rm -f "${HOME}/Steam/appcache/appinfo.vdf"
+	fi
+	# check for new build
+	availablebuild=$(${STEAMCMD} +login "${steamlogin}" +app_info_update 1 +app_info_print "${release_server_appid}" +quit | \
+		sed -n '/branch/,$p' | grep -m 1 buildid | tr -cd '[:digit:]')
+	if [ -z "${availablebuild}" ]
+	then
+		printf "\r[ ${red}FAIL${default} ] Checking for update:\n"
+		printf "\r[ ${red}FAIL${default} ] Checking for update:: Not returning version info\n"
+		exit
+	else
+		printf "\r[ ${green}OK${default} ] Checking for update:"
+	fi
+	# compare builds
+	if [ "${currentbuild}" != "${availablebuild}" ] || [[ ${1} = "force" ]]
+	then
+		printf "\r[ ${green}OK${default} ] Checking for update:: Update available\n"
+		printf "Update available:\n"
+		printf "\tCurrent build: ${red}${currentbuild}${default}\n"
+		printf "\tAvailable build: ${green}${availablebuild}${default}\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n"
+		printf "\nApplying update"
+		# run update
+		dologin
+		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
+		modupdate
+	else
+		printf "\r[ ${green}OK${default} ] Checking for update:: No update available\n"
+		printf "\nNo update available:\n"
+		printf "\tCurrent version: ${green}${currentbuild}${default}\n"
+		printf "\tAvailable version: ${green}${availablebuild}${default}\n"
+		printf "\thttps://steamdb.info/app/${release_server_appid}/\n\n"
+	fi
+}
+
+get_mods(){
+	workshoplist=""
+	mod_command_line=""
+  for link in $(ls -tdr ${SERVER_FILES}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | cut -d/ -f7)
+		MODNAME=$(get_mod_name ${ID})
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		mod_command_line+="@${MODNAME};"
+  done
+	if [[ ${mod_command_line} != "" ]]
+	then
+		mod_command_line='-mod='${mod_command_line::-1}
+	fi
+}
+
+
+# Update mods
+modupdate(){
+	echo "Updating mods..."
+	dologin
+	get_mods
+	${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" ${workshoplist} +quit
+	# Updated files come in with mixed cases. Fix that.
+	echo -ne "\nFixing file names..."
+	find "${WORKSHOP_DIR}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+	echo "done"
+	echo
+}
+
+# Display the status of everything
+status(){
+	INSTALLED="${NO}"
+	LOGGED_IN="${NO}"
+	RUNNING="${NO}"
+
+	# DayZ Server files installation
+	if [ -f "${SERVER_INSTALL_FILE}" ]
+	then
+		INSTALLED="${YES}"
+	fi
+	# Logged into Steam
+	if [ -f "${STEAM_LOGIN}" ]
+	then
+		LOGGED_IN="${YES}"
+		if grep -q anonymous "${STEAM_LOGIN}"
+		then
+			ANONYMOUS="${yellow}(as anonymous)${default}"
+		else
+			ANONYMOUS="${green}(not anonymous)${default}"
+		fi
+	fi
+	echo -ne "
+Logged in to Steam: ${LOGGED_IN} ${ANONYMOUS}
+Server files installed: ${INSTALLED}"
+	if [[ "${INSTALLED}" = "${NO}" ]]
+	then
+		echo
+		echo
+		exit 0
+	fi
+	# Mods
+	echo -ne "
+Mods: "
+	MODS=$(list)
+	if [[ ${MODS} == "" ]]
+	then
+		echo -n "none"
+	fi
+	echo -e "${MODS}"
+}
+
+# Capture the first argument and shift it off so we can pass $@ to every function
+C=${1}
+shift || {
+	usage
+}
+
+case "${C}" in
+	a|add)
+		add "${@}"
+		;;
+	i|install)
+		install "${@}"
+		;;
+	g|login)
+		login "${@}"
+		;;
+	m|modupdate)
+		modupdate "${@}"
+		;;
+	r|remove)
+		remove "${@}"
+		;;
+	s|status)
+		status "${@}"
+		;;
+	u|update)
+		update "${@}"
+		;;
+	x|xml)
+		xml "${@}"
+		;;
+	*)
+		usage "$*"
+	;;
+esac

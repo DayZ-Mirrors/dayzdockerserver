@@ -1,19 +1,53 @@
 version: "3.3"
 
-# This is where the server files, profile, mods, and logs will reside.
-# The server script does its best to clean up the copious logs that the
-# server creates, but with mods, this volume will grow rather large.
-# It's best to keep an eye on its size.
 volumes:
-  homedir:
+  # For steamcmd files and resource files used by the scripts
+  homedir_main:
+  # For Steam, for now
+  homedir_server:
+  # Where the server files will be installed
+  serverfiles:
+  # Server profile files
+  profiles:
+  # Upstream mission files
+  servermpmissions:
+  # Server mission files
+  mpmissions:
+  # Mods
+  mods:
 
 services:
 
-  main:
-    build: .
+  web:
+    build: web
     volumes:
-      - homedir:/home/user
+      - homedir_main:/home/user
+      - serverfiles:/serverfiles
+      - servermpmissions:/serverfiles/mpmissions
+      - mods:/serverfiles/steamapps/workshop/content
+      - mods:/mods
       - ./files:/files
+      - ./web/bin/dz:/usr/local/bin/dz
+      - ./web:/web
+    ports:
+      - "8000:8000/tcp"
+    restart: no
+    environment:
+      # The use of the Steam API requires a key. Get yours here: https://steamcommunity.com/dev/apikey
+      - STEAMAPIKEY=YOUR_STEAM_API_KEY_HERE
+
+  server:
+    build: server
+    volumes:
+      - homedir_server:/home/user
+      - serverfiles:/serverfiles
+      - servermpmissions:/mpmissions:ro
+      - mods:/mods
+      - mpmissions:/serverfiles/mpmissions
+      - profiles:/profiles
+      - ./files:/files
+      - ./server:/server
+      - ./server/bin/dz:/usr/local/bin/dz
     # To have the server show up in the LAN tab of the DayZ launcher,
     # it must run under host mode.
     network_mode: host
@@ -21,20 +55,19 @@ services:
     # the server to show up on the LAN, comment out the network_mode above
     # and uncomment the port mappings below.
 #    ports:
+#       # Game port
 #      - 2302:2302/udp
-#      - 2303:2303/udp
-#      - 2304:2304/udp
+#       # RCON port
+#      - 2302:2302/udp
+#       # Steam port
 #      - 27016:27016/udp
     # Always restart, unless stopped
     restart: unless-stopped
     # Allows attaching a debugger from the host
-#    cap_add:
-#      - SYS_PTRACE
+    cap_add:
+      - SYS_PTRACE
     # Allows core files to be created within the container. These are VERY LARGE! Enable only for debugging!
-#    ulimits:
-#      core:
-#        soft: -1
-#        hard: -1
-    # Do nothing instead of starting the server, which is the default.
-    # Helpful for development or debugging.
-#    command: tail -f /dev/null
+    ulimits:
+      core:
+        soft: -1
+        hard: -1

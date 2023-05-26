@@ -17,6 +17,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     ca-certificates \
     gdb \
     git \
+    gwenhywfar-tools \
     jq \
     lib32gcc-s1 \
     lib32stdc++6 \
@@ -31,7 +32,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     python3-pip \
     wget \
     rename \
-    steamcmd
+    steamcmd \
+    xmlstarlet
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
@@ -42,18 +44,34 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# Add py3rcon
-RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
-
 # Steamcmd needs its path added, as it ends up in /usr/games.
 # Our server script is bind mounted in /files in docker-compose.
-ENV PATH /usr/games:/files:${PATH}
+ENV PATH /usr/games:/files/bin:/web:${PATH}
+
+# Install nodejs
+RUN mkdir /usr/local/nvm
+ENV NVM_DIR /usr/local/nvm
+ENV NODE_VERSION 16.17.0
+RUN echo $NODE_VERSION
+
+# Install nvm with node and npm
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
+    && . $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+
+ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
+ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+# Add py3rcon
+RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 
 # Setup a non-privileged user
 RUN groupadd user && \
     useradd -l -g user user && \
-    mkdir /home/user && \
-    chown user:user /home/user
+    mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /web && \
+    chown -R user:user /home/user /serverfiles /web
 
 # Use our non-privileged user
 USER user
@@ -61,5 +79,5 @@ USER user
 # The dayzserver script expects a home directory to itself.
 WORKDIR /home/user
 
-# Run the server.
-CMD ["dayzserver", "start"]
+# Run the web server
+CMD ["start.sh"]

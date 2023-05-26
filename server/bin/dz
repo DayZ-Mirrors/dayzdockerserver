@@ -1,0 +1,480 @@
+#!/usr/bin/env bash
+
+source dz-common
+
+# Server container base directories
+SERVER_PROFILE="/profiles"
+MPMISSIONS="${SERVER_FILES}/mpmissions"
+
+mkdir -p ${SERVER_PROFILE}/battleye
+
+# Server configuration file
+SERVER_CFG_FILE="serverDZ.cfg"
+SERVER_CFG_DST="${SERVER_PROFILE}/${SERVER_CFG_FILE}"
+SERVER_CFG_SRC="${FILES}/${SERVER_CFG_FILE}"
+
+# Command line parameters except mod, as that is handled separately.
+parameters="-config=${SERVER_CFG_DST} -port=${port} -freezecheck -BEpath=${SERVER_PROFILE}/battleye -profiles=${SERVER_PROFILE} -nologs"
+
+# Where mods are installed.
+WORKSHOP_DIR="/mods/${release_client_appid}"
+mod_command_line=""
+
+# Backups
+BACKUP_DIR="${HOME}/backup"
+if [ ! -d "${BACKUP_DIR}" ]
+then
+	mkdir -p "${BACKUP_DIR}"
+fi
+
+# Functions
+
+# Usage
+usage(){
+  echo -e "
+${red}Bad option or arguments! ${yellow}${*}${default}
+
+Usage: ${green}$(basename $0)${yellow} option [ arg1 [ arg2 ] ]
+
+Options and arguments:
+
+  a|activate id - Activate an installed DayZ Workshop items by id or index
+  b|backup - Backup the mission storage files in all mission directories
+  c|config - Update the internal serverDZ.cfg file from files/serverDZ.cfg on the host. Presents a unified diff if the internal file doesn't match the host file
+  d|deactivate id - Deactivate an installed DayZ Workshop items by id or index - Keeps the mod files but excludes it from the mod parameter
+  f|force - Forcibly kill the server. Use only as a last resort if the server won't shut down
+  l|list - List Workshop items and their details
+  n|rcon - Connect to the server using a python RCON client
+  r|restart - Restart the server without restarting the container
+  s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
+  stop - Stop the server
+${default}"
+  exit 1
+}
+
+loadconfig(){
+	if [ ! -f "${SERVER_INSTALL_FILE}" ]
+	then
+		echo
+		echo -e "The DayZ server files are not installed. You need to do this first in the web UI."
+		echo
+		exit 1
+	fi
+	# Handle the initial server configuration file
+	if [ ! -f ${SERVER_CFG_DST} ]
+	then
+		echo "Creating initial server configuration file"
+		cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+	fi
+	# battleye config and rconpassword setup
+	# The server creates a new file from this file, which it then uses.
+	# Let's make sure to delete it first
+	BE_SERVER_FILE="${SERVER_PROFILE}/battleye/beserver_x64.cfg"
+	ALT_BE_SERVER_FILE=$(find ${SERVER_PROFILE}/battleye -name "beserver_x64_active*")
+	if [ ! -f "${BE_SERVER_FILE}" ] && [ ! -f "${ALT_BE_SERVER_FILE}" ]
+	then
+		passwd=$(openssl rand -base64 8 | tr -dc 'A-Za-z0-9')
+		if [ "${passwd}" == "" ]
+		then
+			passwd=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c10)
+		fi
+		if [ "${passwd}" == "" ]
+		then
+			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
+			exit 1
+		else
+			cat > "${BE_SERVER_FILE}" <<EOF
+RConPassword ${passwd}
+RestrictRCon 0
+RConPort ${rcon_port}
+EOF
+		fi
+		printf "[ ${cyan}INFO${default} ] New RCON password: ${yellow}${passwd}${default}\n"
+	else
+		if [ -f "${BE_SERVER_FILE}" ]
+		then
+			FILE="${BE_SERVER_FILE}"
+		elif [ -f "${ALT_BE_SERVER_FILE}" ]
+		then
+			FILE="${ALT_BE_SERVER_FILE}"
+		fi
+		passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
+#		printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
+	fi
+	cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
+	jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
+		'.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
+		/usr/local/py3rcon/configexample.json \
+		> ~/py3rcon.config.json
+}
+
+get_mods(){
+	workshoplist=""
+	mod_command_line=""
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		mod_command_line+="@${MODNAME};"
+  done
+  # Remove the trailing semi-colon. This is necessary.
+	if [[ ${mod_command_line} != "" ]]
+	then
+		mod_command_line="-mod=${mod_command_line::-1}"
+	fi
+}
+
+# Make sure to clean up and report on exit, as these files remain in the container's volume
+report() {
+	rm -f /tmp/mod_command_line /tmp/parameters
+	echo
+	echo -e "${yellow}========================================== error.log =========================================="
+	find "${SERVER_PROFILE}" -name error.log -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== script*.log ========================================"
+	find "${SERVER_PROFILE}" -name "script*.log" -exec head {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== *.RPT =============================================="
+	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
+	echo
+	echo -e "========================================== End log ======================================${default}"
+}
+
+mergexml(){
+  # First copy the pristine files from upstream
+  echo "Copying pristine versions of cfgeconomycore.xml and cfgeventspawns.xml..."
+  find /mpmissions -name cfgeconomycore.xml -exec cp {} ${SERVER_FILES}{} \;
+#  find /mpmissions -name cfgeventspawns.xml -exec cp {} ${SERVER_FILES}{} \;
+
+  # Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding and make a single XML
+  # file for the ones that can go into it.
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+    # Going to have to maintain a matrix of file names -> root node -> child node permutations
+    C=""
+    for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+    do
+      var=$(echo ${i} | cut -d: -f1)
+      CHECK=$(echo ${i} | cut -d: -f2)
+      CHILD=$(echo ${i} | cut -d: -f3)
+      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+      then
+        FOUND=1
+        echo "Adding ${WORKSHOP_DIR}/${ID}/${var,,}.xml to cfgeconomycore..."
+        for dir in $(ls ${MPMISSIONS})
+         do
+           mkdir -pv ${MPMISSIONS}/${dir}/${ID}
+           cp -v ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${dir}/${ID}/${var,,}.xml
+        done
+        C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
+      fi
+    done
+    if [[ ${C} != "" ]]
+    then
+      # Merge into every mpmissions file
+      find ${MPMISSIONS} -name cfgeconomycore.xml -exec \
+        xmlstarlet ed -L -s / -t elem -n ce \
+          -a /ce -t attr -n folder -v "${ID}" \
+          ${C} \
+          -m /ce /economycore {} \;
+    fi
+    # These still have to be merged into the upstream file
+    for i in "CFGEVENTSPAWNS:eventposdef:event"
+    do
+      var=$(echo ${i} | cut -d: -f1)
+      CHECK=$(echo ${i} | cut -d: -f2)
+      CHILD=$(echo ${i} | cut -d: -f3)
+      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+      then
+        echo "Merging ${var,,}.xml..."
+#        xmlstarlet ed -L -s / -t name event
+      fi
+    done
+  done
+}
+
+# Start the server in the foreground
+start(){
+	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
+	trap '
+		report
+	' EXIT
+	get_mods
+	mergexml
+	cd ${SERVER_FILES}
+	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
+	# safely shut the container down without killing the server within.
+	printf "[ ${green}DayZ${default} ] Server starting...\n"
+	# Save the mod command line and parameters that were used to start the server, so status reflects the running server's
+	# actual status with those
+	echo ${mod_command_line} > /tmp/mod_command_line
+	echo ${parameters} > /tmp/parameters
+	./DayZServer "${mod_command_line}" ${parameters}
+	EXIT_CODE=$?
+	if [ -f ${SERVER_FILES}/restart ]
+	then
+		rm -f ${SERVER_FILES}/restart
+		EXIT_CODE=42
+	fi
+	printf "\n[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
+	exit ${EXIT_CODE}
+}
+
+# Restarts the server by forcing an exit code other than 0, causing docker to restart the container.
+restart(){
+	touch "${SERVER_FILES}/restart"
+	echo "Restarting DayZ server..."
+	kill -TERM $(pidof DayZServer)
+}
+
+# Stops the server cleanly and exits 0, which will stop the container.
+stop(){
+	echo "Stopping DayZ server..."
+	kill -TERM $(pidof DayZServer)
+}
+
+# Forcibly kill the server, should it be necessary.
+force(){
+	echo "Forcibly stopping DayZ server..."
+	kill -KILL $(pidof DayZServer)
+}
+
+# Handle any changes in the server config file by allowing them to be merged after viewing a diff.
+config(){
+	if ! diff -q "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}"
+	then
+		echo "========================================================================="
+		diff -Nau --color "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}" | more
+		echo "========================================================================="
+		if prompt_yn "The new server configuration file differs from what's installed. Use it?"
+		then
+			echo "Updating the server configuration file"
+			cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+		else
+			echo "NOT updating the server configuration file"
+		fi
+	else
+		echo "No differences found between ${SERVER_CFG_SRC} and ${SERVER_CFG_DST}"
+	fi
+}
+
+get_mod_id_by_index(){
+	X=1
+	# Loop over mods
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		if [[ ${X} = ${1} ]]
+		then
+			echo -n ${ID}
+			return
+		fi
+		X=$((X+1))
+	done
+}
+
+# Get mod name by ID or index
+get_mod_name(){
+	# Check for an ID
+	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
+	then
+		echo "Mod ID ${1} doesn't exist" >&2
+		exit 1
+	fi
+	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
+	echo -n ${NAME}
+}
+
+# Activate / Deactivate a mod
+activate(){
+	W=${1}
+	shift
+	WW=""
+	COLOR="${green}"
+	if [[ ${W} = 0 ]]
+	then
+		WW="de"
+		UU="un"
+		COLOR="${red}"
+	fi
+	ID=$(get_mod_id_by_index2 ${1})
+	MODNAME=$(get_mod_name ${ID})
+	# Toggle state or report nothing burger
+	pushd "${SERVER_PROFILE}" > /dev/null
+	if [ -L "${SERVER_PROFILE}/@${MODNAME}" ]
+	then
+	  rm -vf "${SERVER_PROFILE}/@${MODNAME}"
+	else
+	  ln -s "${WORKSHOP_DIR}/${ID}" "${SERVER_PROFILE}/@${MODNAME}"
+#		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
+	fi
+	echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
+	popd > /dev/null
+	status
+}
+
+# Our internal RCON
+rcon(){
+	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
+}
+
+# List mods
+activelist(){
+	X=1
+  C="${green}"
+	spaces="                        "
+	have=no
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
+	  if [[ ${have} = "no" ]]
+	  then
+	    have="yes"
+      echo -e "\n     ID         Name                             URL                                                                Size"
+      echo "------------------------------------------------------------------------------------------------------------------------"
+    fi
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+	  MODNAME=$(get_mod_name ${ID})
+		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
+		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
+		X=$((X+1))
+	done
+	echo
+}
+
+# Display the status of everything
+status(){
+  loadconfig
+	INSTALLED="${NO}"
+	RUNNING="${NO}"
+
+	# DayZ Server files installation
+	if [ -f "${SERVER_INSTALL_FILE}" ]
+	then
+		INSTALLED="${YES}"
+	fi
+	# Running or not
+	if pidof DayZServer > /dev/null
+	then
+		# Uptime
+		D=$(date +%s)
+		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
+		DAYS=$(( (${D} - ${F}) / 86400 ))
+#		UPTIME=$(date --date="$(( ${D} - ${F} ))" +"${DAYS} days %H:%M:%S")
+		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +"%H hours %M minutes %S seconds")
+
+		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
+		# Current parameters
+		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
+	fi
+
+	MAP="none"
+	# Map name
+	if [[ -f ${SERVER_CFG_DST} ]]
+	then
+		MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
+	fi
+	# Number of mods plus the list denoting on or off
+	echo -ne "
+Server files installed: ${INSTALLED}"
+	if [[ "${INSTALLED}" = "${NO}" ]]
+	then
+		echo
+		echo
+		exit 0
+	fi
+	get_mods
+	echo -ne "
+Active mods: "
+  activelist
+	if [[ ${MODS} == "" ]]
+	then
+		echo -n "none"
+	fi
+	echo -e "${MODS}
+Server running: ${RUNNING}
+Working parameters: ${parameters}
+Working mod parameter: ${mod_command_line}"
+	if [[ "${INSTALLED}" = "${YES}" ]]
+	then
+		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
+		echo "Map: ${MAP}"
+	fi
+	echo
+}
+
+backup(){
+  cd ${MPMISSIONS}
+	DATE=$(date +'%Y-%m-%d-%H-%M-%S')
+	for i in $(ls)
+	do
+		B="${BACKUP_DIR}/${DATE}/"
+		echo "Backing up ${i} to ${B}..."
+		mkdir -p ${B}
+		cp -a "${i}" "${B}"
+	done
+}
+
+# Capture the first argument and shift it off so we can pass $@ to every function
+C=${1}
+shift || {
+	usage
+}
+
+case "${C}" in
+	a|activate)
+		activate 1 "${@}"
+		;;
+	add)
+		add "${@}"
+		;;
+	b|backup)
+		backup "${@}"
+		;;
+	c|config)
+		config "${@}"
+		;;
+	d|deactivate)
+		activate 0 "${@}"
+		;;
+	f|force)
+		force
+		;;
+	i|install)
+		install "${@}"
+		;;
+	l|list)
+		list "${@}"
+		;;
+	login)
+		login "${@}"
+		;;
+	m|modupdate)
+		modupdate "${@}"
+		;;
+	n|rcon)
+		rcon "${@}"
+		;;
+	r|remove)
+		remove "${@}"
+		;;
+	r|restart)
+		restart "${@}"
+		;;
+	start)
+		start "${@}"
+		;;
+	s|status)
+		status "${@}"
+		;;
+	stop)
+		stop "${@}"
+		;;
+	u|update)
+		update "${@}"
+		;;
+	*)
+		usage "$*"
+	;;
+esac
