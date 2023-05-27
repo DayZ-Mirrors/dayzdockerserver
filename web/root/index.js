@@ -1,31 +1,48 @@
 const template = `
-	<div class="container-fluid">
-		<div class="row jumbotron darkgrey">
-		    <div class="col-7">
-		        <h1>DayZ Docker Server</h1>
+	<div class="container-fluid bg-light">
+		<div class="d-flex justify-content-between">
+            <div class="text-center">
+                <h1>DayZ Docker Server</h1>
+            </div>
+		    <div class="d-flex">
+                <div class="text-center">
+                    <button
+                        @click="install"
+                        :class="'btn ' + (installed ? 'btn-danger' : 'btn-success')"
+                    >
+                        Install Server Files
+                    </button>
+                    <button @click="updatebase" class="btn btn-warning">Update Base</button>
+                    <button @click="updatemods" class="btn btn-warning">Update Mods</button>
+                </div>
+                <div class="text-center">
+                    <button @click="server" class="btn btn-primary">Server</button>
+                </div>
 		    </div>
-		    <div class="col-3 form-control-lg">
+		    <div class="form-control-lg">
                 <form @submit="handleSubmit">
                     <input name="search" placeholder="Search mods..." autofocus>
                 </form>
 		    </div>
-            <div class="col-2">
-                <div>
-                    Server files installed: {{ installed }}
+            <div>
+                <div class="justify-right">
+                    Server files installed:
+                    <span class="bi bi-check h2 text-success" v-if="installed"></span>
+                    <span class="bi bi-x h2 danger text-danger" v-else></span>
                 </div>
-                <div>
-                    Version: {{ version }}
+                <div v-if="version != ''">
+                    Version: <span class="text-success font-weight-bold">{{ version }}</span>
                 </div>
     		</div>
 		</div>
 		<div
 			v-if="fetchError != ''"
-			class="row jumbotron text-center alert alert-danger"
+			class="text-center alert alert-danger"
 		>
 			{{ fetchError }}
 		</div>
-        <div class="row jumbotron darkgrey">
-            <div class="col-3">
+		<div class="d-flex">
+            <div>
                 <h2 class="text-center">Mods</h2>
                 <table>
                     <tr>
@@ -39,7 +56,7 @@ const template = `
                         <td>
                             <a
                                 target="_blank"
-                                :href="'https://steamcommunity.com/sharedfiles/filedetails/?id=' + mod.id"
+                                :href="steamURL + mod.id"
                             >
                                 {{ mod.id }}
                             </a>
@@ -51,7 +68,40 @@ const template = `
                     </template>
                 </table>
             </div>
-            <div class="col-9 modInfo" v-if="searchResults != ''">
+            <div v-if="modInfo != ''">
+                <div>
+                    <h3>{{ modInfo.name }}</h3>
+                    <div class="d-flex">
+                        <div>
+                            <div>
+                                ID: {{ modInfo.id }}
+                            </div>
+                            <div>
+                                Size: {{ modInfo.size.toLocaleString("en-US") }}
+                            </div>
+                            <div v-if="modInfo.customXML.length > 0">
+                                Custom XML files:
+                                <ul>
+                                    <li v-for="info in modInfo.customXML">
+                                        <a
+                                            :class="'simulink xmlfile ' + info.name"
+                                            @click="getXMLInfo(modInfo.id,info.name)"
+                                        >
+                                            {{ info.name }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div v-if="XMLInfo != ''">
+                                <textarea cols="120" rows="15" v-if="this.XMLInfo != ''">{{ this.XMLInfo }}</textarea>    
+                            </div>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+            <div v-if="searchResults != ''">
                 <table>
                     <tr>
                         <th>Steam Link</th>
@@ -65,9 +115,9 @@ const template = `
                         <td>
                             <a
                                 target="_blank"
-                                :href="'https://steamcommunity.com/sharedfiles/filedetails/?id=' + result.publishedfileid"
+                                :href="steamURL + result.publishedfileid"
                             >
-                                <img data-bs-toggle="tooltip" data-bs-placement="left" :title="result.short_description" width="160" height="90" :src="result.preview_url">
+                                <img :alt="result.short_description" data-bs-toggle="tooltip" data-bs-placement="left" :title="result.short_description" width="160" height="90" :src="result.preview_url">
                             </a>
                         </td>
                         <td>{{ result.title }}</td>                        
@@ -80,37 +130,6 @@ const template = `
                         </td>                   
                     </tr>                
                 </table>
-            </div>
-            <div class="col-9 modInfo" v-if="modInfo != ''">
-                <div class="text-center col-12">
-                    <h2>{{ modInfo.name }} mod info:</h2>                    
-                </div>
-                <div class="row">
-                    <div class="col-2">
-                        <div>
-                            ID: {{ modInfo.id }}
-                        </div>
-                        <div>
-                            Size: {{ modInfo.size.toLocaleString("en-US") }}
-                        </div>
-                        <div v-if="modInfo.customXML.length > 0">
-                            Custom XML files:
-                            <ul>
-                                <li v-for="info in modInfo.customXML">
-                                    <a
-                                        :class="'simulink xmlfile ' + info.name"
-                                        @click="getXMLInfo(modInfo.id,info.name)"
-                                    >
-                                        {{ info.name }}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-10">
-                        <textarea cols="120" rows="15" v-if="this.XMLInfo != ''">{{ this.XMLInfo }}</textarea>    
-                    </div>
-                </div>
             </div>
         </div>
 	</div>
@@ -126,6 +145,7 @@ export default {
             mods: [],
             modInfo: "",
             searchResults: [],
+            steamURL: 'https://steamcommunity.com/sharedfiles/filedetails/?id=',
             version: "Unknown",
             XMLFile: "",
             XMLInfo: "",
@@ -187,6 +207,17 @@ export default {
         },
         installMod(modId) {
             fetch('/install/' + modId)
+                .then(response => response.text())
+                .then(response => {
+                    console.log(response)
+                })
+                .catch((error) => {
+                    console.error(error)
+                    this.fetchError = error.message
+                })
+        },
+        removeMod(modId) {
+            fetch('/remove/' + modId)
                 .then(response => response.text())
                 .then(response => {
                     console.log(response)

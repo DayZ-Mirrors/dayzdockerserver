@@ -1,3 +1,11 @@
+/*
+ A DayZ Linux server provisioning system.
+
+ This is the web UI for provisioning a DayZ server running under Linux.
+ It manages the main container that installs and maintains the base DayZ server files
+ along with all mod base files. The goal being to keep all of these centralized and consistent,
+ but to also make them available for the creation of server containers.
+ */
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
@@ -45,11 +53,61 @@ const configFiles = [
     'types.xml',
 ]
 
+// From https://helpthedeadreturn.wordpress.com/2019/07/17/dayz-sa-mission-file
+const allConfigFiles = {
+    "db": [ // global server config and core loot economy files
+        "events.xml", // dynamic events
+        "globals.xml", // global settings
+        "messages.xml", // server broadcast messages and shutdown
+        "types.xml" // loot table
+    ],
+    "env": [ // coordinates, static and dynamic spawns for each entity
+        "cattle_territories.xml",
+        "domestic_animals_territories.xml",
+        "hare_territories.xml",
+        "hen_territories.xml",
+        "pig_territories.xml",
+        "red_deer_territories.xml",
+        "roe_deer_territories.xml",
+        "sheep_goat_territories.xml",
+        "wild_boar_territories.xml",
+        "wolf_territories.xml",
+        "zombie_territories.xml"
+    ],
+    "root": [
+        "cfgeconomycore.xml", // loot economy core settings and extensions
+        "cfgeffectarea.json", // static contaminated area coordinates and other properties
+        "cfgenvironment.xml", // includes env\* files and parameters
+        "cfgeventgroups.xml", // definitions of groups of objects that spawn together in a dynamic event
+        "cfgeventspawns.xml", // coordinates where events may occur
+        "cfggameplay.json", // gameplay configuration settings.
+        "cfgIgnoreList.xml", //  list of items that won’t be loaded from the storage
+        "cfglimitsdefinition.xml", // list of valid categories, tags, usageflags and valueflags
+        "cfglimitsdefinitionuser.xml", // shortcut groups of usageflags and valueflags
+        "cfgplayerspawnpoints.xml", // new character spawn points
+        "cfgrandompresets.xml", // collection of groups of items
+        "cfgspawnabletypes.xml", // loot categorization (ie hoarder) as well as set of items that spawn as cargo or as attachment on weapons, vehicles or infected.
+        "cfgundergroundtriggers.json", // used for triggering light and sounds in the Livonia bunker, not used for Chernarus
+        "cfgweather.xml", // weather configuration
+        "init.c", // mission startup file (PC only)
+        "map*.xml",
+        "mapgroupproto.xml", // structures, tags, maxloot and lootpoints
+        "mapgrouppos.xml" // all valid lootpoints
+    ]
+}
+
 const config = {
     installFile: serverFiles + "/DayZServer",
     modDir: modDir + "/" + client_appid,
     port: 8000,
     steamAPIKey: process.env["STEAMAPIKEY"]
+}
+
+const getVersion = (installed) => {
+    if(installed) {
+        return "1.20.bogus"
+    }
+    return ""
 }
 
 const getDirSize = (dirPath) => {
@@ -144,6 +202,23 @@ app.get(('/install/:modId'), (req, res) => {
     res.send(modId + " was installed")
 })
 
+// Remove a mod
+app.get(('/remove/:modId'), (req, res) => {
+    const modId = req.params["modId"]
+    // Shell out to steamcmd, monitor the process, and display the output as it runs
+    res.send(modId + " was removed")
+})
+
+// Update base files
+app.get('/updatebase', (req, res) => {
+    res.send("Base files were updates")
+})
+
+// Update mods
+app.get('/updatemods', (req, res) => {
+    res.send("Mod files were updates")
+})
+
 /*
  Get the status of things:
  If the base files are installed, the version of the server, a list of mods, etc.
@@ -152,9 +227,10 @@ app.get('/status', (req, res) => {
     // FIXME Async/await this stuff...
     const installed = fs.existsSync(config.installFile)
     const mods = getMods()
+    const version = getVersion(installed)
     const ret = {
         "installed": installed,
-        "version": "1.20.bogus",
+        "version": version,
         "mods": mods
     }
     res.send(ret)

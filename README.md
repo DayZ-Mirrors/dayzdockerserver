@@ -18,6 +18,10 @@ This volume can get quite large. It will require at least 2G of disk space for t
 Some map mods are as large as 10G. Make sure you have that much disk space in the location where docker stores its
 volumes, usually `/var/lib/docker/volumes`.
 
+## Goals
+
+* Provide a turnkey DayZ server with mod support.
+
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/)
@@ -152,7 +156,7 @@ docker compose exec main dayzserver force
 When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be restarted.
 
 NOTE: As DayZ Experimental 1.19, the server is known to not exit upon SIGINT when mods are installed. This makes force stopping the server
-required. This is not a clean exit, and will cause the server to restart. Manually take the server [down](#down) to stop the container.
+required. This is not a clean exit, and will cause the server to restart. Manually take the server [down](#stop) to stop the container.
 
 ### Workshop - Add / List / Remove / Update mods
 

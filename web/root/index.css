@@ -1,23 +1,15 @@
 body {
-    padding-top: 10px;
+    padding: 10px;
     background-color: black;
 }
-.green {
-    color: green;
-    font-weight: bolder;
-}
-.yellow {
-    color: yellow;
-    font-weight: bolder;
-}
-.darkgrey {
-    background-color: darkgray;
-    font-weight: bolder;
-    margin-bottom: 10px;
+
+button {
+    padding: 5px;
+    margin: 10px;
 }
 
-.modInfo {
-    background-color: aliceblue;
+th, td {
+    padding-right: 10px
 }
 
 .result {
@@ -31,8 +23,4 @@ body {
 .simulink {
     cursor: pointer;
     text-underline: blue;
-}
-
-th, td {
-    padding-right: 10px
 }
