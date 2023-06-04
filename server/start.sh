@@ -7,9 +7,8 @@ export PS1="${debian_chroot:+($debian_chroot)}\u@dz-server:\w\$ "
 EOF
 
 # Uncomment the line below to run things manually in the container, then run:
-# docker compose exec main bash
-#tail -f /dev/null
-#exit 0
+# docker compose exec main bash, and from within the container: dz start (or do whatever)
+tail -f /dev/null
 
 # Otherwise, start the server normally
-dz start
+#dz start

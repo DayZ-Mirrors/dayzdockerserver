@@ -1,49 +1,65 @@
 const template = `
-	<div class="container-fluid bg-light">
-		<div class="d-flex justify-content-between">
-            <div class="text-center">
-                <h1>DayZ Docker Server</h1>
+<div 
+    class="modal"
+    id="staticBackdrop"
+    data-bs-backdrop="static"
+    data-bs-keyboard="false"
+    tabindex="-1"
+    aria-labelledby="staticBackdropLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Error</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-		    <div class="d-flex">
-                <div class="text-center">
-                    <button
-                        @click="install"
-                        :class="'btn ' + (installed ? 'btn-danger' : 'btn-success')"
-                    >
-                        Install Server Files
-                    </button>
-                    <button @click="updatebase" class="btn btn-warning">Update Base</button>
-                    <button @click="updatemods" class="btn btn-warning">Update Mods</button>
-                </div>
-                <div class="text-center">
-                    <button @click="server" class="btn btn-primary">Server</button>
-                </div>
-		    </div>
-		    <div class="form-control-lg">
-                <form @submit="handleSubmit">
-                    <input name="search" placeholder="Search mods..." autofocus>
-                </form>
-		    </div>
+            <div class="modal-body">
+                {{ fetchError }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid min-vh-100 d-flex flex-column bg-light">
+    <div class="row">
+        <div class="col-3 text-center">
+            <h1>DayZ Docker Server</h1>
+        </div>
+        <div class="col-5">
+            <button
+                @click="installbase"
+                :class="'btn ' + (installed ? 'btn-danger' : 'btn-success')"
+            >
+                Install Server Files
+            </button>
+            <button @click="updatebase" class="btn btn-success">Update Server Files</button>
+            <button @click="updatemods" class="btn btn-success">Update Mods</button>
+            <button @click="servers" class="btn btn-primary">Servers</button>
+            <button @click="listmods" class="btn btn-primary">Mods</button>
+        </div>
+        <div class="col form-control-lg text-center">
+            <form @submit="handleSubmit">
+                <input name="search" placeholder="Search mods..." autofocus>
+            </form>
+        </div>
+        <div class="col">
             <div>
-                <div class="justify-right">
-                    Server files installed:
-                    <span class="bi bi-check h2 text-success" v-if="installed"></span>
-                    <span class="bi bi-x h2 danger text-danger" v-else></span>
-                </div>
-                <div v-if="version != ''">
-                    Version: <span class="text-success font-weight-bold">{{ version }}</span>
-                </div>
-    		</div>
-		</div>
-		<div
-			v-if="fetchError != ''"
-			class="text-center alert alert-danger"
-		>
-			{{ fetchError }}
-		</div>
-		<div class="d-flex">
+                Server files installed:
+                <span class="bi bi-check h2 text-success" v-if="installed"></span>
+                <span class="bi bi-x h2 danger text-danger" v-else></span>
+            </div>
+            <div v-if="version != ''">
+                Version: <span class="text-success font-weight-bold">{{ version }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="row flex-grow-1">
+        <div class="col-md-3 border">
             <div>
-                <h2 class="text-center">Mods</h2>
+                <h4 class="text-center">Installed Mods</h4>
                 <table>
                     <tr>
                         <th>Steam Link</th>
@@ -68,40 +84,39 @@ const template = `
                     </template>
                 </table>
             </div>
-            <div v-if="modInfo != ''">
+        </div>
+        <div class="col-md-9 border">
+            <div class="d-flex" v-if="modInfo != ''">
                 <div>
-                    <h3>{{ modInfo.name }}</h3>
-                    <div class="d-flex">
-                        <div>
-                            <div>
-                                ID: {{ modInfo.id }}
-                            </div>
-                            <div>
-                                Size: {{ modInfo.size.toLocaleString("en-US") }}
-                            </div>
-                            <div v-if="modInfo.customXML.length > 0">
-                                Custom XML files:
-                                <ul>
-                                    <li v-for="info in modInfo.customXML">
-                                        <a
-                                            :class="'simulink xmlfile ' + info.name"
-                                            @click="getXMLInfo(modInfo.id,info.name)"
-                                        >
-                                            {{ info.name }}
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div>
-                            <div v-if="XMLInfo != ''">
-                                <textarea cols="120" rows="15" v-if="this.XMLInfo != ''">{{ this.XMLInfo }}</textarea>    
-                            </div>
-                        </div>
-                    </div>                    
+                    <div>
+                        <strong>{{ modInfo.name }}</strong>
+                    </div>
+                    <div>
+                        ID: {{ modInfo.id }}
+                    </div>
+                    <div>
+                        Size: {{ modInfo.size.toLocaleString("en-US") }}
+                    </div>
+                    <div v-if="modInfo.customXML.length > 0">
+                        Custom XML files:
+                        <ul>
+                            <li v-for="info in modInfo.customXML">
+                                <a
+                                    :class="'simulink xmlfile ' + info.name"
+                                    @click="getXMLInfo(modInfo.id,info.name)"
+                                >
+                                    {{ info.name }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>                    
+                <div class="col-1"></div>
+                <div>
+                    <xmltree v-if="XMLInfo != ''" :xmlData="XMLInfo" />
                 </div>
             </div>
-            <div v-if="searchResults != ''">
+            <div v-if="searchResults != ''" class="d-flex">
                 <table>
                     <tr>
                         <th>Steam Link</th>
@@ -132,12 +147,30 @@ const template = `
                 </table>
             </div>
         </div>
-	</div>
+    </div>
+</div>
 `
+
+import xmltree from "/xmltree.js"
+
+const fetcher = (args) => {
+    fetch(args.url)
+        .then(response => (
+            args.type === "json" ? response.json() : response.text()
+        ))
+        .then(response => args.callback(response))
+        .catch((error) => {
+            console.error(error)
+            this.fetchError = error.message
+        })
+}
 
 export default {
     name: 'DazDockerServer',
     template: template,
+    components: {
+        xmltree
+    },
     data() {
         return {
             fetchError: "",
@@ -153,17 +186,15 @@ export default {
     },
     methods: {
         getModInfo(modId) {
-            fetch('/mod/' + modId)
-                .then(response => response.json())
-                .then(response => {
+            fetcher ({
+                url: '/mod/' + modId,
+                type: "json",
+                callback: (response) => {
                     this.modInfo = response
                     this.XMLInfo = ""
                     this.searchResults = ""
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.fetchError = error.message
-                })
+                }
+            })
         },
         getXMLInfo(modId, file) {
             for (const e of document.getElementsByClassName("selected")) e.classList.remove("selected")
@@ -199,6 +230,8 @@ export default {
                     tooltipTriggerList.map(function (tooltipTriggerEl) {
                         return new bootstrap.Tooltip(tooltipTriggerEl)
                     })
+                    // Enable all alerts
+                    $('.alert').alert()
                 })
                 .catch((error) => {
                     console.error(error)
@@ -234,6 +267,21 @@ export default {
                 n = n/1024
             }
             return(n.toFixed(n < 10 && l > 0 ? 1 : 0) + ' ' + units[l])
+        },
+        installbase() {
+            console.log("Install base files")
+        },
+        servers() {
+            console.log("List servers")
+        },
+        listmods() {
+            console.log("List mods")
+        },
+        updatebase() {
+            console.log("Update base files")
+        },
+        updatemods() {
+            console.log("Update mod files")
         }
     },
     mounted() {
@@ -246,6 +294,9 @@ export default {
                 this.mods = response.mods
                 if(response.error) {
                     this.fetchError = response.error
+                    // Since it's a modal, we have to manually show it...?
+                    const modal = new bootstrap.Modal(document.getElementById('staticBackdrop'))
+                    modal.show()
                 }
             })
             .catch((error) => {

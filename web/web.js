@@ -10,6 +10,7 @@ import express from 'express'
 import path from 'path'
 import fs from 'fs'
 import https from 'https'
+import { spawn } from 'child_process'
 
 const app = express()
 
@@ -154,6 +155,28 @@ const getMods = () => {
     return mods
 }
 
+const login = () => {
+    const args = "+force_install_dir " + serverFiles + " +login '" + config.steamLogin + "' +quit"
+    steamcmd(args)
+}
+
+const steamcmd = (args) => {
+    const proc = spawn('steamcmd ' + args)
+    proc.stdout.on('data', (data) => {
+        res.write(data)
+    })
+    proc.stderr.on('data', (data) => {
+        res.write(data)
+    })
+    proc.on('error', (error) => {
+        res.write(error)
+    })
+    proc.on('close', (error) => {
+        if(error) res.write(error)
+        res.end()
+    })
+}
+
 app.use(express.static('root'))
 
 // Get mod metadata by ID
@@ -211,6 +234,7 @@ app.get(('/remove/:modId'), (req, res) => {
 
 // Update base files
 app.get('/updatebase', (req, res) => {
+    login()
     res.send("Base files were updates")
 })
 
@@ -229,10 +253,12 @@ app.get('/status', (req, res) => {
     const mods = getMods()
     const version = getVersion(installed)
     const ret = {
+        "appid": server_appid,
         "installed": installed,
         "version": version,
         "mods": mods
     }
+    // ret.error = "This is a test error from the back end"
     res.send(ret)
 })
 

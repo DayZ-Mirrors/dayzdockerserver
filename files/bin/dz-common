@@ -43,14 +43,9 @@ SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 STEAM_LOGIN="${HOME}/steamlogin"
 STEAMCMD=steamcmd
 
-# Workshop files (mods)
-WORKSHOP_DIR="${SERVER_FILES}/steamapps/workshop/content/${release_client_appid}"
-
 # Other stuff
 YES="${green}yes${default}"
 NO="${red}no${default}"
-
-# Functions
 
 # Convenience function
 prompt_yn(){
@@ -64,72 +59,4 @@ prompt_yn(){
 	else
 		return 1
 	fi
-}
-
-check_mod_install(){
-	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
-	if [ -f ${FILES}/mods/${1}/${2}.sh ]
-	then
-		echo "An ${2}.sh was found for mod id ${1}. Running..."
-		${FILES}/mods/${1}/${2}.sh
-	fi
-	# A generic map install script. Presumes a git repo as the source
-	if [ -f ${FILES}/mods/${1}/install.env ]
-	then
-		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
-		source ${FILES}/mods/${1}/install.env
-		${FILES}/mods/install.sh ${1} ${2}
-	fi
-}
-
-get_mod_id_by_index2(){
-	# If we were passed a valid mod id, just return it
-	if [ -d "${WORKSHOP_DIR}/${1}" ]
-	then
-		echo -n ${1}
-		return
-	fi
-	X=1
-	# Loop over mods
-	for dir in $(ls -tr ${WORKSHOP_DIR})
-	do
-	  ID=${dir}
-		if [[ ${X} = ${1} ]]
-		then
-			echo -n ${ID}
-			return
-		fi
-		X=$((X+1))
-	done
-}
-
-# Get mod name by ID or index
-get_mod_name(){
-	ID=$(get_mod_id_by_index2 ${1})
-	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
-	then
-		echo "Mod ID ${1} doesn't exist" >&2
-		exit 1
-	fi
-	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
-	echo -n ${NAME}
-}
-
-# List mods
-list(){
-	X=1
-  C="${green}"
-	spaces="                            "
-  echo "Installed mods:"
-  echo -e "     ID         Name                             URL                                                                Size"
-  echo "------------------------------------------------------------------------------------------------------------------------"
-	for dir in $(ls -tr ${WORKSHOP_DIR})
-	do
-	  ID=${dir}
-	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | sed -r 's/\s+//g')
-		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
-		X=$((X+1))
-	done
-	echo
 }
