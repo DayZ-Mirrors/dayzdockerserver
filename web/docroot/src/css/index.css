@@ -1,0 +1,21 @@
+button {
+    padding: 5px;
+    margin: 10px;
+}
+
+th, td {
+    padding-right: 10px
+}
+
+.selected {
+    background-color: cyan;
+}
+
+.simulink {
+    cursor: pointer;
+    text-underline: blue;
+}
+
+.simulink:hover {
+    background-color: cyan;
+}

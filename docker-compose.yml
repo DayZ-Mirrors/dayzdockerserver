@@ -30,6 +30,7 @@ services:
       - ./web/bin/dz:/usr/local/bin/dz
       - ./web:/web
     ports:
+      - "8001:8001/tcp"
       - "8000:8000/tcp"
     restart: no
     environment:
