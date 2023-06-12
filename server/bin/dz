@@ -450,9 +450,6 @@ case "${C}" in
 	login)
 		login "${@}"
 		;;
-	m|modupdate)
-		modupdate "${@}"
-		;;
 	n|rcon)
 		rcon "${@}"
 		;;
@@ -470,9 +467,6 @@ case "${C}" in
 		;;
 	stop)
 		stop "${@}"
-		;;
-	u|update)
-		update "${@}"
 		;;
 	*)
 		usage "$*"

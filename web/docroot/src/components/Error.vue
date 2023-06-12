@@ -1,9 +1,8 @@
 <script setup>
 import { onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useErrorStore } from '@/stores/error'
-const { errorText } = storeToRefs(useErrorStore())
 import { Modal } from 'bootstrap'
+import { useAppStore } from '@/stores/app.js'
+const store = useAppStore()
 let modal = {}
 onMounted(() => {
   modal = new Modal('#errorModal', {})
@@ -28,7 +27,7 @@ onMounted(() => {
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          {{ errorText }}
+          {{ store.errorText }}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

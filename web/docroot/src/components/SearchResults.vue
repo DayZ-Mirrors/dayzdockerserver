@@ -1,6 +1,49 @@
 <script setup>
-const searchResults = null
+import { useFetch} from '@vueuse/core'
+import { useAppStore } from '@/stores/app.js'
+const store = useAppStore()
+const { data: searchResults, error } = useFetch(() => `http://bubba:8000/search/${store.searchText}`, {
+  immediate: false,
+  refetch: true
+}).get().json()
 </script>
+
+<script>
+export default {
+  name: "SearchResults",
+  methods: {
+    handleSubmit(e) {
+      e.preventDefault()
+      fetch(this.apihost + '/search/' + e.target.search.value)
+          .then(response => response.json())
+          .then(response => {
+            this.modInfo = ""
+            this.XMLInfo = ""
+            // const sortField = "time_updated"
+            const sortField = "lifetime_subscriptions"
+            response.response.publishedfiledetails.sort((a, b) =>
+                a[sortField] < b[sortField] ? 1 : -1
+            )
+            this.searchResults = response.response.publishedfiledetails
+          })
+          .then(() => {
+            // Enable all tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+              return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+            // Enable all alerts
+            // $('.alert').alert()
+          })
+          .catch((error) => {
+            console.error(error)
+            this.fetchError = error.message
+          })
+    },
+  }
+}
+</script>
+
 
 <template>
   <div v-if="searchResults" class="d-flex">

@@ -1,16 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue'
-import xmltree from '@/components/XmlTree.vue'
-import { useFetch} from '@/fetch'
-const modId = ref(null)
-const modInfo = null
-const xmlInfo = null
-const url = computed(() => baseUrl + '/mod/' + modId.value)
-const { data } = useFetch(url)
+import { useFetch } from "@vueuse/core"
+import xmlTree from '@/components/XmlTree.vue'
+import { useAppStore } from '@/stores/app.js'
+const store = useAppStore()
+const { data, error } = useFetch(() => `http://bubba:8000/mod/${store.modId}`, {
+  immediate: false,
+  refetch: true
+}).get().json()
 </script>
+
 <template>
   <div class="col-md-9 border">
-    <div class="d-flex" v-if="data">
+    <div v-if="error" class="d-flex">Error: {{ error }}</div>
+    <div v-else-if="data" class="d-flex">
       <div>
         <div>
           <strong>{{ data.name }}</strong>
@@ -26,8 +28,8 @@ const { data } = useFetch(url)
           <ul>
             <li v-for="info in data.customXML">
               <a
-                  :class="'simulink xmlfile ' + info.name"
-                  @click="modInfo=nfo.name"
+                :class="'simulink xmlfile ' + info.name"
+                @click="store.modFile=info.name"
               >
                 {{ info.name }}
               </a>
@@ -36,8 +38,8 @@ const { data } = useFetch(url)
         </div>
       </div>
       <div class="col-1"></div>
-      <div>
-        <xmltree v-if="xmlInfo" :xmlData="xmlInfo" />
+      <div v-if="store.modFile">
+        <xml-tree :file="store.modFile" :mod-id="store.modId" />
       </div>
     </div>
   </div>

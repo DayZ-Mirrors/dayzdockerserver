@@ -1,17 +1,17 @@
 const template = `
 <div 
     class="modal"
-    id="staticBackdrop"
+    id="errorModal"
     data-bs-backdrop="static"
     data-bs-keyboard="false"
     tabindex="-1"
-    aria-labelledby="staticBackdropLabel"
+    aria-labelledby="errorModalLabel"
     aria-hidden="true"
 >
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLabel">Error</h1>
+                <h1 class="modal-title fs-5" id="errorModalLabel">Error</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -295,7 +295,7 @@ export default {
                 if(response.error) {
                     this.fetchError = response.error
                     // Since it's a modal, we have to manually show it...?
-                    const modal = new bootstrap.Modal(document.getElementById('staticBackdrop'))
+                    const modal = new bootstrap.Modal(document.getElementById('errorModal'))
                     modal.show()
                 }
             })

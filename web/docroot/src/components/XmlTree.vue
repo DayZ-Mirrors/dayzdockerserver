@@ -33,7 +33,7 @@
     </span>
     <span v-if="elem.nodeType === 3">{{elem.data.trim()}}</span>
     <div v-for="child in children">
-      <xmltree v-if="child.nodeType !== 8" :element="child" :d="depth" />
+      <xml-tree v-if="child.nodeType !== 8" :element="child" :d="depth" />
     </div>
     <span
         v-if="elem.nodeType === 1 && elem.children.length > 0"
@@ -45,8 +45,9 @@
 </template>
 
 <script>
+import { useFetch } from '@vueuse/core'
 export default {
-  name: "xmltree",
+  name: "xmlTree",
   props: {
     d: {
       type: Number,
@@ -56,7 +57,14 @@ export default {
       type: [Element, Text],
       default: undefined
     },
-    xmlData: String
+    file: {
+      type: String,
+      default: ''
+    },
+    modId: {
+      type: Number,
+      default: 0
+    }
   },
   data() {
     return {
@@ -72,13 +80,14 @@ export default {
     }
   },
   computed: {
-    elem() {
+    async elem() {
       this.depth = parseInt(this.d) + 1
       if (this.element) {
         return this.element
-      } else {
+      } else if(this.file) {
+        const { data } = await useFetch(`http://bubba:8000/mod/${this.modId}/${this.file}`)
         const parser = new DOMParser()
-        const xmlDoc = parser.parseFromString(this.xmlData, "text/xml")
+        const xmlDoc = parser.parseFromString(data, "text/xml")
         return xmlDoc.documentElement
       }
     },

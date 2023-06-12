@@ -364,25 +364,6 @@ check_mod_install(){
 	fi
 }
 
-# List mods
-list(){
-	X=1
-  C="${green}"
-	spaces="                            "
-  echo "Installed mods:"
-  echo -e "     ID         Name                             URL                                                                Size"
-  echo "------------------------------------------------------------------------------------------------------------------------"
-	for dir in $(ls -tr ${WORKSHOP_DIR})
-	do
-	  ID=${dir}
-	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | sed -r 's/\s+//g')
-		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
-		X=$((X+1))
-	done
-	echo
-}
-
 # Capture the first argument and shift it off so we can pass $@ to every function
 C=${1}
 shift || {

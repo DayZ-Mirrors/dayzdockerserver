@@ -1,13 +1,13 @@
 <script setup>
-import Mods from "@/components/Mods.vue"
-import Modinfo from "@/components/Modinfo.vue";
+import Mods from '@/components/Mods.vue'
+import ModInfo from '@/components/Modinfo.vue'
+import SearchResults from "@/components/SearchResults.vue";
 </script>
 
 <template>
   <div class="row flex-grow-1">
-    <div class="col-md-3 border">
-      <Mods />
-      <Modinfo />
-    </div>
+    <Mods />
+    <ModInfo />
+    <SearchResults />
   </div>
 </template>

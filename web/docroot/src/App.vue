@@ -5,9 +5,13 @@ import Header from '@/components/Header.vue'
 </script>
 
 <template>
-  <Error />
-  <div class="container-fluid min-vh-100 d-flex flex-column bg-light">
-    <Header />
-    <Body />
-  </div>
+  <Suspense>
+    <main>
+      <Error />
+      <div class="container-fluid min-vh-100 d-flex flex-column bg-light">
+        <Header />
+        <Body />
+      </div>
+    </main>
+  </Suspense>
 </template>

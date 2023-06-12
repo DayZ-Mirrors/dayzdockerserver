@@ -6,7 +6,7 @@ import './css/index.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import { useErrorStore } from '@/stores/error.js'
+import {useAppStore} from "@/stores/app";
 
 // Create an instance of our Vue app
 const app = createApp(App)
@@ -22,8 +22,8 @@ app.config.globalProperties.steamUrl = 'https://steamcommunity.com/sharedfiles/f
 
 // A global error handler
 app.config.errorHandler = (err, instance, info) => {
-    const errorStore = useErrorStore()
-    errorStore.errorText = err.message
+    const store = useAppStore()
+    store.errorText = err.message
     console.error('GLOBAL ERROR HANDLER!   ', err, instance, info)
 }
 

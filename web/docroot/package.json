@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "@vueuse/core": "^10.1.2",
     "bootstrap": "^5.3.0",
     "bootstrap-icons": "^1.10.5",
     "pinia": "^2.1.3",

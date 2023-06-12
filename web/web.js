@@ -14,6 +14,13 @@ import { spawn } from 'child_process'
 
 const app = express()
 
+app.use((req, res, next) => {
+    res.append('Access-Control-Allow-Origin', ['*'])
+    res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+    res.append('Access-Control-Allow-Headers', 'Content-Type')
+    next()
+})
+
 /*
  The DayZ server Steam app ID. USE ONE OR THE OTHER!!
 
@@ -32,6 +39,15 @@ const server_appid = "1042420"
  DayZ release client Steam app ID. This is for mods, as only the release client has them.
  */
 const client_appid = "221100"
+
+/*
+ Denote if it's release or experimental
+ */
+const versions = {
+    "1042420": "Experimental",
+    "223350": "Release"
+}
+const appid_version = versions[server_appid]
 
 /*
  Base file locations
@@ -106,13 +122,14 @@ const config = {
 
 const getVersion = (installed) => {
     if(installed) {
-        return "1.20.bogus"
+        return "1.21.bogus"
     }
     return ""
 }
 
 const getDirSize = (dirPath) => {
     let size = 0
+    if (! fs.existsSync(dirPath)) return size
     const files = fs.readdirSync(dirPath)
     for (let i = 0; i < files.length; i++) {
         const filePath = path.join(dirPath, files[i])
@@ -144,6 +161,7 @@ const getModNameById = (id) => {
             if(sym.indexOf(id) > -1) return file.name
         }
     }
+    return ''
 }
 
 const getMods = () => {
@@ -245,20 +263,29 @@ app.get('/updatemods', (req, res) => {
 
 /*
  Get the status of things:
- If the base files are installed, the version of the server, a list of mods, etc.
+ If the base files are installed, the version of the server, the appid (If release or experimental)
  */
 app.get('/status', (req, res) => {
     // FIXME Async/await this stuff...
     const installed = fs.existsSync(config.installFile)
-    const mods = getMods()
     const version = getVersion(installed)
     const ret = {
-        "appid": server_appid,
+        "appid": appid_version,
         "installed": installed,
-        "version": version,
+        "version": version
+    }
+    ret.error = "This is a test error from the back end"
+    res.send(ret)
+})
+
+/*
+ Get all mod metadata
+ */
+app.get('/mods', (req, res) => {
+    const mods = getMods()
+    const ret = {
         "mods": mods
     }
-    // ret.error = "This is a test error from the back end"
     res.send(ret)
 })
 
