@@ -74,7 +74,7 @@ docker compose up -d server
 Tail the log:
 
 ```
-docker compose logs -f
+docker compose logs -f server
 ```
 ## Stop
 
@@ -97,14 +97,13 @@ The following management commands presume the server has been brought [up](#run)
 ### RCON
 
 A terminal-based RCON client is included: https://github.com/indepth666/py3rcon.
-The dayzserver script manages what's necessary to configure and run it:
+The dz script manages what's necessary to configure and run it:
 
 ```
-docker compose exec server dayzserver rcon
+docker compose exec server dz rcon
 ```
 
-To reset the RCON password in the Battle Eye configuration file, simply delete it, and a random one will be generated
-on the next server startup:
+To reset the RCON password in the Battle Eye configuration file, simply delete it, and a random one will be generated on the next server startup:
 
 ```
 docker compose run --rm server rm serverfiles/battleye/baserver_x64_active*
@@ -121,7 +120,7 @@ docker compose down
 Then run the command:
 
 ```
-docker compose run --rm web dayzserver update
+docker compose run --rm web dz update
 ```
 
 Don't forget to [bring it back up](#run).
@@ -129,13 +128,13 @@ Don't forget to [bring it back up](#run).
 ### Stop the server
 
 ```
-docker compose exec server dayzserver stop
+docker compose exec server dz stop
 ```
 
 The server doesn't always exit when stopping it (SIGINT). When this happens, it's necessary to force stop it (SIGKILL):
 
 ```
-docker compose exec server dayzserver force
+docker compose exec server dz force
 ```
 
 When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be restarted.
@@ -148,8 +147,8 @@ required. This is not a clean exit, and will cause the server to restart. Manual
 Interactive interface for managing mods. 
 
 ```
-docker compose exec server dayzserver activate id | add id1 | deactivate id | list | modupdate | remove id
-docker compose exec server dayzserver a id | add id1 | d id | l | m | r id
+docker compose exec server dz activate id | add id1 | deactivate id | list | modupdate | remove id
+docker compose exec server dz a id | add id1 | d id | l | m | r id
 ```
 
 Look for mods in the [DayZ Workshop](https://steamcommunity.com/app/221100/workshop/). Browse to one. In its URL will be
@@ -157,7 +156,7 @@ an `id` parameter. Here is the URL to SimpleAutoRun: https://steamcommunity.com/
 add it:
 
 ```
-docker compose exec web dayzserver add 2264162971
+docker compose exec web dz add 2264162971
 ```
 
 Adding and removing mods will add and remove their names from the `-mod=` parameter.

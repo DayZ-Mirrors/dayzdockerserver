@@ -54,8 +54,6 @@ get_mod_id(){
 # Get mod name by ID or index
 get_mod_name(){
 	ID=$(get_mod_id ${1})
-	echo "ID: ${ID}" >&2
-	exit 0
 	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
 	then
 		echo "Mod ID ${1} doesn't exist" >&2
