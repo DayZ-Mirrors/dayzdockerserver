@@ -6,6 +6,8 @@ The main goal is to provide a turnkey DayZ server with mod support that can be s
 
 ## TL;DR for setting up a release DayZ server with the "1.21 stable release":
 
+Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/) are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as your user, in your home directory.
+
 ```shell
 git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
@@ -47,8 +49,6 @@ This process will create several docker volumes for the following sets of files:
 These volumes can get quite large. The `serverfiles` one will require at least 2.7G of disk space for the default install. The mods one can fill up very quickly, with some map mods being as large as 10G. Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
 
 ## Configure and Build
-
-Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/) are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as your user, in your home directory.
 
 Clone the repo, and change into the newly created directory:
 
