@@ -4,6 +4,34 @@ A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
+## TL;DR for setting up a release DayZ server with the "1.21 stable reelase":
+
+```shell
+git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
+cd dayzdockerserver
+# Edit the config file and set the server name. It's the first line of the file.
+nano files/serverDZ.cfg
+# Build the docker images
+docker compose up -d --build
+# Go into the web container, login, and install the server files
+docker compose exec main bash
+# Use a real login if you want to install mods. Otherwise, use the anonymous user. You'll be limited to the vanilla Chernarus and Livonia maps.
+dz login
+dz install
+# Download the "1.21 stable release" file.
+cd /serverfiles
+mv DayZServer DayZServer.release
+wget https://cdn.discordapp.com/attachments/491622000935305217/1119206127750615101/DayZServer
+chmod 755 DayZServer
+# Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
+cp /files/tmp/* .  DayZ Experimental server files.
+# Switch to the server container and start the server
+exit
+docker compose exec server bash
+# Start the server. This will run a vanilla Chernarus server. To run Livonia, simply change files/serverDZ.cfg to use the Livonia map in the section at the bottom of the file.
+dz start
+```
+
 ## Caveat Emptor
 
 As of DayZ release 1.15, a [Linux DayZ server](https://steamdb.info/app/1042420/) was made available in Dayz Experimental. This has not been officially released, so this will only run a DayZ Experimental server at the moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experimental) will be able to connect to it. The goal is to have a working implementation once the Linux server is officially released, presumably [here](https://steamdb.info/app/223350/).
