@@ -30,6 +30,8 @@ cp /files/tmp/* .
 # Switch to the server container and start the server
 exit
 docker compose exec server bash
+# Copy the upstream mpmissions files from the read-only mount point on the server.
+cp -a /mpmissions/dayzOffline.chernarusplus/ /serverfiles/mpmissions/
 # Start the server. This will run a vanilla Chernarus server. To run Livonia, simply change files/serverDZ.cfg to use the Livonia map in the section at the bottom of the file.
 dz start
 ```
