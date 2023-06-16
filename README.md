@@ -4,7 +4,7 @@ A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
-## TL;DR for setting up a release DayZ server with the "1.21 stable reelase":
+## TL;DR for setting up a release DayZ server with the "1.21 stable release":
 
 ```shell
 git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
