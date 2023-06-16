@@ -26,7 +26,7 @@ cd /serverfiles
 wget https://cdn.discordapp.com/attachments/491622000935305217/1119206127750615101/DayZServer
 chmod 755 DayZServer
 # Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
-cp /files/tmp/* .  DayZ Experimental server files.
+cp /files/tmp/* .
 # Switch to the server container and start the server
 exit
 docker compose exec server bash
