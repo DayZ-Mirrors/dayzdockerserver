@@ -16,4 +16,5 @@ export DEBUG='express:*'
 npx nodemon web.js &
 
 cd docroot
+npm i
 npm run dev
