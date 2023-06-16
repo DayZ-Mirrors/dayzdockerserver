@@ -11,6 +11,7 @@ Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](ht
 ```shell
 git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
+git checkout release-server
 # Edit the config file and set the server name. It's the first line of the file.
 nano files/serverDZ.cfg
 # Build the docker images
@@ -22,7 +23,6 @@ dz login
 dz install
 # Download the "1.21 stable release" file.
 cd /serverfiles
-mv DayZServer DayZServer.release
 wget https://cdn.discordapp.com/attachments/491622000935305217/1119206127750615101/DayZServer
 chmod 755 DayZServer
 # Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
