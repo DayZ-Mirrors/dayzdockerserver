@@ -16,7 +16,7 @@ nano files/serverDZ.cfg
 # Build the docker images
 docker compose up -d --build
 # Go into the web container, login, and install the server files
-docker compose exec main bash
+docker compose exec web bash
 # Use a real login if you want to install mods. Otherwise, use the anonymous user. You'll be limited to the vanilla Chernarus and Livonia maps.
 dz login
 dz install
