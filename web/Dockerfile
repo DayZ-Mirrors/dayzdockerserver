@@ -22,8 +22,6 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     lib32gcc-s1 \
     lib32stdc++6 \
     libcurl4:i386 \
-    libsdl2-2.0-0:i386 \
-    libsdl2-2.0-0 \
     libcap2 \
     libxml2-utils \
     locales \
