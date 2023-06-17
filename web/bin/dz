@@ -4,6 +4,10 @@ source dz-common
 
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
 WORKSHOP_DIR="/mods/${release_client_appid}"
+if [ ! -d ${WORKSHOP_DIR} ]
+then
+  mkdir -p ${WORKSHOP_DIR}
+fi
 
 workshoplist=""
 

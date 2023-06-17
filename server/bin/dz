@@ -18,10 +18,6 @@ parameters="-config=${SERVER_CFG_DST} -port=${port} -freezecheck -BEpath=${SERVE
 
 # Where mods are installed.
 WORKSHOP_DIR="/mods/${release_client_appid}"
-if [ ! -d ${WORKSHOP_DIR} ]
-then
-  mkdir -p ${WORKSHOP_DIR}
-fi
 
 # Backups
 BACKUP_DIR="${HOME}/backup"
