@@ -36,6 +36,32 @@ cp -a /mpmissions/dayzOffline.chernarusplus/ /serverfiles/mpmissions/
 dz start
 ```
 
+## TL;DR part 2: Adding mods
+
+Be in the same directory as above, and:
+
+```shell
+# Go into the web container
+docker compose exec web bash
+# Add CF
+dz add 1559212036
+# Add VPPAdminTools
+dz add 1828439124
+exit
+# Then in the server container
+docker compose exec server bash
+# Activate CF, but do so by index
+dz a 1
+# Same for VPPAdminTools
+dz a 2
+# Check the status
+dz s
+# Start the server
+dz start
+```
+
+Follow the instructions for [setting up VPPAdminTools](https://steamcommunity.com/sharedfiles/filedetails/?id=1828439124)
+
 ## Caveat Emptor
 
 As of DayZ release 1.15, a [Linux DayZ server](https://steamdb.info/app/1042420/) was made available in Dayz Experimental. This has not been officially released, so this will only run a DayZ Experimental server at the moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experimental) will be able to connect to it. The goal is to have a working implementation once the Linux server is officially released, presumably [here](https://steamdb.info/app/223350/).
