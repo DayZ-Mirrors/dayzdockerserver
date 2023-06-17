@@ -264,7 +264,7 @@ config(){
 get_mod_id_by_index(){
 	X=1
 	# Loop over mods
-  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  for link in $(ls -tdr ${SERVER_FILES}/@* 2> /dev/null)
 	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		if [[ ${X} = ${1} ]]
@@ -300,7 +300,7 @@ activate(){
 		UU="un"
 		COLOR="${red}"
 	fi
-	ID=$(get_mod_id_by_index2 ${1})
+	ID=$(get_mod_id_by_index ${1})
 	MODNAME=$(get_mod_name ${ID})
 	# Toggle state or report nothing burger
 	pushd "${SERVER_PROFILE}" > /dev/null
