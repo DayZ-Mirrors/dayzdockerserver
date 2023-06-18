@@ -56,7 +56,9 @@ dz a 1
 dz a 2
 # Check the status
 dz s
-# Start the server
+# Restart the server
+# Hit control C to stop the running server, wait for it to exit
+# Then start it again.
 dz start
 ```
 
