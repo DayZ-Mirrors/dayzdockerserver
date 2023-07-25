@@ -69,7 +69,7 @@ get_mod_name(){
 
 # "Manage" XML files.
 xml(){
-  /files/mods/xml.sh ${1}
+  /files/bin/xml.sh ${1}
   mergexml ${1}
 }
 
