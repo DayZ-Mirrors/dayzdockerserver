@@ -12,7 +12,7 @@ Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](ht
 git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
 git checkout release-server
-# Copy the config file to /profiles and set the server name. It's the first line of the file.
+# Set the server name in the config file. It's the first line of the file.
 nano files/serverDZ.cfg
 # Build the docker images
 docker compose up -d --build
