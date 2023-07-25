@@ -34,7 +34,7 @@ services:
       - "8000:8000/tcp"
     restart: no
     environment:
-      # The use of the Steam API requires a key. Get yours here: https://steamcommunity.com/dev/apikey
+      # The use of the Steam API in the (very incomplete) web app requires a key. Get yours here: https://steamcommunity.com/dev/apikey
       - STEAMAPIKEY=YOUR_STEAM_API_KEY_HERE
 
   server:
@@ -47,7 +47,6 @@ services:
       - mpmissions:/serverfiles/mpmissions
       - profiles:/profiles
       - ./files:/files
-      - ./server:/server
       - ./server/bin/dz:/usr/local/bin/dz
     # To have the server show up in the LAN tab of the DayZ launcher,
     # it must run under host mode.
@@ -59,7 +58,7 @@ services:
 #       # Game port
 #      - 2302:2302/udp
 #       # RCON port
-#      - 2302:2302/udp
+#      - 2303:2303/udp
 #       # Steam port
 #      - 27016:27016/udp
     # Always restart, unless stopped
