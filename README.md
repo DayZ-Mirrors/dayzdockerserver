@@ -27,11 +27,11 @@ wget https://cdn.discordapp.com/attachments/491622000935305217/11192061277506151
 chmod 755 DayZServer
 # Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
 cp /files/tmp/* .
-# Copy the serverDZ.cfg file to where it's used at runtime
-cp /files/serverDZ.cfg /profiles
 # Switch to the server container and start the server
 exit
 docker compose exec server bash
+# Copy the serverDZ.cfg file to where it's used at runtime
+cp /files/serverDZ.cfg /profiles
 # Copy the upstream mpmissions files from the read-only mount point on the server.
 cp -a /mpmissions/dayzOffline.chernarusplus/ /serverfiles/mpmissions/
 # Start the server. This will run a vanilla Chernarus server. To run Livonia, simply change files/serverDZ.cfg to use the Livonia map in the section at the bottom of the file.
