@@ -13,8 +13,7 @@ git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
 git checkout release-server
 # Copy the config file to /profiles and set the server name. It's the first line of the file.
-cp files/serverDZ.cfg /profiles
-nano /profiles/serverDZ.cfg
+nano files/serverDZ.cfg
 # Build the docker images
 docker compose up -d --build
 # Go into the web container, login, and install the server files
@@ -28,6 +27,8 @@ wget https://cdn.discordapp.com/attachments/491622000935305217/11192061277506151
 chmod 755 DayZServer
 # Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
 cp /files/tmp/* .
+# Copy the serverDZ.cfg file to where it's used at runtime
+cp /files/serverDZ.cfg /profiles
 # Switch to the server container and start the server
 exit
 docker compose exec server bash
