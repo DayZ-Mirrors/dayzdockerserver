@@ -47,6 +47,9 @@ RUN groupadd user && \
     mkdir -p /home/user /serverfiles/mpmissions /mods /mpmissions /profiles && \
     chown -R user:user /home/user /serverfiles /mods /mpmissions /profiles
 
+# Add our startup script, as this rarely changes.
+COPY --chown=user:user start.sh /usr/local/bin/start.sh
+
 # Use our non-privileged user
 USER user
 

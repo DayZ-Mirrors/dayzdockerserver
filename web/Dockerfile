@@ -71,6 +71,9 @@ RUN groupadd user && \
     mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /web && \
     chown -R user:user /home/user /serverfiles /web
 
+# Add our startup script, as this rarely changes.
+COPY --chown=user:user start.sh /usr/local/bin/start.sh
+
 # Use our non-privileged user
 USER user
 

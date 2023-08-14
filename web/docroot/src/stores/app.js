@@ -5,6 +5,8 @@ export const useAppStore = defineStore('app', {
         errorText: '',
         modId: 0,
         modFile: '',
-        searchText: ''
+        mods: [],
+        searchText: '',
+        section: 'mods',
     })
 })
