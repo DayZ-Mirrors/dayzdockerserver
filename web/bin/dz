@@ -63,7 +63,7 @@ get_mod_name(){
 		echo "Mod ID ${1} doesn't exist" >&2
 		exit 1
 	fi
-	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
+	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
 	echo -n ${NAME}
 }
 
