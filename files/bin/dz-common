@@ -72,7 +72,7 @@ list(){
 	for dir in $(ls -tr ${WORKSHOP_DIR})
 	do
 	  ID=${dir}
-	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | sed -r 's/\s+//g')
+	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | tr -cd [:alnum:])
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
 		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
