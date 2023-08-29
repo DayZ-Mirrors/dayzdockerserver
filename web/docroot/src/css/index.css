@@ -7,10 +7,6 @@ th, td {
     padding-right: 10px
 }
 
-.selected {
-    background-color: cyan;
-}
-
 .simulink {
     cursor: pointer;
     text-underline: blue;

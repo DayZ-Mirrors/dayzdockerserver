@@ -22,8 +22,6 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     lib32gcc-s1 \
     lib32stdc++6 \
     libcurl4:i386 \
-    libsdl2-2.0-0:i386 \
-    libsdl2-2.0-0 \
     libcap2 \
     libxml2-utils \
     locales \
@@ -72,6 +70,9 @@ RUN groupadd user && \
     useradd -l -g user user && \
     mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /web && \
     chown -R user:user /home/user /serverfiles /web
+
+# Add our startup script, as this rarely changes.
+COPY --chown=user:user start.sh /usr/local/bin/start.sh
 
 # Use our non-privileged user
 USER user

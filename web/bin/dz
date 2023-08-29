@@ -4,6 +4,10 @@ source dz-common
 
 # An array to store Workshop items. Each element contains the mod's ID, name, and state (active or not).
 WORKSHOP_DIR="/mods/${release_client_appid}"
+if [ ! -d ${WORKSHOP_DIR} ]
+then
+  mkdir -p ${WORKSHOP_DIR}
+fi
 
 workshoplist=""
 
@@ -59,13 +63,13 @@ get_mod_name(){
 		echo "Mod ID ${1} doesn't exist" >&2
 		exit 1
 	fi
-	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | sed -r 's/\s+//g')
+	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
 	echo -n ${NAME}
 }
 
 # "Manage" XML files.
 xml(){
-  /files/mods/xml.sh ${1}
+  /files/bin/xml.sh ${1}
   mergexml ${1}
 }
 
