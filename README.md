@@ -4,68 +4,6 @@ A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
-## TL;DR for setting up a release DayZ server with the "1.21 stable release":
-
-Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/) are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as your user, in your home directory.
-
-```shell
-git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
-cd dayzdockerserver
-git checkout release-server
-# Set the server name in the config file. It's the first line of the file.
-nano files/serverDZ.cfg
-# Build the docker images
-docker compose up -d --build
-# Go into the web container, login, and install the server files
-docker compose exec web bash
-# Use a real login if you want to install mods. Otherwise, use the anonymous user. You'll be limited to the vanilla Chernarus and Livonia maps.
-dz login
-dz install
-# Download the "1.21 stable release" file.
-cd /serverfiles
-wget https://cdn.discordapp.com/attachments/491622000935305217/1119206127750615101/DayZServer
-chmod 755 DayZServer
-# Copy the two shared object files are needed for the server to run. These come from the experimental server release, but are included here for convenience.
-cp /files/tmp/* .
-# Switch to the server container and start the server
-exit
-docker compose exec server bash
-# Copy the serverDZ.cfg file to where it's used at runtime
-cp /files/serverDZ.cfg /profiles
-# Copy the upstream mpmissions files from the read-only mount point on the server.
-cp -a /mpmissions/dayzOffline.chernarusplus/ /serverfiles/mpmissions/
-# Start the server. This will run a vanilla Chernarus server. To run Livonia, simply change files/serverDZ.cfg to use the Livonia map in the section at the bottom of the file.
-dz start
-```
-
-## TL;DR part 2: Adding mods
-
-Be in the same directory as above, and:
-
-```shell
-# Go into the web container
-docker compose exec web bash
-# Add CF
-dz add 1559212036
-# Add VPPAdminTools
-dz add 1828439124
-exit
-# Then in the server container
-docker compose exec server bash
-# Activate CF, but do so by index
-dz a 1
-# Same for VPPAdminTools
-dz a 2
-# Check the status
-dz s
-# Restart the server
-# Hit control C to stop the running server, wait for it to exit
-# Then start it again.
-dz start
-```
-
-Follow the instructions for [setting up VPPAdminTools](https://steamcommunity.com/sharedfiles/filedetails/?id=1828439124)
-
 ## Caveat Emptor
 
 As of DayZ release 1.15, a [Linux DayZ server](https://steamdb.info/app/1042420/) was made available in Dayz Experimental. This has not been officially released, so this will only run a DayZ Experimental server at the moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experimental) will be able to connect to it. The goal is to have a working implementation once the Linux server is officially released, presumably [here](https://steamdb.info/app/223350/).
@@ -81,6 +19,8 @@ This process will create several docker volumes for the following sets of files:
 These volumes can get quite large. The `serverfiles` one will require at least 2.7G of disk space for the default install. The mods one can fill up very quickly, with some map mods being as large as 10G. Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
 
 ## Configure and Build
+
+Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/) are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as your user, in your home directory.
 
 Clone the repo, and change into the newly created directory:
 
