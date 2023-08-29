@@ -12,7 +12,6 @@ RUN echo 'deb http://deb.debian.org/debian bullseye-backports main non-free' >> 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
     curl \
     ca-certificates \
-    gdb \
     git \
     jq \
     libsdl2-2.0-0 \
@@ -21,13 +20,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     locales \
     nano \
     procps \
-    python3-pip \
-    strace \
     wget \
     xmlstarlet
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
