@@ -25,9 +25,9 @@ cyan="\e[36m"
 # Presumably once the Linux server is released, the binaries will come from this ID.
 # But more importantly, if we have a release-compatible binary, the base files must be installed from this id,
 # even if the server binary and accompanying shared object don't come from it.
-release_server_appid=223350
+#release_server_appid=223350
 # Without a release binary, we must use the experimental server app id for everything.
-#release_server_appid=1042420
+release_server_appid=1042420
 
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
