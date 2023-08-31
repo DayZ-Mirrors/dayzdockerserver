@@ -77,7 +77,7 @@ list(){
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 	  MODNAME=$(get_mod_name ${ID})
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
+		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
 	echo
