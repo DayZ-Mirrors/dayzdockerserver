@@ -32,6 +32,9 @@ release_server_appid=1042420
 # DayZ release client SteamID. This is for mods, as only the release client has them.
 release_client_appid=221100
 
+# Server container profile directory
+SERVER_PROFILE="/profiles"
+
 # Common container base directories
 FILES="/files"
 SERVER_FILES="/serverfiles"
@@ -66,16 +69,95 @@ list(){
 	X=1
   C="${green}"
 	spaces="                            "
-  echo "Installed mods:"
+  echo
   echo -e "     ID         Name                             URL                                                                Size"
   echo "------------------------------------------------------------------------------------------------------------------------"
-	for dir in $(ls -tr ${WORKSHOP_DIR})
-	do
-	  ID=${dir}
-	  NAME=$(grep name "${WORKSHOP_DIR}/${dir}/meta.cpp" | cut -d '"' -f2 | tr -cd [:alnum:])
-		SIZE=$(du -sh "${WORKSHOP_DIR}/${dir}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${NAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
+  for link in $(ls -d ${SERVER_FILES}/@* | sort)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+	  MODNAME=$(get_mod_name ${ID})
+		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
+		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#NAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
 	echo
+}
+
+# Get mod name by ID or index
+get_mod_name(){
+	# Check for an ID
+	if ! [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo "Mod ID ${1} doesn't exist" >&2
+		exit 1
+	fi
+	NAME=$(grep name ${WORKSHOP_DIR}/${1}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
+	echo -n ${NAME}
+}
+
+get_mod_id(){
+	# If we were passed a valid mod id, just return it
+	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	then
+		echo -n ${1}
+		return
+	fi
+  # If we have a second argument, we want to iterate over active server mods
+  DIR=${SERVER_FILES}
+  ARG="-d"
+  if [[ ${2} = "0" ]]
+  then
+    ARG="-tdr"
+    DIR=${SERVER_PROFILE}
+  fi
+#  echo "DIR: ${DIR}, ARG: ${ARG}" >&2
+	X=1
+	# Loop over mods
+  for link in $(ls ${ARG} ${DIR}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		if [[ ${X} = ${1} ]]
+		then
+			echo -n ${ID}
+			return
+		fi
+		X=$((X+1))
+	done
+}
+
+get_mods(){
+	workshoplist=""
+  for link in $(ls -d ${SERVER_FILES}/@* 2> /dev/null | sort)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+  done
+  get_mod_command_line
+}
+
+get_mod_command_line(){
+  mod_command_line=""
+  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+  do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+    mod_command_line+="@${MODNAME};"
+  done
+  if [[ ${mod_command_line} != "" ]]
+  then
+    mod_command_line='-mod='${mod_command_line::-1}
+  fi
+}
+
+# Copy mod keys
+copy_keys(){
+	if [[ ${1} = 1 ]]
+	then
+		echo -n "Copying key file(s): "
+		find ${WORKSHOP_DIR}/${2} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
+	else
+	  echo -n "Removing key file(s): "
+    find ${WORKSHOP_DIR}/${2} -name "*.bikey" -execdir rm -vf "${SERVER_FILES}/keys/{}" \;
+	fi
 }

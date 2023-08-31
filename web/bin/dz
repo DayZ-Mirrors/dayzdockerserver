@@ -34,52 +34,10 @@ ${default}"
   exit 1
 }
 
-get_mod_id(){
-	# If we were passed a valid mod id, just return it
-	if [ -d "${WORKSHOP_DIR}/${1}" ]
-	then
-		echo -n ${1}
-		return
-	fi
-	X=1
-	# Loop over mods
-	for dir in $(ls -tr ${WORKSHOP_DIR})
-	do
-	  ID=${dir}
-		if [[ ${X} = ${1} ]]
-		then
-			echo -n ${ID}
-			return
-		fi
-		X=$((X+1))
-	done
-}
-
-# Get mod name by ID or index
-get_mod_name(){
-	ID=$(get_mod_id ${1})
-	if ! [ -d "${WORKSHOP_DIR}/${ID}" ]
-	then
-		echo "Mod ID ${1} doesn't exist" >&2
-		exit 1
-	fi
-	NAME=$(grep name ${WORKSHOP_DIR}/${ID}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
-	echo -n ${NAME}
-}
-
 # "Manage" XML files.
 xml(){
   /files/bin/xml.sh ${1}
   mergexml ${1}
-}
-
-# Copy mod keys
-copy_keys(){
-	if [[ ${1} = 1 ]]
-	then
-		echo "Copying key files..."
-		find ${WORKSHOP_DIR}/${2} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
-	fi
 }
 
 # Manage the mod symlink
@@ -158,7 +116,7 @@ add(){
 	# Lower case all the files in mod directories.
 	find "${WORKSHOP_DIR}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	# Copy the key files
-	copy_keys 1 ${1}
+#	copy_keys 1 ${1}
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
 	mergexml ${ID}
 #	checkTypesXML ${1} install
@@ -278,23 +236,6 @@ update(){
 	fi
 }
 
-get_mods(){
-	workshoplist=""
-	mod_command_line=""
-  for link in $(ls -tdr ${SERVER_FILES}/@* 2> /dev/null)
-  do
-		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-		MODNAME=$(get_mod_name ${ID})
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-		mod_command_line+="@${MODNAME};"
-  done
-	if [[ ${mod_command_line} != "" ]]
-	then
-		mod_command_line='-mod='${mod_command_line::-1}
-	fi
-}
-
-
 # Update mods
 modupdate(){
 	echo "Updating mods..."
@@ -388,7 +329,7 @@ case "${C}" in
 	r|remove)
 		remove "${@}"
 		;;
-	s|status)
+	l|s|status)
 		status "${@}"
 		;;
 	u|update)
