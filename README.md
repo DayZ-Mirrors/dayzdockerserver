@@ -65,6 +65,12 @@ Edit `files/serverDZ.cfg` and set the values of any variables there. See the [do
 hostname = "Something other than Server Name";   // Server name
 ```
 
+Install the server config file. The goal is to maintain the config file in the repo, and then install it into the container. In the future this process will show the diff between the repo file and the installed file.
+
+```shell
+docker compose run --rm server dz c
+```
+
 Launch the server container into the background:
 
 ```
