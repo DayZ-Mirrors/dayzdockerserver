@@ -127,7 +127,7 @@ report() {
 mergexml(){
   # First copy the pristine files from upstream
   echo "Copying pristine versions of cfgeconomycore.xml and cfgeventspawns.xml..."
-``  find /mpmissions -name cfgeconomycore.xml -exec cp -v {} ${SERVER_FILES}{} \;
+  find /mpmissions -name cfgeconomycore.xml -exec cp -v {} ${SERVER_FILES}{} \;
 #  find /mpmissions -name cfgeventspawns.xml -exec cp {} ${SERVER_FILES}{} \;
 
   # Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding and make a single XML
