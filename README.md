@@ -76,22 +76,14 @@ docker compose run --rm server dz c
 
 The maintenance of the config file is a work in progress. The goal is to create a facility for merging changes into the config file and maintain a paper trail of changes.
 
-Install the mpmissions files for the map(s) you plan to run. By default, only Chernarus and Livonia come with the server: 
-```shell
-# Copy Chernarus
-cp -a /mpmission/dayzOffline.chernarusplus ${MPMISSIONS}
-# And/Or copy Livonia
-cp -a /mpmission/dayzOffline.enoch ${MPMISSIONS}
-```
-
-To install other maps, see [maps](maps).
-
-Start the stack:
+Launch the stack into the background:
 ```shell
 docker compose up -d
 ```
 
-Tail the server log:
+There will be nothing in mpmissions when the server container starts for the first time. A pristine copy of `dayzOffline.chernarusplus` will be copied from the `mpmission` volume to the server container. This will be the default map. To install other maps, see [Maps](#maps).
+
+To see the server log:
 
 ```shell
 docker compose logs -f server

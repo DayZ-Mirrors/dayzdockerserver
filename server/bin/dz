@@ -180,6 +180,14 @@ mergexml(){
 
 # Start the server in the foreground
 start(){
+  # Ensure mpmissions has at least one map. If not, block the server from starting
+  if [ ! -d "${MPMISSIONS}/dayzOffline.chernarusplus" ]
+  then
+    echo
+    echo "Performing one-time copy of Chernarus mpmissions..."
+    echo
+    cp -a /mpmission/dayzOffline.chernarusplus ${MPMISSIONS}
+  fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
 		report
