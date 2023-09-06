@@ -18,20 +18,22 @@ This process will create several docker volumes for the following sets of files:
 
 These volumes can get quite large. The `serverfiles` one will require at least 2.7G of disk space for the default install. The mods one can fill up very quickly, with some map mods being as large as 10G. Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
 
+This is a work in progress. It's subject to change and break often.
+
 ## Configure and Build
 
 Ensure [Docker](https://docs.docker.com/engine/install/) and [Docker compose](https://docs.docker.com/compose/install/) are properly installed. This means setting it up so it runs as your user. Make sure you're running these commands as your user, in your home directory.
 
 Clone the repo, and change into the newly created directory:
 
-```
+```shell
 git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
 ```
 
 Build the Docker images:
 
-```
+```shell
 docker compose build
 ```
 
@@ -39,64 +41,85 @@ docker compose build
 
 [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) is used to manage Steam downloads. A vanilla DayZ server can be installed with the `anonymous` Steam user, but most mods cannot. If the goal is to add mods, a real Steam login must be used. Login:
 
-```
+```shell
 docker compose run --rm web dz login
 ```
 
 Follow the prompts. Hit enter to accept the default, which is to use the `anonymous` user, otherwise use your real username and keep following the prompts to add your password and Steam Guard code. This process will wait indefinitely until the code is entered.
 
-The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD). How it encrypts or otherwise obfuscates the credentials is beyond the scope of this document. Suffice to say that they are stored in the docker volume. All subsequent SteamCMD commands will use the stored credentials. so this process does not need to be repeated unless the session expires or the docker volume is deleted.
+The credentials will be managed by [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD). This will store a session token in the `homedir` docker volume. All subsequent SteamCMD commands will use this. so this process does not need to be repeated unless the session expires or the docker volume is deleted.
 
-To manage the login credentials, simply run the command again. See [Manage](#manage). 
+To manage the login credentials, simply run the above command again. See [Manage](#manage). 
 
 ## Install
 
-The server files must be installed before the server can be run:
-```
+The base server files must be installed before the server can be run:
+```shell
 docker compose run --rm web dz install
 ```
-This process will download the several gigabytes (about 2.7G) of files required to run the server.
+
+This will download about 2.7G of files.
 
 ## Run
 
-Edit `files/serverDZ.cfg` and set the values of any variables there. See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-documentation/):
+Edit `files/serverDZ.cfg` and set the values of any variables there. See the [documentation](https://forums.dayz.com/topic/239635-dayz-server-files-documentation/) if you want, but most of the default values are fine. At the very least, change the server name:
 
 ```
 hostname = "Something other than Server Name";   // Server name
 ```
 
-Install the server config file. The goal is to maintain the config file in the repo, and then install it into the container. In the future this process will show the diff between the repo file and the installed file.
+Install the server config file:
 
 ```shell
 docker compose run --rm server dz c
 ```
 
-Launch the server container into the background:
+The maintenance of the config file is a work in progress. The goal is to create a facility for merging changes into the config file and maintain a paper trail of changes.
 
-```
-docker compose up -d server
+Install the mpmissions files for the map(s) you plan to run. By default, only Chernarus and Livonia come with the server: 
+```shell
+# Copy Chernarus
+cp -a /mpmission/dayzOffline.chernarusplus ${MPMISSIONS}
+# Copy Livonia
+cp -a /mpmission/dayzOffline.enoch ${MPMISSIONS}
 ```
 
-Tail the log:
+To install other maps, see [maps](maps).
 
+Start the stack:
+```shell
+docker compose up -d
 ```
+
+Tail the server log:
+
+```shell
 docker compose logs -f server
 ```
-## Stop
+## Stopping the server
 
 To stop the DayZ server:
-```
+```shell
 docker compose exec server dz stop
 ```
 
-If it exits cleanly, the container will also stop. Otherwise the server will restart
+If it exits cleanly, the container will also stop. Otherwise a crash is presumed and the server will restart. Ideally, the server would always exit cleanly, but... it's DayZ.
 
-To stop the container:
+To stop the containers:
+```shell
+docker compose stop
 ```
+
+To bring the entire stack down:
+```shell
 docker compose down
 ```
 
 ## Manage
+
+### Maps
+
+Installing another map requires installing its mod and mpmissions files. Some maps maintain github repositories or public web sites for their mpmissions, while others do not. This project aims to support DayZ maps whose mpmissions are easily accessible "Out of the box" by maintaining configuration files for them.
 
 The following management commands presume the server has been brought [up](#run).
 
@@ -105,48 +128,55 @@ The following management commands presume the server has been brought [up](#run)
 A terminal-based RCON client is included: https://github.com/indepth666/py3rcon.
 The dz script manages what's necessary to configure and run it:
 
-```
+```shell
 docker compose exec server dz rcon
 ```
 
 To reset the RCON password in the Battle Eye configuration file, simply delete it, and a random one will be generated on the next server startup:
 
-```
+```shell
 docker compose run --rm server rm serverfiles/battleye/baserver_x64_active*
 ```
 
+Don't expect much from this RCON at this time.
+
 ### Update the DayZ server files
 
-It's probably not a good idea to update the server files while it's running. Make sure it's down first:
+It's probably not a good idea to update the server files while a server is running. Bring everything down first:
 
-```
+```shell
 docker compose down
 ```
 
 Then run the command:
 
-```
+```shell
 docker compose run --rm web dz update
 ```
 
+This will update the server base files as well as all installed mods.
+
 Don't forget to [bring it back up](#run).
 
-### Stop the server
+### Stop the DayZ server
 
-```
+To stop the server:
+```shell
 docker compose exec server dz stop
 ```
 
-The server doesn't always exit when stopping it (SIGINT). When this happens, it's necessary to force stop it (SIGKILL):
+The above sends the SIGINT signal to the server process. The server sometimes fails to stop with this signal. It may be necessary to force stop it with the SIGKILL:
 
-```
+```shell
 docker compose exec server dz force
 ```
 
-When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be restarted.
+When the server exits cleanly, i.e. exit code 0, the container also stops. Otherwise, a crash is presumed, and the server will be automatically restarted.
 
-NOTE: As DayZ Experimental 1.19, the server is known to not exit upon SIGINT when mods are installed. This makes force stopping the server
-required. This is not a clean exit, and will cause the server to restart. Manually take the server [down](#stop) to stop the container.
+To bring the entire stack down:
+```shell
+docker compose down
+```
 
 ### Workshop - Add / List / Remove / Update mods
 
