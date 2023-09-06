@@ -12,11 +12,19 @@ source ${FILES}/mods/${ID}/xml.env
 # Iterate over the file names we can handle
 for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
 do
-  if echo ${!var} | grep -q http
+  DIR="${WORKSHOP_DIR}/${ID}"
+  OUT="${DIR}/${var,,}.xml"
+  if echo ${!var} | grep -qE "^http"
   then
-    OUT="${WORKSHOP_DIR}/${ID}/${var,,}.xml"
     echo "${var} is a URL, downloading to ${OUT}"
     curl -so ${OUT} ${!var}
+  elif echo ${!var} | grep -qE "^\./"
+  then
+    echo "${var} is local, copying to ${OUT}"
+    cp -v "${DIR}/${!var}" "${OUT}"
+  fi
+  if [ -f ${OUT} ]
+  then
     xmllint --noout ${OUT} 2> /dev/null || {
       echo -e "${red}${var,,}.xml does not pass XML lint test!${default}"
     } && {

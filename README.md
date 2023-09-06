@@ -80,7 +80,7 @@ Install the mpmissions files for the map(s) you plan to run. By default, only Ch
 ```shell
 # Copy Chernarus
 cp -a /mpmission/dayzOffline.chernarusplus ${MPMISSIONS}
-# Copy Livonia
+# And/Or copy Livonia
 cp -a /mpmission/dayzOffline.enoch ${MPMISSIONS}
 ```
 
