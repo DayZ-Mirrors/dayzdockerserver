@@ -126,15 +126,21 @@ report() {
 
 mergexml(){
   # First copy the pristine files from upstream
-  echo "Copying pristine versions of cfgeconomycore.xml and cfgeventspawns.xml..."
-  find /mpmissions -name cfgeconomycore.xml -exec cp -v {} ${SERVER_FILES}{} \;
-#  find /mpmissions -name cfgeventspawns.xml -exec cp {} ${SERVER_FILES}{} \;
+  for i in cfgeconomycore.xml #cfgeventspawns.xml
+  do
+    echo "Copying pristine version of ${i} into local mpmission(s)..."
+    for dir in $(ls -d ${MPMISSIONS}/*)
+    do
+      #echo "dir: ${dir}, basename: $(basename ${dir})"
+      find /mpmissions/$(basename ${dir}) -name ${i} -exec cp -v {} ${SERVER_FILES}{} \;
+    done
+  done
 
   # Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding and make a single XML
   # file for the ones that can go into it.
   for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
   do
-		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+    ID=$(readlink ${link} | awk -F/ '{print $NF}')
     # Going to have to maintain a matrix of file names -> root node -> child node permutations
     C=""
     for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
@@ -180,13 +186,20 @@ mergexml(){
 
 # Start the server in the foreground
 start(){
-  # Ensure mpmissions has at least one map. If not, block the server from starting
+  # Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
   if [ ! -d "${MPMISSIONS}/dayzOffline.chernarusplus" ]
   then
     echo
     echo "Performing one-time copy of Chernarus mpmissions..."
     echo
-    cp -a /mpmission/dayzOffline.chernarusplus ${MPMISSIONS}
+    cp -av /mpmissions/dayzOffline.chernarusplus ${MPMISSIONS}
+  fi
+  # If we're developing, just block the container
+  if [[ ${DEVELOPMENT} = "1" ]]
+  then
+    echo "DEVELOPMENT mode, blocking..."
+    tail -f /dev/null
+    exit 0
   fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
@@ -421,9 +434,6 @@ case "${C}" in
 		;;
 	n|rcon)
 		rcon "${@}"
-		;;
-	r|remove)
-		remove "${@}"
 		;;
 	r|restart)
 		restart "${@}"

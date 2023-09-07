@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 
-# Set PS1 so we know we're in the container
+# Set PS1 so we know we're in the container, should we exec into it.
 cat > .bashrc <<EOF
 alias ls='ls --color'
 export PS1="${debian_chroot:+($debian_chroot)}\u@dz-server:\w\$ "
 EOF
 
-# Uncomment the line below to run things manually in the container, then run:
-# docker compose exec main bash, and from within the container: dz start (or do whatever)
-#tail -f /dev/null
-
-# Otherwise, start the server normally
+# Start the server.
+# If the DEVELOPMENT environment variable is set to 1, the container will just block and not start the server.
 dz start

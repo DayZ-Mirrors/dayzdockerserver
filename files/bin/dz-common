@@ -67,15 +67,20 @@ prompt_yn(){
 # List mods
 list(){
 	X=1
-  C="${green}"
+	C="${green}"
 	spaces="                            "
-  echo
-  echo -e "     ID         Name                             URL                                                                Size"
-  echo "------------------------------------------------------------------------------------------------------------------------"
-  for link in $(ls -d ${SERVER_FILES}/@* | sort)
-  do
+	FIRST=1
+	for link in $(ls -d ${SERVER_FILES}/@* 2> /dev/null | sort)
+	do
+		if [[ ${FIRST} = 1 ]]
+		then
+			echo
+			echo -e "     ID         Name                             URL                                                                Size"
+			echo "------------------------------------------------------------------------------------------------------------------------"
+			FIRST=0
+		fi
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-	  MODNAME=$(get_mod_name ${ID})
+		MODNAME=$(get_mod_name ${ID})
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
 		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
@@ -102,19 +107,19 @@ get_mod_id(){
 		echo -n ${1}
 		return
 	fi
-  # If we have a second argument, we want to iterate over active server mods
-  DIR=${SERVER_FILES}
-  ARG="-d"
-  if [[ ${2} = "0" ]]
-  then
-    ARG="-tdr"
-    DIR=${SERVER_PROFILE}
-  fi
-#  echo "DIR: ${DIR}, ARG: ${ARG}" >&2
+	# If we have a second argument, we want to iterate over active server mods
+	DIR=${SERVER_FILES}
+	ARG="-d"
+	if [[ ${2} = "0" ]]
+	then
+		ARG="-tdr"
+		DIR=${SERVER_PROFILE}
+	fi
+#	echo "DIR: ${DIR}, ARG: ${ARG}" >&2
 	X=1
 	# Loop over mods
-  for link in $(ls ${ARG} ${DIR}/@* 2> /dev/null)
-  do
+	for link in $(ls ${ARG} ${DIR}/@* 2> /dev/null)
+	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		if [[ ${X} = ${1} ]]
 		then
@@ -127,27 +132,27 @@ get_mod_id(){
 
 get_mods(){
 	workshoplist=""
-  for link in $(ls -d ${SERVER_FILES}/@* 2> /dev/null | sort)
-  do
+	for link in $(ls -d ${SERVER_FILES}/@* 2> /dev/null | sort)
+	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		MODNAME=$(get_mod_name ${ID})
 		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
-  done
-  get_mod_command_line
+	done
+	get_mod_command_line
 }
 
 get_mod_command_line(){
-  mod_command_line=""
-  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
-  do
+	mod_command_line=""
+	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		MODNAME=$(get_mod_name ${ID})
-    mod_command_line+="@${MODNAME};"
-  done
-  if [[ ${mod_command_line} != "" ]]
-  then
-    mod_command_line='-mod='${mod_command_line::-1}
-  fi
+		mod_command_line+="@${MODNAME};"
+	done
+	if [[ ${mod_command_line} != "" ]]
+	then
+		mod_command_line='-mod='${mod_command_line::-1}
+	fi
 }
 
 # Copy mod keys

@@ -7,6 +7,11 @@ set -eE
 
 ID=${1}
 
+if ! [ -f ${FILES}/mods/${ID}/xml.env ]
+then
+	exit 0
+fi
+
 source ${FILES}/mods/${ID}/xml.env
 
 # Iterate over the file names we can handle

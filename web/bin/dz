@@ -26,6 +26,7 @@ Options and arguments:
   i|install - Install the DayZ server files
   g|login - Login to Steam.
   m|modupdate - Update the mod files
+  p|map id - Install a mod's mpmissions files by id. (Presumes template exists)
   r|remove id - Remove all files and directories of a Workshop item by id
   s|status - Shows Steam login status, if base files are installed, installed mods
   u|update - Update the server files
@@ -110,7 +111,7 @@ add(){
 	# Lower case all the files in mod directories.
 	find "${WORKSHOP_DIR}/${1}" -depth -exec rename -f 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
-	installxml ${ID}
+	xml ${ID}
 }
 
 # Remove a mod
@@ -241,7 +242,6 @@ modupdate(){
 status(){
 	INSTALLED="${NO}"
 	LOGGED_IN="${NO}"
-	RUNNING="${NO}"
 
 	# DayZ Server files installation
 	if [ -f "${SERVER_INSTALL_FILE}" ]
@@ -274,31 +274,34 @@ Mods: "
 	MODS=$(list)
 	if [[ ${MODS} == "" ]]
 	then
-		echo -n "none"
+		echo -ne "${red}none${default}"
 	fi
 	echo -e "${MODS}"
 }
 
-check_mod_install(){
-	# See if this mod id exists in files/mods, and offer to install other server side files if an install.sh is found
+map(){
+	# Install map mpmissions for mods that have them. Presumes a map.env was created for the mod, with the required metadata (git URL, etc.)
+	if [ -f ${FILES}/mods/${1}/install.env ]
+	then
+		echo "Installing mpmissions files for mod id ${1}..."
+		source ${FILES}/mods/${1}/install.env
+		${FILES}/bin/install.sh ${1} install
+	fi
+}
+
+mod_install(){
 	if [ -f ${FILES}/mods/${1}/${2}.sh ]
 	then
 		echo "An ${2}.sh was found for mod id ${1}. Running..."
 		${FILES}/mods/${1}/${2}.sh
 	fi
 	# A generic map install script. Presumes a git repo as the source
-	if [ -f ${FILES}/mods/${1}/install.env ]
-	then
-		echo "An ${2}.env was found for mod id ${1}. Performing ${2}..."
-		source ${FILES}/mods/${1}/install.env
-		${FILES}/mods/install.sh ${1} ${2}
-	fi
 }
 
 # "Manage" XML files.
 xml(){
   /files/bin/xml.sh ${1}
-  installxml ${1}
+  #installxml ${1}
 }
 
 # Capture the first argument and shift it off so we can pass $@ to every function
@@ -325,6 +328,9 @@ case "${C}" in
 		;;
 	l|s|status)
 		status "${@}"
+		;;
+	p|map)
+		map "${@}"
 		;;
 	u|update)
 		update "${@}"

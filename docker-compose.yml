@@ -32,7 +32,7 @@ services:
     ports:
       - "8001:8001/tcp"
       - "8000:8000/tcp"
-    restart: no
+    restart: always
     environment:
       # The use of the Steam API in the (very incomplete) web app requires a key. Get yours here: https://steamcommunity.com/dev/apikey
       - STEAMAPIKEY=YOUR_STEAM_API_KEY_HERE
@@ -63,11 +63,15 @@ services:
 #      - 27016:27016/udp
     # Always restart, unless stopped
     restart: unless-stopped
+    environment:
+      # To prevent the server from starting to allow for development, set this to 1
+      - DEVELOPMENT=0
     # Allows attaching a debugger from the host
-    cap_add:
-      - SYS_PTRACE
+#    cap_add:
+#      - SYS_PTRACE
     # Allows core files to be created within the container. These are VERY LARGE! Enable only for debugging!
-    ulimits:
-      core:
-        soft: -1
-        hard: -1
+    # One must also set the sysctl kernel.core_pattern parameter ON THE HOST to a path that is writable within the container. YMMV
+#    ulimits:
+#      core:
+#        soft: -1
+#        hard: -1

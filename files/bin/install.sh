@@ -2,27 +2,27 @@
 
 set -eE
 
-source /files/mods/${1}/install.env
+if [ -f /files/mods/${1}/install.env ]
+then
+	source /files/mods/${1}/install.env
+else
+	echo "install.env not found for mod id ${1}..."
+	exit 1
+fi
 
-echo
 if [[ ${2} = "uninstall" ]]
 then
 	echo "Backing up, as uninstalling will remove the ${MAP} mpmissions directory"
-	dayzserver backup
-	echo "Uninstalling mpmissions..."
-	echo
+	dz backup
 	rm -rf ${SERVER_FILES}/mpmissions/${MPDIR}
 elif [[ ${2} = "update" ]]
 then
-	echo "Updating mpmissions directory..."
-	echo
 	cd /tmp
 	git clone ${REPO} 2> /dev/null 1> /dev/null
 	cp -a ${DIR}/${MPDIR} ${SERVER_FILES}/mpmissions
 	rm -rf ${DIR}
-else
-	echo "Installing mpmissions files..."
-	echo
+elif [[ ${2} = "install" ]]
+then
 	cd /tmp
 	git clone ${REPO} 2> /dev/null 1> /dev/null
 	cp -a ${DIR}/${MPDIR} ${SERVER_FILES}/mpmissions
