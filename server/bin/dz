@@ -128,10 +128,13 @@ mergexml(){
   # First copy the pristine files from upstream
   for i in cfgeconomycore.xml #cfgeventspawns.xml
   do
-    echo "Copying pristine version of ${i} into local mpmission(s)..."
+    echo "Copying pristine version of ${i} into local mpmission ${MAP}..."
     for dir in $(ls -d ${MPMISSIONS}/*)
     do
-      #echo "dir: ${dir}, basename: $(basename ${dir})"
+      if [[ ${dir} != ${MAP} ]]
+      then
+        continue
+      fi
       find /mpmissions/$(basename ${dir}) -name ${i} -exec cp -v {} ${SERVER_FILES}{} \;
     done
   done
@@ -143,6 +146,7 @@ mergexml(){
     ID=$(readlink ${link} | awk -F/ '{print $NF}')
     # Going to have to maintain a matrix of file names -> root node -> child node permutations
     C=""
+    FOUND=0
     for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
     do
       var=$(echo ${i} | cut -d: -f1)
@@ -150,11 +154,22 @@ mergexml(){
       CHILD=$(echo ${i} | cut -d: -f3)
       if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
       then
-        FOUND=1
-        echo "Adding ${WORKSHOP_DIR}/${ID}/${var,,}.xml to cfgeconomycore..."
+        if [[ ${FOUND} = 0 ]]
+        then
+          MODNAME=$(get_mod_name ${ID})
+          echo "  Adding mod ${MODNAME}"
+          FOUND=1
+        fi
+        echo -n "    "
         for dir in $(ls ${MPMISSIONS})
          do
-           mkdir -pv ${MPMISSIONS}/${dir}/${ID}
+           # Only copy for the current map
+           if [[ ${dir} != ${MAP} ]]
+           then
+             continue
+           fi
+           rm -rf ${MPMISSIONS}/${dir}/${ID}
+           mkdir -p ${MPMISSIONS}/${dir}/${ID}
            cp -v ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${dir}/${ID}/${var,,}.xml
         done
         C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
@@ -170,17 +185,17 @@ mergexml(){
           -m /ce /economycore {} \;
     fi
     # These still have to be merged into the upstream file
-    for i in "CFGEVENTSPAWNS:eventposdef:event"
-    do
-      var=$(echo ${i} | cut -d: -f1)
-      CHECK=$(echo ${i} | cut -d: -f2)
-      CHILD=$(echo ${i} | cut -d: -f3)
-      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
-      then
-        echo "Merging ${var,,}.xml..."
+#    for i in "CFGEVENTSPAWNS:eventposdef:event"
+#    do
+#      var=$(echo ${i} | cut -d: -f1)
+#      CHECK=$(echo ${i} | cut -d: -f2)
+#      CHILD=$(echo ${i} | cut -d: -f3)
+#      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+#      then
+#        echo "Merging ${var,,}.xml (Not really...WIP)"
 #        xmlstarlet ed -L -s / -t name event
-      fi
-    done
+#      fi
+#    done
   done
 }
 
@@ -329,6 +344,16 @@ activelist(){
   fi
 }
 
+get_map_name(){
+  MAP="none"
+  # Map name
+  if [[ -f ${SERVER_CFG_DST} ]]
+  then
+    MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//" | cut -d= -f2 | cut -d\; -f1 | tr -d '"')
+  fi
+  echo ${MAP}
+}
+
 # Display the status of everything
 status(){
   loadconfig
@@ -354,13 +379,7 @@ status(){
 		# Current parameters
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
-
-	MAP="none"
-	# Map name
-	if [[ -f ${SERVER_CFG_DST} ]]
-	then
-		MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//")
-	fi
+  MAP=$(get_map_name)
 	# Number of mods plus the list denoting on or off
 	echo -ne "
 Server files installed: ${INSTALLED}"
@@ -393,10 +412,12 @@ backup(){
 	do
 		B="${BACKUP_DIR}/${DATE}/"
 		echo "Backing up ${i} to ${B}..."
-		mkdir -p ${B}
+		mkdir -p ${B} 1> /dev/null
 		cp -a "${i}" "${B}"
 	done
 }
+
+MAP=$(get_map_name)
 
 # Capture the first argument and shift it off so we can pass $@ to every function
 C=${1}
