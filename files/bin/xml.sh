@@ -23,9 +23,13 @@ do
   then
     echo "${var} is a URL, downloading to ${OUT}"
     curl -so ${OUT} ${!var}
+  elif echo ${!var} | grep -qE "^local"
+  then
+    echo "${var} comes from mod integrations, copying to ${OUT}"
+    cp -v "${FILES}/mods/${ID}/${var,,}.xml" "${OUT}"
   elif echo ${!var} | grep -qE "^\./"
   then
-    echo "${var} is local, copying to ${OUT}"
+    echo "${var} comes from the mod as ${!var}, copying to ${OUT}"
     cp -v "${DIR}/${!var}" "${OUT}"
   fi
   if [ -f ${OUT} ]

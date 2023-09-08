@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<spawnabletypes>
+	<damage min="0.1" max="0.3" />
+	<type name="RFWC_Whaler">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".05">
+			<item name="CanisterGasoline" chance="1.00" />
+		</attachments>
+		<attachments chance=".45">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>	
+	<type name="RFWC_CarpBoat">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+		</type>	
+	<type name="RFWC_CarpBoat_Rusty">
+		<damage min="0.1" max="0.4" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".10">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".10">
+			<item name="CanisterGasoline" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+		</type>
+	<type name="RFWC_Zodiac_Black">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".45">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>	
+	<type name="RFWC_Zodiac_Orange">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+	<type name="RFWC_DragBoat_Red">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+	<type name="RFWC_DragBoat_Black">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+	<type name="RFWC_Seadoo_Camo">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+	<type name="RFWC_Seadoo_Green">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+	<type name="RFWC_Seadoo_Orange">
+		<damage min="0.1" max="0.3" />
+		<attachments chance=".45">
+			<item name="RFWC_Anchor_Rope" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="SparkPlug" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="TruckBattery" chance="1.00" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="CanisterGasoline" chance=".05" />
+		</attachments>
+		<attachments chance=".20">
+			<item name="EngineOil" chance="1.00" />
+		</attachments>
+	</type>
+</spawnabletypes>
