@@ -15,14 +15,9 @@ RUN echo 'deb http://deb.debian.org/debian bullseye-backports main non-free' >> 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
     curl \
     ca-certificates \
-    gdb \
     git \
     gwenhywfar-tools \
     jq \
-    lib32gcc-s1 \
-    lib32stdc++6 \
-    libcurl4:i386 \
-    libcap2 \
     libxml2-utils \
     locales \
     nano \
