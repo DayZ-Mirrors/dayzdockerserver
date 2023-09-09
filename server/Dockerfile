@@ -13,6 +13,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     curl \
     ca-certificates \
     git \
+    gwenhywfar-tools \
     jq \
     libsdl2-2.0-0 \
     libcap2 \

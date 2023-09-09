@@ -110,6 +110,10 @@ EOF
 
 # Make sure to clean up and report on exit, as these files remain in the container's volume
 report() {
+  if [[ ${DONT_START} != "" ]]
+  then
+    exit 0
+  fi
 	rm -f /tmp/mod_command_line /tmp/parameters
 	echo
 	echo -e "${yellow}========================================== error.log =========================================="
@@ -122,106 +126,112 @@ report() {
 	find "${SERVER_PROFILE}" -name "*.RPT" -exec ls -la {} \; -exec tail -n 30 {} \; -exec rm -f {} \;
 	echo
 	echo -e "========================================== End log ======================================${default}"
+	# Back these files up into a new directory with the current time stamp in the name
+	DIR="${SERVER_PROFILE}/logs-$(date +%Y-%m-%d-%H-%M-%S)"
+	mkdir -p ${DIR}
+	cd ${SERVER_PROFILE}
+	mv -v *.log *.RPT *.mdmp ${DIR} 2> /dev/null
 }
 
 mergexml(){
-  # First copy the pristine files from upstream
-  for i in cfgeconomycore.xml #cfgeventspawns.xml
-  do
-    echo "Copying pristine version of ${i} into local mpmission ${MAP}..."
-    for dir in $(ls -d ${MPMISSIONS}/*)
-    do
-      if [[ ${dir} != ${MAP} ]]
-      then
-        continue
-      fi
-      find /mpmissions/$(basename ${dir}) -name ${i} -exec cp -v {} ${SERVER_FILES}{} \;
-    done
-  done
-
-  # Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding and make a single XML
-  # file for the ones that can go into it.
-  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
-  do
-    ID=$(readlink ${link} | awk -F/ '{print $NF}')
-    # Going to have to maintain a matrix of file names -> root node -> child node permutations
-    C=""
-    FOUND=0
-    for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
-    do
-      var=$(echo ${i} | cut -d: -f1)
-      CHECK=$(echo ${i} | cut -d: -f2)
-      CHILD=$(echo ${i} | cut -d: -f3)
-      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
-      then
-        if [[ ${FOUND} = 0 ]]
-        then
-          MODNAME=$(get_mod_name ${ID})
-          echo "  Adding mod ${MODNAME}"
-          FOUND=1
-        fi
-        echo -n "    "
-        for dir in $(ls ${MPMISSIONS})
-         do
-           # Only copy for the current map
-           if [[ ${dir} != ${MAP} ]]
-           then
-             continue
-           fi
-           rm -rf ${MPMISSIONS}/${dir}/${ID}
-           mkdir -p ${MPMISSIONS}/${dir}/${ID}
-           cp -v ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${dir}/${ID}/${var,,}.xml
-        done
-        C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
-      fi
-    done
-    if [[ ${C} != "" ]]
-    then
-      # Merge into every mpmissions file
-      find ${MPMISSIONS} -name cfgeconomycore.xml -exec \
-        xmlstarlet ed -L -s / -t elem -n ce \
-          -a /ce -t attr -n folder -v "${ID}" \
-          ${C} \
-          -m /ce /economycore {} \;
-    fi
-    # These still have to be merged into the upstream file
-#    for i in "CFGEVENTSPAWNS:eventposdef:event"
-#    do
-#      var=$(echo ${i} | cut -d: -f1)
-#      CHECK=$(echo ${i} | cut -d: -f2)
-#      CHILD=$(echo ${i} | cut -d: -f3)
-#      if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
-#      then
-#        echo "Merging ${var,,}.xml (Not really...WIP)"
-#        xmlstarlet ed -L -s / -t name event
-#      fi
-#    done
-  done
+  echo
+	# First copy the pristine files from upstream
+	echo -e "${green}Copying upstream XML files into local mpmissions for map ${MAP}${default}":
+	find /mpmissions/${MAP} \( -name "cfgeconomycore.xml" -o -name "cfgeventspawns.xml" \) -exec cp -v {} ${SERVER_FILES}{} \;
+	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
+	# First, remove any existing files, via the mod_ prefix
+	rm -rf ${MPMISSIONS}/${MAP}/mod_*
+	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		# Going to have to maintain a matrix of file names -> root node -> child node permutations
+		C=""
+		FOUND=0
+		for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+		do
+			var=$(echo ${i} | cut -d: -f1)
+			CHECK=$(echo ${i} | cut -d: -f2)
+			CHILD=$(echo ${i} | cut -d: -f3)
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+			then
+				if [[ ${FOUND} = 0 ]]
+				then
+					MODNAME=$(get_mod_name ${ID})
+					echo
+					echo -e "${green}Adding mod ${MODNAME}${default}"
+					FOUND=1
+				fi
+				echo -n "Copy "
+				mkdir -p ${MPMISSIONS}/${MAP}/mod_${ID}
+				cp -v ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${MAP}/mod_${ID}/${var,,}.xml
+				C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
+			fi
+		done
+		if [[ ${C} != "" ]]
+		then
+			# Merge into the current mpmissions file
+			echo "Create new XML node <ce folder=\"mod_${ID}\"> -> ${MPMISSIONS}/${MAP}/cfgeconomycore.xml"
+			find ${MPMISSIONS}/${MAP} -name cfgeconomycore.xml -exec \
+				xmlstarlet ed -L -s / -t elem -n ce \
+				-a /ce -t attr -n folder -v "mod_${ID}" ${C} \
+				-m /ce /economycore {} \;
+		fi
+		# These are merged directly into the upstream file
+		for i in "CFGEVENTSPAWNS:eventposdef:event"
+		do
+			var=$(echo ${i} | cut -d: -f1)
+			CHECK=$(echo ${i} | cut -d: -f2)
+			CHILD=$(echo ${i} | cut -d: -f3)
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+			then
+				echo "Merge XML ${WORKSHOP_DIR}/${ID}/${var,,}.xml -> ${MPMISSIONS}/${MAP}/${var,,}.xml"
+				rm -f /tmp/x /tmp/y
+				xmlmerge -o /tmp/x ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${MAP}/${var,,}.xml
+				xmlstarlet fo /tmp/x > /tmp/y
+				# Ensure the XML is valid
+				xmllint --noout /tmp/y || (
+					echo
+					echo "Merged XML file ${MPMISSIONS}/${MAP}/${var,,}.xml is not valid! Can't continue!"
+					echo
+					exit 1
+				)
+				mv /tmp/y ${MPMISSIONS}/${MAP}/${var,,}.xml
+			fi
+		done
+	done
 }
 
 # Start the server in the foreground
 start(){
-  # Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
-  if [ ! -d "${MPMISSIONS}/dayzOffline.chernarusplus" ]
-  then
-    echo
-    echo "Performing one-time copy of Chernarus mpmissions..."
-    echo
-    cp -av /mpmissions/dayzOffline.chernarusplus ${MPMISSIONS}
-  fi
-  # If we're developing, just block the container
-  if [[ ${DEVELOPMENT} = "1" ]]
-  then
-    echo "DEVELOPMENT mode, blocking..."
-    tail -f /dev/null
-    exit 0
-  fi
+	# Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
+	if [ ! -d "${MPMISSIONS}/${MAP}" ]
+	then
+		echo
+		echo "Performing one-time copy of ${MAP} mpmissions..."
+		echo
+		cp -av /mpmissions/${MAP} ${MPMISSIONS}
+	fi
+	# If we're developing, just block the container
+	if [[ ${DEVELOPMENT} = "1" ]]
+	then
+		echo "DEVELOPMENT mode, blocking. Unset DEVELOPMENT in the current environment to run the server."
+		tail -f /dev/null
+		exit 0
+	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
 		report
 	' EXIT
 	get_mods
 	mergexml
+	if [[ ${DONT_START} != "" ]]
+	then
+		echo
+		echo "Not starting server, as DONT_START is set"
+		echo
+		exit 0
+	fi
+	echo
 	cd ${SERVER_FILES}
 	# Run the server. Allow docker to restart the container if the script exits with a code other than 0. This is so we can
 	# safely shut the container down without killing the server within.
@@ -322,7 +332,7 @@ rcon(){
 activelist(){
 	X=1
   C="${green}"
-	spaces="                        "
+	spaces="                            "
 	have=no
   for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
 	do
@@ -335,7 +345,7 @@ activelist(){
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 	  MODNAME=$(get_mod_name ${ID})
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.23s    %s      https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
+		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
 	if [[ ${have} = "no" ]]
@@ -379,7 +389,7 @@ status(){
 		# Current parameters
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
-  MAP=$(get_map_name)
+  MAP=${MAP}
 	# Number of mods plus the list denoting on or off
 	echo -ne "
 Server files installed: ${INSTALLED}"
@@ -399,7 +409,6 @@ Working parameters: ${parameters}
 Working mod parameter: ${mod_command_line}"
 	if [[ "${INSTALLED}" = "${YES}" ]]
 	then
-		MAP=$(grep template ${SERVER_CFG_DST} | grep -v "^//" | cut -d= -f2 | cut -d\; -f1)
 		echo "Map: ${MAP}"
 	fi
 	echo

@@ -61,6 +61,16 @@ installxml(){
     then
       echo "Normalizing ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
       cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml /tmp/x
+      # Quirks
+      # Some cfgeventspanws.xml files have <events> instead of <eventposdef>. Let's just try to fix that first.
+      if [[ ${var} = "CFGEVENTSPAWNS" ]]
+			then
+				if grep -q '<events>' /tmp/x
+				then
+					echo "  - (Quirk) has <events> instead of <eventposdef>. fixing..."
+					xmlstarlet ed -L -r "events" -v "eventposdef" /tmp/x
+				fi
+			fi
       if ! grep -q '<'${CHECK}'>' /tmp/x
       then
         echo "  - has no root node <${CHECK}>. fixing..."
