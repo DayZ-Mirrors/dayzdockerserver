@@ -33,9 +33,8 @@ services:
       - "8001:8001/tcp"
       - "8000:8000/tcp"
     restart: always
-    environment:
-      # The use of the Steam API in the (very incomplete) web app requires a key. Get yours here: https://steamcommunity.com/dev/apikey
-      - STEAMAPIKEY=YOUR_STEAM_API_KEY_HERE
+    env_file:
+      - .env
 
   server:
     build: server
@@ -63,9 +62,6 @@ services:
 #      - 27016:27016/udp
     # Always restart, unless stopped
     restart: unless-stopped
-    environment:
-      # To prevent the server from starting to allow for development, set this to 1
-      - DEVELOPMENT=0
     # Allows attaching a debugger from the host
 #    cap_add:
 #      - SYS_PTRACE
@@ -75,3 +71,5 @@ services:
 #      core:
 #        soft: -1
 #        hard: -1
+    env_file:
+      - .env
