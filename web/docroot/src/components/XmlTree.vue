@@ -46,6 +46,7 @@
 
 <script>
 import { useFetch } from '@vueuse/core'
+import { config } from '@/config'
 export default {
   name: "xmlTree",
   props: {
@@ -85,7 +86,7 @@ export default {
       if (this.element) {
         return this.element
       } else if(this.file) {
-        const { data } = await useFetch(`http://bubba:8000/mod/${this.modId}/${this.file}`)
+        const { data } = await useFetch(config.baseUrl + `/mod/${this.modId}/${this.file}`)
         const parser = new DOMParser()
         const xmlDoc = parser.parseFromString(data, "text/xml")
         return xmlDoc.documentElement

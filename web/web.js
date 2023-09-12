@@ -215,8 +215,10 @@ app.get('/mod/:modId', (req, res) => {
 app.get('/mod/:modId/:file', (req, res) => {
     const modId = req.params["modId"]
     const file = req.params["file"]
-    const contents = fs.readFileSync(config.modDir + d + modId + d + file)
-    res.send(contents)
+    if (fs.existsSync(config.modDir + d + modId + d + file)) {
+        const contents = fs.readFileSync(config.modDir + d + modId + d + file)
+        res.send(contents)
+    }
 })
 
 // Search for a mod

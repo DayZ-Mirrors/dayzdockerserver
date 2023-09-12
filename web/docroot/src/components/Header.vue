@@ -5,7 +5,8 @@ import Servers from '@/components/Servers.vue'
 import { useFetch } from '@vueuse/core'
 import { useAppStore } from '@/stores/app.js'
 const store = useAppStore()
-const { error, data } = await useFetch('http://bubba:8000/status').get().json()
+import { config } from '@/config'
+const { error, data } = await useFetch(config.baseUrl + '/status').get().json()
 const set = (w, e) => {
   store.section = w
   const active = Array.from(document.getElementsByClassName('active'))

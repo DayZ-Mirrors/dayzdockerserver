@@ -3,7 +3,8 @@ import { useFetch } from "@vueuse/core"
 import xmlTree from '@/components/XmlTree.vue'
 import { useAppStore } from '@/stores/app.js'
 const store = useAppStore()
-const { data, error } = useFetch(() => `http://bubba:8000/mod/${store.modId}`, {
+import { config } from '@/config'
+const { data, error } = useFetch(() => config.baseUrl + `/mod/${store.modId}`, {
   immediate: false,
   refetch: true
 }).get().json()
