@@ -217,6 +217,7 @@ app.get('/mod/:modId/:file', (req, res) => {
     const file = req.params["file"]
     if (fs.existsSync(config.modDir + d + modId + d + file)) {
         const contents = fs.readFileSync(config.modDir + d + modId + d + file)
+        res.set('Content-type', 'application/xml')
         res.send(contents)
     }
 })
