@@ -1,8 +1,10 @@
 # Custom Server Changes
 
-## No Food
+## The following are the various custom integrations possible with dayzdockerserver
 
-For a more survival-oriented experience, one can remove all food items from mpmissions:
+### No food
+
+For a more survival-oriented experience, one can prevent food from spawning in the world, forcing players to hunt and fish for food.
 
 Go into the server container:
 
@@ -10,15 +12,15 @@ Go into the server container:
 docker compose exec server bash
 ```
 
-Make a new directory in /profiles/custom and go into it:
+Make a new directory in /profiles/custom called no-food and go into it:
 
 ```shell
-cd /profiles/custom
-mkdir no-food
-cd no-food
+mkdir -p /profiles/custom/no-food
+cd /profiles/custom/no-food
 ```
 
-Generate the types.xml override file for your mpmissions type.xml:
+Generate the types.xml override file from your current mpmissions type.xml (presumes dayzOffline.chernarusplus):
+
 ```shell
 xmlstarlet ed \
   -s / -t elem -n food \
@@ -33,16 +35,15 @@ xmlstarlet ed \
 Explanation:
 * Start xmlstarlet in edit mode
 * Add a new XML node at the root named "food"
-* Move all types nodes where <category name=... has the word "food" in it to the new /food node
-* Delete the remaining /types root node
-* Rename /food back to /types
-* Set all remaining nodes to have nominal 0
-* Do this for every mpmissions types.xml file
-* Save it to a new types.xml file
+* Move all `<type>` nodes where `<category name="...` has the word "food" in it to the new /food node
+* Delete the remaining `<types>` root node
+* Rename `<food>` to `<types>`
+* Set all remaining nodes to have `<nominal>0</nominal>`
+* Do this for every mpmissions types.xml file (dayzOffline.chernarusplus shown here)
+* Save it to a new types.xml file in the current directory, the one we made above.
 
-This file will now serve as a types.xml override for all food items!
+This file will now serve as a types.xml override for all food items when the server starts!
 
 Every directory under /profiles/custom will be added as a new Economy Core entry when the server is started.
 
 See https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding for more details.
-
