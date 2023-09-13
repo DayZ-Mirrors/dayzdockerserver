@@ -1,6 +1,6 @@
 # Custom Server Changes
 
-## The following are the various custom integrations possible with dayzdockerserver
+## These are the custom integrations possible with dayzdockerserver
 
 ### No food
 
