@@ -35,9 +35,9 @@ do
   if [ -f ${OUT} ]
   then
     xmllint --noout ${OUT} 2> /dev/null && (
-      echo -e "${green}${OUT}.xml passes XML lint test!${default}"
+      echo -e "${green}${OUT} passes XML lint test!${default}"
     ) || (
-      echo -e "${yellow}${OUT}.xml does not pass XML lint test!${default}"
+      echo -e "${yellow}${OUT} does not pass XML lint test!${default}"
     )
   fi
 done

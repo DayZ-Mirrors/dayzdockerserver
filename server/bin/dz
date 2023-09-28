@@ -127,7 +127,7 @@ report() {
 	echo
 	echo -e "========================================== End log ======================================${default}"
 	# Back these files up into a new directory with the current time stamp in the name
-	DIR="${SERVER_PROFILE}/logs-$(date +%Y-%m-%d-%H-%M-%S)"
+	DIR="${SERVER_PROFILE}/logs/$(date +%Y-%m-%d-%H-%M-%S)"
 	mkdir -p ${DIR}
 	cd ${SERVER_PROFILE}
 	mv -v *.log *.RPT *.mdmp ${DIR} 2> /dev/null
@@ -199,6 +199,44 @@ mergexml(){
 			fi
 		done
 	done
+	if [ -d ${SERVER_PROFILE}/custom ]
+	then
+		# First, remove any existing files, via the custom_ prefix
+		rm -rf ${MPMISSIONS}/${MAP}/custom_*
+		for dir in $(ls ${SERVER_PROFILE}/custom 2> /dev/null)
+		do
+			FOUND=0
+			C=""
+			for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type" "GLOBALS:globals:var"
+			do
+				var=$(echo ${i} | cut -d: -f1)
+				CHECK=$(echo ${i} | cut -d: -f2)
+				CHILD=$(echo ${i} | cut -d: -f3)
+				if [ -f "${SERVER_PROFILE}/custom/${dir}/${var,,}.xml" ]
+				then
+					if [[ ${FOUND} = 0 ]]
+					then
+						echo
+						echo -e "${green}Adding custom integration ${dir}${default}"
+						FOUND=1
+					fi
+					mkdir -p ${MPMISSIONS}/${MAP}/custom_${dir}
+					echo -n "Copy "
+					cp -v ${SERVER_PROFILE}/custom/${dir}/${var,,}.xml ${MPMISSIONS}/${MAP}/custom_${dir}/${var,,}.xml
+					C+="-s / -t elem -n file -a /file -t attr -n name -v ${var,,}.xml -a /file -t attr -n type -v ${CHECK} -m /file /ce "
+				fi
+			done
+			if [[ ${C} != "" ]]
+			then
+				# Merge into the current mpmissions file
+				echo "Create new XML node <ce folder=\"custom_${dir}\"> -> ${MPMISSIONS}/${MAP}/cfgeconomycore.xml"
+				find ${MPMISSIONS}/${MAP} -name cfgeconomycore.xml -exec \
+					xmlstarlet ed -L -s / -t elem -n ce \
+					-a /ce -t attr -n folder -v "custom_${dir}" ${C} \
+					-m /ce /economycore {} \;
+			fi
+		done
+	fi
 }
 
 # Start the server in the foreground

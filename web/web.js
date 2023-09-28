@@ -122,7 +122,7 @@ const config = {
 
 const getVersion = (installed) => {
     if(installed) {
-        return "1.21.bogus"
+        return "1.22.bogus"
     }
     return ""
 }

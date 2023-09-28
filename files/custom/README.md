@@ -2,6 +2,35 @@
 
 ## These are the custom integrations possible with dayzdockerserver
 
+### Lowered login/logout time
+
+To lower the login/logout time from the default 15 seconds.
+
+Go into the server container:
+
+```shell
+docker compose exec server bash
+```
+
+Make a new directory in /profiles/custom called login and go into it:
+
+```shell
+mkdir -p /profiles/custom/login
+cd /profiles/custom/login
+```
+
+Generate a globals.xml with the changed values:
+
+```shell
+cat > globals.xml << EOF
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<variables>
+    <var name="TimeLogin" type="0" value="1"/>
+    <var name="TimeLogout" type="0" value="1"/>
+</variables>
+EOF
+```
+
 ### No food
 
 For a more survival-oriented experience, one can prevent food from spawning in the world, forcing players to hunt and fish for food.
@@ -26,10 +55,15 @@ xmlstarlet ed \
   -s / -t elem -n food \
   -m "/types/type[category[contains(@name, 'food')]]" "/food" \
   -d /types \
-  -r /food -v /types \
+  -r food -v types \
   -u //nominal -v 0 \
   /serverfiles/mpmissions/dayzOffline.chernarusplus/db/types.xml \
   > types.xml
+```
+
+Always lint any XML file that is created/merged:
+```shell
+xmllint --noout types.xml
 ```
 
 Explanation:
