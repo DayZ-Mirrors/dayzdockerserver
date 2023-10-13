@@ -61,10 +61,15 @@ ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 
 # Setup a non-privileged user
-RUN groupadd user && \
-    useradd -l -g user user && \
+ARG USER_ID
+
+RUN groupadd -g ${USER_ID} user && \
+    useradd -l -u ${USER_ID} -m -g user user && \
     mkdir -p /home/user /serverfiles/mpmissions /serverfiles/steamapps/workshop/content /web && \
     chown -R user:user /home/user /serverfiles /web
+
+# Shut steamcmd up
+RUN cd /usr/lib/i386-linux-gnu && ln -s /web/bin/steamservice.so
 
 # Add our startup script, as this rarely changes.
 COPY --chown=user:user start.sh /usr/local/bin/start.sh

@@ -31,6 +31,12 @@ git clone https://ceregatti.org/git/daniel/dayzdockerserver.git
 cd dayzdockerserver
 ```
 
+Create a `.env` file that contains your user id. Usually the `${UID}` shell variable has this:
+
+```shell
+echo "export USER_ID=${UID}" | tee .env
+```
+
 Build the Docker images:
 
 ```shell

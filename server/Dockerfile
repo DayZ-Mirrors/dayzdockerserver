@@ -37,8 +37,10 @@ ENV PATH /files/bin:/server:${PATH}
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 
 # Setup a non-privileged user
-RUN groupadd user && \
-    useradd -l -g user user && \
+ARG USER_ID
+
+RUN groupadd -g ${USER_ID} user && \
+    useradd -l -u ${USER_ID} -m -g user user && \
     mkdir -p /home/user /serverfiles/mpmissions /mods /mpmissions /profiles && \
     chown -R user:user /home/user /serverfiles /mods /mpmissions /profiles
 

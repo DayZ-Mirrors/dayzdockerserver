@@ -19,7 +19,11 @@ volumes:
 services:
 
   web:
-    build: web
+    build:
+      context: web
+      args:
+        - USER_ID
+    user: ${USER_ID}
     volumes:
       - homedir_main:/home/user
       - serverfiles:/serverfiles
@@ -37,7 +41,11 @@ services:
       - .env
 
   server:
-    build: server
+    build:
+      context: server
+      args:
+        - USER_ID
+    user: ${USER_ID}
     volumes:
       - homedir_server:/home/user
       - serverfiles:/serverfiles
