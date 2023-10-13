@@ -54,4 +54,4 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-CMD ["start.sh"]
+ENTRYPOINT ["start.sh"]

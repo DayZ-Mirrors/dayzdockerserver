@@ -242,7 +242,7 @@ mergexml(){
 # Start the server in the foreground
 start(){
 	# Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
-	if [ ! -d "${MPMISSIONS}/${MAP}" ]
+	if [ ! -d "${MPMISSIONS}/${MAP}" ] && [ -d "/mpmissions/${MAP}" ]
 	then
 		echo
 		echo "Performing one-time copy of ${MAP} mpmissions..."
@@ -253,7 +253,14 @@ start(){
 	if [[ ${DEVELOPMENT} = "1" ]]
 	then
 		echo "DEVELOPMENT mode, blocking. Unset DEVELOPMENT in the current environment to run the server."
-		tail -f /dev/null
+		trap '
+			echo "Caught SIGTERM/SIGINT..."
+			exit 0
+		' SIGTERM SIGINT
+		while true
+		do
+			sleep 1
+		done
 		exit 0
 	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.

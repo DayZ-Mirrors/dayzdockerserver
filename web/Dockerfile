@@ -81,4 +81,4 @@ USER user
 WORKDIR /home/user
 
 # Run the web server
-CMD ["start.sh"]
+ENTRYPOINT ["start.sh"]

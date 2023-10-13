@@ -8,4 +8,4 @@ EOF
 
 # Start the server.
 # If the DEVELOPMENT environment variable is set to 1, the container will just block and not start the server.
-dz start
+exec dz start
