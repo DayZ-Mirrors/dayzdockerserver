@@ -97,6 +97,11 @@ get_mod_name(){
 		exit 1
 	fi
 	NAME=$(grep name ${WORKSHOP_DIR}/${1}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
+	if [[ ${NAME} = "" ]]
+	then
+		echo "Could not get metadata. See above. Exiting..."
+		exit 1
+	fi
 	echo -n ${NAME}
 }
 
