@@ -219,6 +219,33 @@ All the files used by the server are in a docker volume. Any change made will be
 
 Use this shell cautiously.
 
+# Development mode
+
+Add the following to the `.env` file:
+
+```shell
+export DEVELOPMENT=1
+```
+
+Bring the stack down then back up. Now, instead of the server starting when the server container comes up it will simply block, keeping the container up and accessible.
+
+This allows access to the server container using exec. You can then start and stop the server manually, using `dz`:
+
+```shell
+# Go into the server container
+docker compose exec shell bash
+# Because this is now in the environment and keeping the server from starting, it'd still keep the server from starting unless we unset it
+unset DEVELOPMENT
+# See what the server status is
+dz s
+# Start it
+dz start
+```
+
+To stop the server, hit control c.
+
+Caveat: Some times the server doesn't stop with control c. If that's the case, control z, exit, then `dz f`. YMMV.
+
 ## TODO
 
 * Create some way to send messages to players on the server using RCON.
