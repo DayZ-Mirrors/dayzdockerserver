@@ -336,35 +336,42 @@ config(){
 
 # Activate / Deactivate a mod
 activate(){
+	# W(hich?) a or d
 	W=${1}
+	# Pop that off so we can loop over the rest
 	shift
+	# Default values are when activating
 	WW=""
 	COLOR="${green}"
 	if [[ ${W} = 0 ]]
 	then
+		# Deactivating instead
 		WW="de"
 		COLOR="${red}"
 	fi
-	ID=$(get_mod_id ${1} ${W})
-	MODNAME=$(get_mod_name ${ID})
-#	echo "ID: ${ID}, MODNAME: ${MODNAME}"
-#	exit 0
-	# Toggle state or report nothing burger
-	pushd "${SERVER_PROFILE}" > /dev/null
-	if [[ ${W} = 0 ]] && [ -L "${SERVER_PROFILE}/@${MODNAME}" ]
-	then
-	  echo -n "Removing mod symlink: "
-	  rm -vf "${SERVER_PROFILE}/@${MODNAME}"
-	elif [[ ${W} = 1 ]]
-	then
-	  echo -n "Creating mod symlink: "
-	  ln -sfv "${WORKSHOP_DIR}/${ID}" "${SERVER_PROFILE}/@${MODNAME}"
-  else
-		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
-	fi
-	copy_keys ${W} ${ID}
-	echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
-	popd > /dev/null
+	# Loop over the rest of the argument(s)
+	for i in ${@}
+	do
+		# Get the mod id and name
+		ID=$(get_mod_id ${i} ${W})
+		MODNAME=$(get_mod_name ${ID})
+		# Toggle state or report nothing burger
+		pushd "${SERVER_PROFILE}" > /dev/null
+		if [[ ${W} = 0 ]] && [ -L "${SERVER_PROFILE}/@${MODNAME}" ]
+		then
+			echo -n "Removing mod symlink: "
+			rm -vf "${SERVER_PROFILE}/@${MODNAME}"
+		elif [[ ${W} = 1 ]]
+		then
+			echo -n "Creating mod symlink: "
+			ln -sfv "${WORKSHOP_DIR}/${ID}" "${SERVER_PROFILE}/@${MODNAME}"
+		else
+			echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
+		fi
+		copy_keys ${W} ${ID}
+		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
+		popd > /dev/null
+	done
 	status
 }
 
@@ -460,7 +467,7 @@ Working mod parameter: ${mod_command_line}"
 }
 
 backup(){
-  cd ${MPMISSIONS}
+	cd ${MPMISSIONS}
 	DATE=$(date +'%Y-%m-%d-%H-%M-%S')
 	for i in $(ls)
 	do
@@ -469,6 +476,7 @@ backup(){
 		mkdir -p ${B} 1> /dev/null
 		cp -a "${i}" "${B}"
 	done
+	cp -a /profiles ${B}
 }
 
 MAP=$(get_map_name)
