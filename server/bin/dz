@@ -257,10 +257,7 @@ start(){
 			echo "Caught SIGTERM/SIGINT..."
 			exit 0
 		' SIGTERM SIGINT
-		while true
-		do
-			sleep 1
-		done
+		sleep 1
 		exit 0
 	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
