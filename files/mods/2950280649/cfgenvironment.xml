@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<env>
+  <territories>
+    <territory type="Ambient" name="AmbientRat" behavior="DZRatGroupBeh">
+      <file usable="rat_territories" />
+      <!-- different agent types - class has to begin with AgentType:w -->
+      <agent type="Male" chance="1">
+        <spawn configName="Animal_Rat_Grey" chance="1" />
+      </agent>
+      <agent type="Female" chance="3">
+        <spawn configName="Animal_Rat_White" chance="10" />
+      </agent>
+      <item name="globalCountMax" val="50" />
+      <item name="zoneCountMin" val="1" />
+      <item name="zoneCountMax" val="1" />
+      <item name="playerSpawnRadiusNear" val="25" />
+      <item name="playerSpawnRadiusFar" val="75" />
+    </territory>
+  </territories>
+</env>
