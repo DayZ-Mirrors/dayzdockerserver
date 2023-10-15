@@ -145,6 +145,7 @@ const getDirSize = (dirPath) => {
 
 const getCustomXML = (modId) => {
     const ret = []
+    if (! fs.existsSync(config.modDir)) return ret
     for(const file of configFiles) {
         if (fs.existsSync(config.modDir + d + modId + d + file)) {
             ret.push({name:file})
@@ -166,6 +167,7 @@ const getModNameById = (id) => {
 
 const getMods = () => {
     const mods = []
+    if (! fs.existsSync(config.modDir)) return mods
     fs.readdirSync(config.modDir).forEach(file => {
         const name = getModNameById(file)
         mods.push({name:name,id:file})
