@@ -241,14 +241,6 @@ mergexml(){
 
 # Start the server in the foreground
 start(){
-	# Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
-	if [ ! -d "${MPMISSIONS}/${MAP}" ] && [ -d "/mpmissions/${MAP}" ]
-	then
-		echo
-		echo "Performing one-time copy of ${MAP} mpmissions..."
-		echo
-		cp -av /mpmissions/${MAP} ${MPMISSIONS}
-	fi
 	# If we're developing, just block the container
 	if [[ ${DEVELOPMENT} = "1" ]]
 	then
@@ -257,7 +249,19 @@ start(){
 			echo "Caught SIGTERM/SIGINT..."
 			exit 0
 		' SIGTERM SIGINT
-		exec sleep 1000000
+		while [ true ]
+		do
+			sleep 1
+		done
+		exit 0
+	fi
+	# Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
+	if [ ! -d "${MPMISSIONS}/${MAP}" ] && [ -d "/mpmissions/${MAP}" ]
+	then
+		echo
+		echo "Performing one-time copy of ${MAP} mpmissions..."
+		echo
+		cp -av /mpmissions/${MAP} ${MPMISSIONS}
 	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
