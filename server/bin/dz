@@ -137,7 +137,7 @@ mergexml(){
   echo
 	# First copy the pristine files from upstream
 	echo -e "${green}Copying upstream XML files into local mpmissions for map ${MAP}${default}":
-	find /mpmissions/${MAP} \( -name "cfgeconomycore.xml" -o -name "cfgeventspawns.xml" \) -exec cp -v {} ${SERVER_FILES}{} \;
+	find /mpmissions/${MAP} \( -name "cfgeconomycore.xml" -o -name "cfgeventspawns.xml" -o -name "cfgenvironment.xml" \) -exec cp -v {} ${SERVER_FILES}{} \;
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
 	# First, remove any existing files, via the mod_ prefix
 	rm -rf ${MPMISSIONS}/${MAP}/mod_*
@@ -177,7 +177,7 @@ mergexml(){
 				-m /ce /economycore {} \;
 		fi
 		# These are merged directly into the upstream file
-		for i in "CFGEVENTSPAWNS:eventposdef:event"
+		for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGENVIRONMENT:env:territories/territory"
 		do
 			var=$(echo ${i} | cut -d: -f1)
 			CHECK=$(echo ${i} | cut -d: -f2)
@@ -257,8 +257,7 @@ start(){
 			echo "Caught SIGTERM/SIGINT..."
 			exit 0
 		' SIGTERM SIGINT
-		sleep 1
-		exit 0
+		exec sleep 1000000
 	fi
 	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
 	trap '
