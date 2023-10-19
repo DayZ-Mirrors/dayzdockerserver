@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # A generic script that retrieves XML files from mods, either upstream in remote endpoints, or
-# locally from the downloaded mod directory
+# locally from the downloaded mod directory, or from project files.
 
 set -eE
 
@@ -9,13 +9,14 @@ ID=${1}
 
 if ! [ -f ${FILES}/mods/${ID}/xml.env ]
 then
+	echo "No xml.env exists for the ID ${ID}."
 	exit 0
 fi
 
 source ${FILES}/mods/${ID}/xml.env
 
 # Iterate over the file names we can handle
-for var in CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+for var in CFGENVIRONMENT CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
 do
   DIR="${WORKSHOP_DIR}/${ID}"
   OUT="${DIR}/${var,,}.xml"
