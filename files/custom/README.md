@@ -31,9 +31,13 @@ cat > globals.xml << EOF
 EOF
 ```
 
+Restart the server.
+
 ### No food
 
 For a more survival-oriented experience, one can prevent food from spawning in the world, forcing players to hunt and fish for food.
+
+Food still spawns on the infected and in containers. Any other mod that adds food will also be unaffected.
 
 Go into the server container:
 
@@ -65,6 +69,8 @@ Always lint any XML file that is created/merged:
 ```shell
 xmllint --noout types.xml
 ```
+
+Restart the server for the changes to take effect.
 
 Explanation:
 * Start xmlstarlet in edit mode
