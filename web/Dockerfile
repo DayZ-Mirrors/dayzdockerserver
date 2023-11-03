@@ -39,16 +39,16 @@ ENV LC_ALL en_US.UTF-8
 
 # Steamcmd needs its path added, as it ends up in /usr/games.
 # Our server script is bind mounted in /files in docker-compose.
-ENV PATH /usr/games:/files/bin:/web:${PATH}
+ENV PATH /usr/games:/files/bin:/web/bin:${PATH}
 
 # Install nodejs
 RUN mkdir /usr/local/nvm
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION 16.17.0
+ENV NODE_VERSION 18.18.2
 RUN echo $NODE_VERSION
 
 # Install nvm with node and npm
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
     && . $NVM_DIR/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm alias default $NODE_VERSION \
@@ -71,9 +71,6 @@ RUN groupadd -g ${USER_ID} user && \
 # Shut steamcmd up
 RUN cd /usr/lib/i386-linux-gnu && ln -s /web/bin/steamservice.so
 
-# Add our startup script, as this rarely changes.
-COPY --chown=user:user start.sh /usr/local/bin/start.sh
-
 # Use our non-privileged user
 USER user
 
@@ -81,4 +78,5 @@ USER user
 WORKDIR /home/user
 
 # Run the web server
-ENTRYPOINT ["start.sh"]
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["start.sh"]

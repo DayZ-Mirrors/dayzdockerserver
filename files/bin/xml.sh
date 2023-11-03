@@ -9,7 +9,6 @@ ID=${1}
 
 if ! [ -f ${FILES}/mods/${ID}/xml.env ]
 then
-	echo "No xml.env exists for the ID ${ID}."
 	exit 0
 fi
 

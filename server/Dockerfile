@@ -31,7 +31,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 # Add our scripts directory to PATH
-ENV PATH /files/bin:/server:${PATH}
+ENV PATH /files/bin:/server/bin:${PATH}
 
 # Add py3rcon
 RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
@@ -44,9 +44,6 @@ RUN groupadd -g ${USER_ID} user && \
     mkdir -p /home/user /serverfiles/mpmissions /mods /mpmissions /profiles && \
     chown -R user:user /home/user /serverfiles /mods /mpmissions /profiles
 
-# Add our startup script, as this rarely changes.
-COPY --chown=user:user start.sh /usr/local/bin/start.sh
-
 # Use our non-privileged user
 USER user
 
@@ -54,4 +51,5 @@ USER user
 WORKDIR /home/user
 
 # Run the server.
-ENTRYPOINT ["start.sh"]
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["start.sh"]
