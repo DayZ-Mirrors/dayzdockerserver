@@ -1,6 +1,6 @@
 <script setup>
 import { useFetch } from "@vueuse/core"
-import xmlTree from '@/components/XmlTree.vue'
+import XmlFile from '@/components/XmlFile.vue'
 import { useAppStore } from '@/stores/app.js'
 const store = useAppStore()
 import { config } from '@/config'
@@ -29,7 +29,7 @@ const { data, error } = useFetch(() => config.baseUrl + `/mod/${store.modId}`, {
           <ul>
             <li v-for="info in data.customXML">
               <a
-                :class="'simulink xmlfile ' + info.name"
+                :class="'simulink xmlfile ' + (store.modFile === info.name ? 'active' : '')"
                 @click="store.modFile=info.name"
               >
                 {{ info.name }}
@@ -39,8 +39,8 @@ const { data, error } = useFetch(() => config.baseUrl + `/mod/${store.modId}`, {
         </div>
       </div>
       <div class="col-1"></div>
-      <div v-if="store.modFile">
-        <xml-tree :file="store.modFile" :mod-id="store.modId" />
+      <div>
+        <XmlFile />
       </div>
     </div>
   </div>

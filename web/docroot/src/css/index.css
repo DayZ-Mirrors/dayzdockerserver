@@ -7,11 +7,15 @@ th, td {
     padding-right: 10px
 }
 
+.active {
+    background-color: cyan;
+}
+
 .simulink {
     cursor: pointer;
     text-underline: blue;
 }
 
 .simulink:hover {
-    background-color: cyan;
+    background-color: green;
 }

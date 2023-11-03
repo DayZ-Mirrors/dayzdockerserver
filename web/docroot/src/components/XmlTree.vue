@@ -1,114 +1,49 @@
+<script setup>
+const props = defineProps({
+  depth: Number,
+  element: [Element, Text],
+})
+function collapse(e) {
+  console.log(e)
+  // e.children?.forEach(x => x.classList?.add("d-none"))
+}
+function children(e) {
+  let children = []
+  let node = e.firstChild
+  while (node) {
+    children.push(node)
+    node = node.nextSibling
+  }
+  return children
+}
+</script>
+
 <template>
-  <div
-      v-if="elem.nodeType === 1 && isText"
-      :style="'padding-left: ' + (depth * 10) + 'px'"
-      @click="collapse"
-  >
-    <span class="xml-tree-tag">&lt;{{elem.nodeName}}</span>
-    <span v-if="elem.hasAttributes()" v-for="attribute in elem.attributes">
-        <span class="xml-tree-attr">&nbsp;{{attribute.name}}</span>
-        <span>=</span>
-        <span class="xml-tree-attr">"{{attribute.value}}"</span>
-    </span>
-    <span class="xml-tree-tag">></span>
-    <span>{{this.children[0].data.trim()}}</span>
-    <span class="xml-tree-tag">&lt;/{{elem.nodeName}}></span>
-  </div>
-  <div v-else :style="'padding-left: ' + (depth * 10) + 'px'">
-    <span v-if="elem.nodeType === 1" class="d-flex">
+  <div v-if="props.element.nodeType === 1" :style="'padding-left: ' + (props.depth * 10) + 'px'">
+    <span class="d-flex">
         <span
-            v-if="elem.children.length > 0"
+            v-if="props.element.children.length > 0"
             class="bi-dash simulink text-center"
             @click="collapse"
         />
-        <span v-else></span>
-        <span class="xml-tree-tag">&lt;{{elem.nodeName}}</span>
-        <span v-if="elem.hasAttributes()" v-for="attribute in elem.attributes">
-            <span class="xml-tree-attr">&nbsp;{{attribute.name}}</span>
+        <span>&lt;{{props.element.nodeName}}</span>
+        <span v-if="props.element.hasAttributes()" v-for="attribute in props.element.attributes">
+            <span>&nbsp;{{attribute.name}}</span>
             <span>=</span>
-            <span class="xml-tree-attr">"{{attribute.value}}"</span>
+            <span>"{{attribute.value}}"</span>
         </span>
-        <span v-if="elem.children.length === 0" class="xml-tree-tag">&nbsp;/></span>
-        <span v-else class="xml-tree-tag">></span>
+        <span v-if="props.element.children.length === 0">&nbsp;/</span>
+        <span>></span>
     </span>
-    <span v-if="elem.nodeType === 3">{{elem.data.trim()}}</span>
-    <div v-for="child in children">
-      <xml-tree v-if="child.nodeType !== 8" :element="child" :d="depth" />
-    </div>
+    <span v-for="child in children(props.element)">
+      <XmlTree v-if="child.nodeType !== 8" :element="child" :depth="props.depth + 1" />
+    </span>
     <span
-        v-if="elem.nodeType === 1 && elem.children.length > 0"
+        v-if="props.element.nodeType === 1"
         style="padding-left: -10px"
     >
-        <span style="padding-left: 20px" class="xml-tree-tag">&lt;/{{elem.nodeName}}></span>
+        <span>&lt;/{{props.element.nodeName}}></span>
     </span>
   </div>
+  <span v-if="props.element.nodeType === 3">{{props.element.data.trim()}}</span>
 </template>
-
-<script>
-import { useFetch } from '@vueuse/core'
-import { config } from '@/config'
-export default {
-  name: "xmlTree",
-  props: {
-    d: {
-      type: Number,
-      default: 0
-    },
-    element: {
-      type: [Element, Text],
-      default: undefined
-    },
-    file: {
-      type: String,
-      default: ''
-    },
-    modId: {
-      type: Number,
-      default: 0
-    }
-  },
-  data() {
-    return {
-      depth: 1
-    }
-  },
-  methods: {
-    collapse() {
-      this.children.forEach(x => x.classList?.add("d-none"))
-    },
-    log(message) {
-      console.log(message)
-    }
-  },
-  computed: {
-    async elem() {
-      this.depth = parseInt(this.d) + 1
-      if (this.element) {
-        return this.element
-      } else if(this.file) {
-        const { data } = await useFetch(config.baseUrl + `/mod/${this.modId}/${this.file}`)
-        const parser = new DOMParser()
-        const xmlDoc = parser.parseFromString(data, "text/xml")
-        return xmlDoc.documentElement
-      }
-    },
-    children() {
-      let children = []
-      let node = this.elem.firstChild
-      while (node) {
-        children.push(node)
-        node = node.nextSibling
-      }
-      return children
-    },
-    isText() {
-      if (this.children.length === 1) {
-        if (this.children[0].nodeType === 3) {
-          return true
-        }
-      }
-      return false
-    }
-  }
-}
-</script>

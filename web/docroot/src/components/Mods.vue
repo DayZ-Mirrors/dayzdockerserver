@@ -26,7 +26,7 @@ const { data, error } = useFetch(config.baseUrl + '/mods', {
             <th>Mod Name</th>
           </tr>
           <template
-              v-for="mod in data.mods"
+              v-for="mod in data.mods.sort( (a,b) => { return a.name.localeCompare(b.name) } )"
           >
             <tr>
               <td>
@@ -38,7 +38,12 @@ const { data, error } = useFetch(config.baseUrl + '/mods', {
                 </a>
               </td>
               <td>
-                <a class="simulink" @click="store.modId=parseInt(mod.id)">{{ mod.name }}</a>
+                <a
+                    :class="'simulink' + (store.modId === parseInt(mod.id) ? ' active' : '')"
+                    @click="store.modFile='';store.modId=parseInt(mod.id)"
+                >
+                  {{ mod.name }}
+                </a>
               </td>
             </tr>
           </template>
