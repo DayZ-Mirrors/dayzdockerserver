@@ -65,7 +65,8 @@ xmlstarlet ed \
   > types.xml
 ```
 
-Always lint any XML file that is created/merged:
+Always lint any XML file that is created/merged (Any output from this command means there is a problem. No output means the XML file is valid):
+
 ```shell
 xmllint --noout types.xml
 ```

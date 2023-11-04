@@ -2,11 +2,11 @@
 
 set -eE
 
-if [ -f /files/mods/${1}/install.env ]
+if [ -f /files/mods/${1}/map.env ]
 then
-	source /files/mods/${1}/install.env
+	source /files/mods/${1}/map.env
 else
-	echo "install.env not found for mod id ${1}..."
+	echo "map.env not found for mod id ${1}..."
 	exit 1
 fi
 

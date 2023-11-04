@@ -294,11 +294,11 @@ Mods: "
 
 map(){
 	# Install map mpmissions for mods that have them. Presumes a map.env was created for the mod, with the required metadata (git URL, etc.)
-	if [ -f ${FILES}/mods/${1}/install.env ]
+	if [ -f ${FILES}/mods/${1}/map.env ]
 	then
 		echo "Installing mpmissions files for mod id ${1}..."
-		source ${FILES}/mods/${1}/install.env
-		${FILES}/bin/install.sh ${1} install
+		source ${FILES}/mods/${1}/map.env
+		${FILES}/bin/map.sh ${1} install
 	fi
 }
 
