@@ -14,11 +14,11 @@ This process will create several docker volumes for the following sets of files:
 * mods: All mods will be stored here
 * homedir: The user home directory. Each container gets its own. Where [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) keeps its resource files.
 * profiles: A running server's profile. A server container gets its own volume.
-* servermpmissions: A running -server's mpmissions directory. A server container gets its own volume.
+* servermpmissions: A server's mpmissions directory. A server container gets its own volume.
 
-These volumes can get quite large. The `serverfiles` one will require at least 2.7G of disk space for the default install. The mods one can fill up very quickly, with some map mods being as large as 10G. Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
+These volumes can get quite large. The `serverfiles` one will require at least 2.9G of disk space for the default install. The volume holding mods can fill up very quickly, with some map mods being as large as 10G (Deer Isle). Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
 
-This is a work in progress. It's subject to change and break often.
+**This is a work in progress. It's subject to change and break often!**
 
 ## Configure and Build
 
@@ -248,5 +248,7 @@ Caveat: Some times the server doesn't stop with control c. If that's the case, c
 
 ## TODO
 
+* Create web management tool:
+  * It shells out to `dz` (for now) for all the heavy lifting. 
 * Create some way to send messages to players on the server using RCON.
-* Implement multiple ids for mod commands.
+* Implement multiple ids for mod commands. (In progress)

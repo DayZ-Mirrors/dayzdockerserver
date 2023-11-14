@@ -136,8 +136,15 @@ report() {
 mergexml(){
   echo
 	# First copy the pristine files from upstream
-	echo -e "${green}Copying upstream XML files into local mpmissions for map ${MAP}${default}":
-	find /mpmissions/${MAP} \( -name "cfgeconomycore.xml" -o -name "cfgeventspawns.xml" -o -name "cfgenvironment.xml" \) -exec cp -v {} ${SERVER_FILES}{} \;
+	echo -e "${green}Copying upstream files into local mpmissions for map ${MAP}${default}":
+	find /mpmissions/${MAP} \( \
+		-name "cfgeconomycore.xml" \
+		-o -name "cfgenvironment.xml" \
+		-o -name "cfgeventspawns.xml" \
+		-o -name "cfggameplay.json" \
+		-o -name "cfgweather.xml" \
+		-o -name "init.c" \
+	\) -exec cp -v {} ${SERVER_FILES}{} \;
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
 	# First, remove any existing files, via the mod_ prefix
 	rm -rf ${MPMISSIONS}/${MAP}/mod_*
@@ -198,7 +205,45 @@ mergexml(){
 				mv /tmp/y ${MPMISSIONS}/${MAP}/${var,,}.xml
 			fi
 		done
+		# These are merged directly into the upstream file, but are JSON
+		for var in "CFGGAMEPLAY"
+		do
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.json" ]
+			then
+				if [[ ${FOUND} = 0 ]]
+				then
+					MODNAME=$(get_mod_name ${ID})
+					echo
+					echo -e "${green}Adding mod ${MODNAME}${default}"
+					FOUND=1
+				fi
+				echo "Merge JSON '${WORKSHOP_DIR}/${ID}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
+				rm -f /tmp/x /tmp/y
+				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
+				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+			fi
+		done
+		# These are merged directly into the upstream file, but are C
+		for var in "INIT"
+		do
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.c" ]
+			then
+				if [[ ${FOUND} = 0 ]]
+				then
+					MODNAME=$(get_mod_name ${ID})
+					echo
+					echo -e "${green}Adding mod ${MODNAME}${default}"
+					FOUND=1
+				fi
+				echo "Patch '${WORKSHOP_DIR}/${ID}/${var,,}.c(.diff)' -> '${MPMISSIONS}/${MAP}/${var,,}.c'"
+				patch -s -p0 ${MPMISSIONS}/${MAP}/${var,,}.c < ${WORKSHOP_DIR}/${ID}/${var,,}.c || (
+					echo "Patch failed!"
+					exit 1
+				)
+			fi
+		done
 	done
+	return
 	if [ -d ${SERVER_PROFILE}/custom ]
 	then
 		# First, remove any existing files, via the custom_ prefix

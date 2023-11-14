@@ -15,29 +15,51 @@ fi
 source ${FILES}/mods/${ID}/xml.env
 
 # Iterate over the file names we can handle
-for var in CFGENVIRONMENT CFGEVENTSPAWNS CFGSPAWNABLETYPES EVENTS TYPES
+for i in cfgenvironment.xml cfgeventspawns.xml cfggameplay.json cfgspawnabletypes.xml cfgweather.xml events.xml init.c types.xml
 do
+	FILE=$(echo ${i} | cut -d. -f1)
+	TYPE=$(echo ${i} | cut -d. -f2)
+	UP=${FILE^^}
+	VAL=${!UP}
   DIR="${WORKSHOP_DIR}/${ID}"
-  OUT="${DIR}/${var,,}.xml"
-  if echo ${!var} | grep -qE "^http"
+  OUT="${DIR}/${i}"
+  if echo ${VAL} | grep -qE "^http"
   then
-    echo "${var} is a URL, downloading to ${OUT}"
-    curl -so ${OUT} ${!var}
-  elif echo ${!var} | grep -qE "^local"
+  	echo
+    echo "${i} is a URL, downloading to ${OUT}"
+    curl -so ${OUT} ${VAL}
+  elif echo ${VAL} | grep -qE "^local"
   then
-    echo "${var} comes from mod integrations, copying to ${OUT}"
-    cp -v "${FILES}/mods/${ID}/${var,,}.xml" "${OUT}"
-  elif echo ${!var} | grep -qE "^\./"
+  	echo
+    echo "${i} comes from mod integration, copying to ${OUT}"
+	  echo -n "  "
+    cp -v "${FILES}/mods/${ID}/${i}" "${OUT}"
+  elif echo ${VAL} | grep -qE "^\./"
   then
-    echo "${var} comes from the mod as ${!var}, copying to ${OUT}"
-    cp -v "${DIR}/${!var}" "${OUT}"
+  	echo
+    echo "${FILE} comes from the mod as ${VAL}, copying to ${OUT}"
+	  echo -n "  "
+    cp -v "${DIR}/${VAL}" "${OUT}"
   fi
   if [ -f ${OUT} ]
   then
-    xmllint --noout ${OUT} 2> /dev/null && (
-      echo -e "${green}${OUT} passes XML lint test!${default}"
-    ) || (
-      echo -e "${yellow}${OUT} does not pass XML lint test!${default}"
-    )
+  	if [[ ${TYPE} = "xml" ]]
+  	then
+			xmllint --noout ${OUT} 2> /dev/null && (
+				echo -e "  ${green}${OUT} passes XML lint test!${default}"
+			) || (
+				echo -e "  ${yellow}${OUT} does not pass XML lint test!${default}"
+			)
+			# TODO - validate against schema - https://github.com/rvost/DayZ-Central-Economy-Schema/tree/master
+		elif [ "${TYPE}" == "json" ]
+		then
+			jq -e . ${OUT} > /dev/null || (
+				echo -e "  ${yellow}${OUT} does not pass JSON lint test!${default}"
+			) && (
+				echo -e "  ${green}${OUT} passes JSON lint test!${default}"
+			)
+  	fi
   fi
 done
+
+echo
