@@ -87,4 +87,27 @@ This file will now serve as a types.xml override for all food items when the ser
 
 Every directory under /profiles/custom will be added as a new Economy Core entry when the server is started.
 
-See https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding for more details.
+### Change starting gear
+
+To change player starting gear, using examples from [the BI DayZ Wiki](https://community.bistudio.com/wiki/DayZ:Spawning_Gear_Configuration):
+
+Go into the server container:
+
+```shell
+docker compose exec server bash
+```
+
+Copy the custom integration directory:
+
+```shell
+cd /profiles/custom
+cp -a /files/custom/starting-gear .
+```
+
+Restart the server.
+
+### References
+
+[BI DayZ Wiki - Spawning Gear Configuration](https://community.bistudio.com/wiki/DayZ:Spawning_Gear_Configuration)
+
+[BI DayZ Wiki - Central Economy Mission Files Modding](ttps://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding)

@@ -1,0 +1,209 @@
+{
+  "spawnWeight": 1,
+  "name": "medic",
+  "attachmentSlotItemSets": [
+    {
+      "slotName": "shoulderR",
+      "discreteItemSets": [
+        {
+          "itemType": "PipeWrench",
+          "spawnWeight": 2,
+          "attributes": {
+            "healthMin": 0.5,
+            "healthMax": 0.8,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": 2
+        },
+        {
+          "itemType": "Crowbar",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 0.5,
+            "healthMax": 0.8
+          },
+          "quickBarSlot": 2
+        }
+      ]
+    },
+    {
+      "slotName": "Vest",
+      "discreteItemSets": [
+        {
+          "itemType": "PressVest_LightBlue",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 1.0,
+            "healthMax": 1.0,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": -1
+        }
+      ]
+    },
+    {
+      "slotName": "Back",
+      "discreteItemSets": [
+        {
+          "itemType": "TortillaBag",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 0.5,
+            "healthMax": 0.8,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": 1
+        },
+        {
+          "itemType": "CoyoteBag_Green",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 0.5,
+            "healthMax": 0.8,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": 1
+        }
+      ]
+    },
+    {
+      "slotName": "Eyewear",
+      "discreteItemSets": [
+        {
+          "itemType": "ThinFramesGlasses",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 1.0,
+            "healthMax": 1.0,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": -1
+        },
+        {
+          "itemType": "",
+          "spawnWeight": 1
+        }
+      ]
+    },
+    {
+      "slotName": "Body",
+      "discreteItemSets": [
+        {
+          "itemType": "MedicalScrubsShirt_Blue",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 1.0,
+            "healthMax": 1.0,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": -1
+        }
+      ]
+    },
+    {
+      "slotName": "Legs",
+      "discreteItemSets": [
+        {
+          "itemType": "MedicalScrubsPants_Blue",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 1.0,
+            "healthMax": 1.0,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": -1
+        }
+      ]
+    },
+    {
+      "slotName": "Feet",
+      "discreteItemSets": [
+        {
+          "itemType": "WorkingBoots_Yellow",
+          "spawnWeight": 1,
+          "attributes": {
+            "healthMin": 1.0,
+            "healthMax": 1.0,
+            "quantityMin": 1.0,
+            "quantityMax": 1.0
+          },
+          "quickBarSlot": -1
+        }
+      ]
+    }
+  ],
+  "discreteUnsortedItemSets": [
+    {
+      "name": "Medic Cargo 1",
+      "spawnWeight": 1,
+      "attributes": {
+        "healthMin": 0.5,
+        "healthMax": 1.0,
+        "quantityMin": 0.6,
+        "quantityMax": 0.8
+      },
+      "complexChildrenTypes": [
+        {
+          "itemType": "FirstAidKit",
+          "attributes": {
+            "healthMin": 0.7,
+            "healthMax": 0.8,
+            "quantityMin": 0.05,
+            "quantityMax": 0.1
+          },
+          "quickBarSlot": 3,
+          "simpleChildrenUseDefaultAttributes": false,
+          "simpleChildrenTypes": [
+            "BloodBagIV",
+            "BandageDressing"
+          ]
+        }
+      ],
+      "simpleChildrenUseDefaultAttributes": false,
+      "simpleChildrenTypes": [
+        "Rag",
+        "SheepSteakMeat"
+      ]
+    },
+    {
+      "name": "Medic Cargo 2",
+      "spawnWeight": 1,
+      "attributes": {
+        "healthMin": 0.5,
+        "healthMax": 1.0,
+        "quantityMin": 0.6,
+        "quantityMax": 0.8
+      },
+      "complexChildrenTypes": [
+        {
+          "itemType": "FirstAidKit",
+          "attributes": {
+            "healthMin": 0.7,
+            "healthMax": 0.8,
+            "quantityMin": 0.05,
+            "quantityMax": 0.1
+          },
+          "quickBarSlot": 3,
+          "simpleChildrenUseDefaultAttributes": false,
+          "simpleChildrenTypes": [
+            "TetracyclineAntibiotics",
+            "BandageDressing"
+          ]
+        }
+      ],
+      "simpleChildrenUseDefaultAttributes": false,
+      "simpleChildrenTypes": [
+        "Canteen",
+        "Rag",
+        "Apple"
+      ]
+    }
+  ]
+}

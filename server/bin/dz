@@ -146,8 +146,9 @@ mergexml(){
 		-o -name "init.c" \
 	\) -exec cp -v {} ${SERVER_FILES}{} \;
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
-	# First, remove any existing files, via the mod_ prefix
+	# Remove any existing files, via the mod_ and custom_ prefixes
 	rm -rf ${MPMISSIONS}/${MAP}/mod_*
+	rm -rf ${MPMISSIONS}/${MAP}/custom_*
 	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
 	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
@@ -165,7 +166,7 @@ mergexml(){
 				then
 					MODNAME=$(get_mod_name ${ID})
 					echo
-					echo -e "${green}Adding mod ${MODNAME}${default}"
+					echo -e "${green}Adding mod integration ${MODNAME}${default}"
 					FOUND=1
 				fi
 				echo -n "Copy "
@@ -214,7 +215,7 @@ mergexml(){
 				then
 					MODNAME=$(get_mod_name ${ID})
 					echo
-					echo -e "${green}Adding mod ${MODNAME}${default}"
+					echo -e "${green}Adding mod integration ${MODNAME}${default}"
 					FOUND=1
 				fi
 				echo "Merge JSON '${WORKSHOP_DIR}/${ID}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
@@ -232,7 +233,7 @@ mergexml(){
 				then
 					MODNAME=$(get_mod_name ${ID})
 					echo
-					echo -e "${green}Adding mod ${MODNAME}${default}"
+					echo -e "${green}Adding mod integration ${MODNAME}${default}"
 					FOUND=1
 				fi
 				echo "Patch '${WORKSHOP_DIR}/${ID}/${var,,}.c(.diff)' -> '${MPMISSIONS}/${MAP}/${var,,}.c'"
@@ -245,8 +246,6 @@ mergexml(){
 	done
 	if [ -d ${SERVER_PROFILE}/custom ]
 	then
-		# First, remove any existing files, via the custom_ prefix
-		rm -rf ${MPMISSIONS}/${MAP}/custom_*
 		for dir in $(ls ${SERVER_PROFILE}/custom 2> /dev/null)
 		do
 			FOUND=0
@@ -278,6 +277,34 @@ mergexml(){
 					xmlstarlet ed -L -s / -t elem -n ce \
 					-a /ce -t attr -n folder -v "custom_${dir}" ${C} \
 					-m /ce /economycore {} \;
+			fi
+			# These are merged directly into the upstream file, but are JSON
+			for var in "CFGGAMEPLAY"
+			do
+				if [ -f "${SERVER_PROFILE}/custom/${dir}/${var,,}.json" ]
+				then
+					if [[ ${FOUND} = 0 ]]
+					then
+						MODNAME=$(get_mod_name ${ID})
+						echo
+						echo -e "${green}Adding custom integration ${dir}${default}"
+						FOUND=1
+					fi
+					echo "Merge JSON '${SERVER_PROFILE}/custom/${dir}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
+					rm -f /tmp/x /tmp/y
+					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
+					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+				fi
+			done
+			if [[ ${FOUND} = 1 ]]
+			then
+				# Copy any other files in the mod directory into a custom directory under mpmissions
+				mkdir -p ${MPMISSIONS}/${MAP}/custom_${dir}
+				for file in $(ls ${SERVER_PROFILE}/custom/${dir} 2> /dev/null)
+				do
+					echo -n "Copy "
+					cp -av ${SERVER_PROFILE}/custom/${dir}/${file} ${MPMISSIONS}/${MAP}/custom_${dir}
+				done
 			fi
 		done
 	fi
