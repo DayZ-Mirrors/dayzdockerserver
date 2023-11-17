@@ -243,7 +243,6 @@ mergexml(){
 			fi
 		done
 	done
-	return
 	if [ -d ${SERVER_PROFILE}/custom ]
 	then
 		# First, remove any existing files, via the custom_ prefix
