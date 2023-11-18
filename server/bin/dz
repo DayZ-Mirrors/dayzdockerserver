@@ -313,7 +313,7 @@ mergexml(){
 # Start the server in the foreground
 start(){
 	# If we're developing, just block the container
-	if [[ ${DEVELOPMENT} = "1" ]]
+	if [[ ${DEVELOPMENT} = "1" ]] && [[ ${DONT_START} = "" ]]
 	then
 		echo "DEVELOPMENT mode, blocking. Unset DEVELOPMENT in the current environment to run the server."
 		trap '

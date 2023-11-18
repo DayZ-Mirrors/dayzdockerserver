@@ -100,8 +100,8 @@ docker compose exec server bash
 Copy the custom integration directory:
 
 ```shell
-cd /profiles/custom
-cp -a /files/custom/starting-gear .
+mkdir -p /profiles/custom
+cp -a /files/custom/starting-gear /profiles/custom/
 ```
 
 Restart the server.
