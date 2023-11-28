@@ -285,7 +285,6 @@ mergexml(){
 				then
 					if [[ ${FOUND} = 0 ]]
 					then
-						MODNAME=$(get_mod_name ${ID})
 						echo
 						echo -e "${green}Adding custom integration ${dir}${default}"
 						FOUND=1
