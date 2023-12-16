@@ -221,7 +221,9 @@ mergexml(){
 				echo "Merge JSON '${WORKSHOP_DIR}/${ID}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 				rm -f /tmp/x /tmp/y
 				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
-				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+#				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+				# FIXME: This is a hack to fix the JSON file, as it expects mixed case
+				mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
 			fi
 		done
 		# These are merged directly into the upstream file, but are C
@@ -241,6 +243,22 @@ mergexml(){
 					echo "Patch failed!"
 					exit 1
 				)
+			fi
+		done
+		# These are copied verbatim
+		for var in "CFGWEATHER"
+		do
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
+			then
+				if [[ ${FOUND} = 0 ]]
+				then
+					MODNAME=$(get_mod_name ${ID})
+					echo
+					echo -e "${green}Adding mod integration ${MODNAME}${default}"
+					FOUND=1
+				fi
+				echo "Copy -> '${WORKSHOP_DIR}/${ID}/${var,,}.xml' -> '${MPMISSIONS}/${MAP}/${var,,}.xml'"
+				cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${MAP}/${var,,}.xml
 			fi
 		done
 	done
@@ -292,7 +310,8 @@ mergexml(){
 					echo "Merge JSON '${SERVER_PROFILE}/custom/${dir}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 					rm -f /tmp/x /tmp/y
 					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
-					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+#					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+					mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
 				fi
 			done
 			if [[ ${FOUND} = 1 ]]
