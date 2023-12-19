@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<eventposdef>
+    <!-- HypeTrain -->
+    <event name="StaticHypeTrain">
+	<zone smin="0" smax="0" dmin="1" dmax="2" r="20" />
+    	<pos x="5587.466" z="2063.353" a="0" y="7.75" group="HypeTrain_Cherno"/>
+    	<pos x="3678.228" z="2328.108" a="0" y="6.7" group="HypeTrain_Kamarovo"/>
+    	<pos x="11254.230" z="3290.319" a="0" y="6.65" group="HypeTrain_Kamy"/>
+    	<pos x="1256.313" z="9349.465" a="0" y="211.82" group="HypeTrain_Myshkino"/>
+    	<pos x="5428.630" z="12312.974" a="0" y="185.59" group="HypeTrain_Petrovka"/>
+    	<pos x="8802.031" z="2334.222" a="0" y="8.42" group="HypeTrain_Prigorodki"/>
+    	<pos x="13377.262" z="13919.888" a="0" y="17.247" group="HypeTrain_Svetlo"/>
+    	<pos x="1309.973" z="4991.340" a="0" y="166.685" group="HypeTrain_Zvir"/>
+    	<pos x="1321.629" z="2398.199" a="0" y="6.7" group="HypeTrain_Kamenka"/>
+    	<pos x="1443.256" z="6622.697" a="0" y="176.220" group="HypeTrain_Metalurg"/>
+    	<pos x="673.779" z="8747.024" a="0" y="194.405" group="HypeTrain_Myshkino"/>
+    	<pos x="3262.817" z="12430.286" a="0" y="219.495" group="HypeTrain_Petrovka"/>
+    </event>
+</eventposdef>

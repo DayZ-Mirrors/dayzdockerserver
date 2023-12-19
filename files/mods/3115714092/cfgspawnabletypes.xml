@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<spawnabletypes>
+	<!-- HypeTrain --> 
+	<type name="HypeTrain_742_Locomotive_Blue">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+	<type name="HypeTrain_742_Locomotive_DarkBlue_Yellow">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+	<type name="HypeTrain_742_Locomotive_IceBlue">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+	<type name="HypeTrain_742_Locomotive_Yellow_Blue_White">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+	<type name="HypeTrain_742_Locomotive_Red">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+	<type name="HypeTrain_742_Locomotive_Red_Olive">
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HeadlightH7" chance="0.50" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="TruckBattery " chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="CarRadiator" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_EngineBelt" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_ControlUnit" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_GlowPlug" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_CompressedAirHoses" chance="0.20" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Large" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+		<attachments chance="1.00">
+			<item name="HypeTrain_742_Locomotive_Glass_Small" chance="0.15" />
+		</attachments>
+	</type>
+</spawnabletypes>

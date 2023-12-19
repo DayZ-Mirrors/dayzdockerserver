@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<eventgroupdef>
+	<!-- HypeTrain -->
+    <!--pos x="5587.466" z="2063.353" a="0" y="7.591" group="HypeTrain_Cherno"/-->
+    <group name="HypeTrain_Cherno">
+<child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="78.123" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="12.085" z="2.740" a="256.739" y="1.789"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="23.106" z="5.477" a="255.579" y="1.781"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="34.546" z="8.424" a="255.837" y="1.32"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="46.285" z="11.341" a="255.321" y="1.398"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="69.472" z="18.594" a="250.938" y="1.450"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="57.966" z="14.737" a="252.227" y="1.411"/>
+    </group>
+    <!--pos x="3678.228" z="2328.108" a="0" y="6.546" group="HypeTrain_Kamarovo"/-->
+    <group name="HypeTrain_Kamarovo">
+        <child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="198.014" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="60.378" z="80.129" a="67.036" y="0.196"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="45.489" z="71.296" a="52.469" y="0.196"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="32.470" z="59.876" a="45.249" y="0.196"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="21.187" z="46.785" a="35.581" y="0.196"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="8.003" z="23.498" a="20.755" y="1.328"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="13.241" z="34.531" a="28.619" y="1.328"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="3.936" z="12.068" a="18.048" y="1.328"/>
+    </group>
+    <!--pos x="11254.230" z="3290.319" a="0" y="6.513" group="HypeTrain_Kamy"/-->
+    <group name="HypeTrain_Kamy">
+<child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="232.116" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="10.519" z="7.484" a="56.981" y="1.359"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="63.608" z="36.819" a="65.102" y="1.350"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="42.184" z="25.479" a="61.364" y="1.357"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="31.572" z="19.643" a="61.364" y="1.377"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="20.972" z="13.791" a="60.977" y="1.373"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="52.812" z="31.258" a="61.364" y="1.354"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="74.479" z="41.357" a="249.519" y="1.775"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="85.195" z="45.147" a="71.548" y="1.771"/>
+    </group>
+    <!--pos x="1256.313" z="9349.465" a="0" y="211.678" group="HypeTrain_Myshkino"/-->
+    <group name="HypeTrain_Myshkino">
+ <child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="29.779" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-6.915" z="-10.795" a="36.096" y="1.265"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-14.550" z="-20.221" a="42.284" y="1.208"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-31.905" z="-37.229" a="47.828" y="1.206"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-23.030" z="-28.951" a="46.538" y="1.211"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="-56.176" z="-58.183" a="49.246" y="0.2"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="-43.109" z="-47.006" a="49.504" y="0.2"/>
+    </group>
+    <!--pos x="5428.630" z="12312.974" a="0" y="185.442" group="HypeTrain_Petrovka"/-->
+    <group name="HypeTrain_Petrovka">
+        <child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="289.612" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="12.042" z="-4.408" a="289.097" y="1.269"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="46.298" z="-16.484" a="289.999" y="1.255"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="34.948" z="-12.386" a="289.354" y="1.242"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="69.121" z="-24.510" a="288.452" y="1.219"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="23.490" z="-8.401" a="289.354" y="1.229"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="57.678" z="-20.632" a="288.323" y="1.2010"/>
+    </group>
+    <!--pos x="8802.031" z="2334.222" a="0" y="8.277" group="HypeTrain_Prigorodki"/-->
+    <group name="HypeTrain_Prigorodki">
+         <child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="319.005" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="16.395" z="-18.849" a="318.876" y="1.405"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="8.245" z="-9.730" a="318.361" y="1.427"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="24.431" z="-28.037" a="318.876" y="1.426"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="34.188" z="-39.164" a="318.618" y="0.247"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="57.286" z="-64.804" a="317.587" y="0.225"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="69.024" z="-77.475" a="316.942" y="0.253"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="45.675" z="-52.051" a="318.103" y="0.242"/>
+    </group>
+    <!--pos x="13377.262" z="13919.888" a="0" y="17.197" group="HypeTrain_Svetlo"/-->
+    <group name="HypeTrain_Svetlo">
+		<child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="10.700" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="-10.339" z="-33.442" a="17.661" y="1.7"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="-3.268" z="-11.845" a="16.630" y="1.713"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="-6.742" z="-22.613" a="18.951" y="1.722"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-13.526" z="-44.791" a="14.567" y="1.229"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-19.898" z="-80.635" a="6.446" y="1.275"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-18.358" z="-68.715" a="8.766" y="1.257"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-16.193" z="-56.684" a="11.216" y="1.272"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-20.853" z="-92.739" a="3.610" y="1.282"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-21.220" z="-104.845" a="0.644" y="1.276"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-21.077" z="-116.967" a="358.840" y="1.304"/>
+    </group>
+    <!--pos x="1309.973" z="4991.340" a="0" y="166.535" group="HypeTrain_Zvir"/-->
+    <group name="HypeTrain_Zvir">
+        <child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="288.452" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="49.419" z="-4.295" a="83.666" y="0.390"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="14.937" z="-3.783" a="99.781" y="0.358"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="32.083" z="-5.389" a="90.628" y="0.376"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="64.047" z="-2.551" a="83.408" y="1.625"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="88.204" z="0.338" a="83.537" y="1.572"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="76.187" z="-1.095" a="83.022" y="1.600"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="100.262" z="1.652" a="82.893" y="1.623"/>
+    </group>
+    <!--pos x="1321.629" z="2398.199" a="0" y="6.309" group="HypeTrain_Kamenka"/-->
+    <group name="HypeTrain_Kamenka">
+        <child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="345.304" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="4.459" z="-14.645" a="341.694" y="0.225"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="10.686" z="-30.795" a="335.635" y="0.226"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="18.944" z="-45.766" a="325.967" y="0.25"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="29.904" z="-58.888" a="313.591" y="0.355"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="79.093" z="-96.478" a="306.113" y="1.787"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="69.927" z="-89.804" a="305.727" y="1.787"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="50.536" z="-75.855" a="305.856" y="1.36"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="40.687" z="-68.627" a="308.047" y="1.36"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="60.385" z="-82.989" a="305.469" y="1.36"/>
+    </group>
+    <!--pos x="1443.256" z="6622.697" a="0" y="176.060" group="HypeTrain_Metalurg"/-->
+    <group name="HypeTrain_Metalurg">
+        <child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="147.737" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="-84.501" z="84.067" a="297.992" y="0.204"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="-54.606" z="67.125" a="303.277" y="0.255"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="-69.328" z="75.889" a="298.507" y="0.224"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="-42.957" z="58.573" a="310.496" y="1.697"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-19.843" z="31.277" a="327.385" y="1.364"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-34.535" z="50.581" a="316.298" y="1.428"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-13.315" z="21.067" a="327.385" y="1.371"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-6.763" z="10.840" a="326.998" y="1.383"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="-26.616" z="41.292" a="324.033" y="1.377"/>
+    </group>
+    <!--pos x="673.779" z="8747.024" a="0" y="194.245" group="HypeTrain_Myshkino"/-->
+    <group name="HypeTrain_Myshkino">
+        <child type="HypeTrain_742_Locomotive_Blue" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="346.572" y="1.9"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="3.166" z="-11.870" a="343.499" y="1.6"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="6.678" z="-22.639" a="340.147" y="1.6"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="11.717" z="-36.060" a="338.987" y="0.0"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="17.868" z="-52.124" a="338.987" y="0.0"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="30.176" z="-84.236" a="338.729" y="0.0"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="24.014" z="-68.186" a="338.987" y="0.0"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="39.777" z="-109.229" a="338.858" y="1.4"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="35.503" z="-97.932" a="339.245" y="1.4"/>
+    </group>
+    <!--pos x="3262.817" z="12430.286" a="0" y="220.335" group="HypeTrain_Petrovka"/-->
+    <group name="HypeTrain_Petrovka">
+        <child type="HypeTrain_742_Locomotive_Red" deloot="0" lootmax="0" lootmin="0" x="0" z="0" a="225.283" y="2.9"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="36.443" z="30.719" a="54.016" y="2.2"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="26.840" z="23.290" a="50.664" y="2.208"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="56.311" z="44.548" a="65.489" y="2.202"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="112.567" z="68.760" a="72.708" y="1.102"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="96.211" z="63.229" a="69.485" y="1.102"/>
+        <child type="HypeTrain_742_Wagon_Flat" deloot="0" lootmax="0" lootmin="0" x="80.282" z="56.654" a="65.747" y="1.102"/>
+        <child type="HypeTrain_742_Wagon_Box" deloot="0" lootmax="0" lootmin="0" x="67.106" z="50.111" a="62.782" y="2.23"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="17.854" z="15.843" a="49.890" y="2.6"/>
+        <child type="HypeTrain_742_Wagon_Tank" deloot="0" lootmax="0" lootmin="0" x="9.272" z="8.479" a="48.085" y="2.615"/>
+    </group>
+</eventgroupdef>
