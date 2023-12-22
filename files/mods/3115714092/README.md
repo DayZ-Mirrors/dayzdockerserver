@@ -1,5 +1,10 @@
 # HypeTrain
 
+## Reference
+
+The files used to integrate the [HypeTrain mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3115714092) came from 
+[here](https://steamcommunity.com/workshop/filedetails/discussion/3115714092/4032475029247848861/).
+
 ## Install
 
 5 files are required to run the mod. Two are map-specific and the rest are common to all maps. They are:
