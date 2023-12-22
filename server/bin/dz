@@ -134,7 +134,7 @@ report() {
 }
 
 mergexml(){
-  echo
+	echo
 	# First copy the pristine files from upstream
 	echo -e "${green}Copying upstream files into local mpmissions for map ${MAP}${default}":
 	find /mpmissions/${MAP} \( \
@@ -153,9 +153,10 @@ mergexml(){
 	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
 	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-		# Going to have to maintain a matrix of file names -> root node -> child node permutations
 		C=""
 		FOUND=0
+		# This loop handles Central Economy files
+		# A matrix of file names -> root node -> child node permutations
 		for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
 		do
 			var=$(echo ${i} | cut -d: -f1)
@@ -262,6 +263,14 @@ mergexml(){
 				cp ${WORKSHOP_DIR}/${ID}/${var,,}.xml ${MPMISSIONS}/${MAP}/${var,,}.xml
 			fi
 		done
+		# Here are where start actions happen
+		if [ -f "${WORKSHOP_DIR}/${ID}/start.sh" ]
+		then
+			echo "Running start script -> ${WORKSHOP_DIR}/${ID}/start.sh"
+			pushd ${MPMISSIONS}/${MAP} > /dev/null
+			bash -x "${WORKSHOP_DIR}/${ID}/start.sh"
+			popd > /dev/null
+		fi
 	done
 	if [ -d ${SERVER_PROFILE}/custom ]
 	then

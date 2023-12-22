@@ -16,5 +16,4 @@
     	<pos x="673.779" z="8747.024" a="0" y="194.405" group="HypeTrain_Myshkino"/>
     	<pos x="3262.817" z="12430.286" a="0" y="219.495" group="HypeTrain_Petrovka"/>
     </event>
-    <event name="StaticTrain"/>
 </eventposdef>

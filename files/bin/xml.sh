@@ -21,30 +21,30 @@ do
 	TYPE=$(echo ${i} | cut -d. -f2)
 	UP=${FILE^^}
 	VAL=${!UP}
-  DIR="${WORKSHOP_DIR}/${ID}"
-  OUT="${DIR}/${i}"
-  if echo ${VAL} | grep -qE "^http"
-  then
-  	echo
-    echo "${i} is a URL, downloading to ${OUT}"
-    curl -so ${OUT} ${VAL}
-  elif echo ${VAL} | grep -qE "^local"
-  then
-  	echo
-    echo "${i} comes from mod integration, copying to ${OUT}"
-	  echo -n "  "
-    cp -v "${FILES}/mods/${ID}/${i}" "${OUT}"
-  elif echo ${VAL} | grep -qE "^\./"
-  then
-  	echo
-    echo "${FILE} comes from the mod as ${VAL}, copying to ${OUT}"
-	  echo -n "  "
-    cp -v "${DIR}/${VAL}" "${OUT}"
-  fi
-  if [ -f ${OUT} ]
-  then
-  	if [[ ${TYPE} = "xml" ]]
-  	then
+	DIR="${WORKSHOP_DIR}/${ID}"
+	OUT="${DIR}/${i}"
+	if echo ${VAL} | grep -qE "^http"
+	then
+		echo
+		echo "${i} is a URL, downloading to ${OUT}"
+		curl -so ${OUT} ${VAL}
+	elif echo ${VAL} | grep -qE "^local"
+	then
+		echo
+		echo "${i} comes from mod integration, copying to ${OUT}"
+		echo -n "  "
+		cp -v "${FILES}/mods/${ID}/${i}" "${OUT}"
+	elif echo ${VAL} | grep -qE "^\./"
+	then
+		echo
+		echo "${FILE} comes from the mod as ${VAL}, copying to ${OUT}"
+		echo -n "  "
+		cp -v "${DIR}/${VAL}" "${OUT}"
+	fi
+	if [ -f ${OUT} ]
+	then
+		if [[ ${TYPE} = "xml" ]]
+		then
 			xmllint --noout ${OUT} 2> /dev/null && (
 				echo -e "  ${green}${OUT} passes XML lint test!${default}"
 			) || (
@@ -58,8 +58,14 @@ do
 			) && (
 				echo -e "  ${green}${OUT} passes JSON lint test!${default}"
 			)
-  	fi
-  fi
+		fi
+	fi
 done
 
-echo
+if [ -f "${FILES}/mods/${ID}/start.sh" ]
+then
+	echo
+	echo "Copy ${FILES}/mods/${ID}/start.sh -> ${DIR}/start.sh"
+	cp "${FILES}/mods/${ID}/start.sh" "${DIR}/start.sh"
+	echo
+fi
