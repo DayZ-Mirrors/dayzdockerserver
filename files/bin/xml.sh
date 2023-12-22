@@ -15,7 +15,7 @@ fi
 source ${FILES}/mods/${ID}/xml.env
 
 # Iterate over the file names we can handle
-for i in cfgenvironment.xml cfgeventspawns.xml cfggameplay.json cfgspawnabletypes.xml cfgweather.xml events.xml init.c types.xml
+for i in cfgeventgroups.xml cfgenvironment.xml cfgeventspawns.xml cfggameplay.json cfgspawnabletypes.xml cfgweather.xml events.xml init.c types.xml
 do
 	FILE=$(echo ${i} | cut -d. -f1)
 	TYPE=$(echo ${i} | cut -d. -f2)

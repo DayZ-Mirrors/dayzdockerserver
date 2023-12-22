@@ -140,6 +140,7 @@ mergexml(){
 	find /mpmissions/${MAP} \( \
 		-name "cfgeconomycore.xml" \
 		-o -name "cfgenvironment.xml" \
+		-o -name "cfgeventgroups.xml" \
 		-o -name "cfgeventspawns.xml" \
 		-o -name "cfggameplay.json" \
 		-o -name "cfgweather.xml" \
@@ -185,7 +186,7 @@ mergexml(){
 				-m /ce /economycore {} \;
 		fi
 		# These are merged directly into the upstream file
-		for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGENVIRONMENT:env:territories/territory"
+		for i in "CFGEVENTGROUPS:eventgroupdef:group" "CFGEVENTSPAWNS:eventposdef:event" "CFGENVIRONMENT:env:territories/territory"
 		do
 			var=$(echo ${i} | cut -d: -f1)
 			CHECK=$(echo ${i} | cut -d: -f2)
@@ -268,7 +269,7 @@ mergexml(){
 		do
 			FOUND=0
 			C=""
-			for i in "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type" "GLOBALS:globals:var"
+			for i in "CFGEVENTGROUPS:eventgroupdef:group" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type" "GLOBALS:globals:var"
 			do
 				var=$(echo ${i} | cut -d: -f1)
 				CHECK=$(echo ${i} | cut -d: -f2)

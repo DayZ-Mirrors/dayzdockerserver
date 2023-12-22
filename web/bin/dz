@@ -52,7 +52,7 @@ symlink(){
 installxml(){
   ID=${1}
   # Going to have to maintain a matrix of file names -> root node -> child node permutations
-  for i in "CFGEVENTSPAWNS:eventposdef:event" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
+  for i in "CFGEVENTGROUPS:eventgroupdef:group" "CFGEVENTSPAWNS:eventposdef:event" "CFGSPAWNABLETYPES:spawnabletypes:type" "EVENTS:events:event" "TYPES:types:type"
   do
     var=$(echo ${i} | cut -d: -f1)
     CHECK=$(echo ${i} | cut -d: -f2)
