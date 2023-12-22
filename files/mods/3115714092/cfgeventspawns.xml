@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <eventposdef>
     <!-- HypeTrain -->
-    <event name="StaticHypeTrain">
-	<zone smin="0" smax="0" dmin="1" dmax="2" r="20" />
+    <event name="VehicleHypeTrain">
+        <zone smin="0" smax="0" dmin="0" dmax="0" r="20" />
     	<pos x="5587.466" z="2063.353" a="0" y="7.75" group="HypeTrain_Cherno"/>
     	<pos x="3678.228" z="2328.108" a="0" y="6.7" group="HypeTrain_Kamarovo"/>
     	<pos x="11254.230" z="3290.319" a="0" y="6.65" group="HypeTrain_Kamy"/>
@@ -16,4 +16,5 @@
     	<pos x="673.779" z="8747.024" a="0" y="194.405" group="HypeTrain_Myshkino"/>
     	<pos x="3262.817" z="12430.286" a="0" y="219.495" group="HypeTrain_Petrovka"/>
     </event>
+    <event name="StaticTrain"/>
 </eventposdef>
