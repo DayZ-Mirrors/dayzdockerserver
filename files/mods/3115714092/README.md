@@ -9,3 +9,5 @@
 * `cfgspawnabletypes.xml` - Common to all maps.
 * `events.xml` - Common to all maps.
 * `types.xml` - Common to all maps.
+
+The `start.sh` script is for doing extra stuff, but programatically. See the comments within it for details.
