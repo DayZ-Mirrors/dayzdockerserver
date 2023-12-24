@@ -146,6 +146,10 @@ mergexml(){
 		-o -name "cfgweather.xml" \
 		-o -name "init.c" \
 	\) -exec cp -v {} ${SERVER_FILES}{} \;
+
+	# FIXME!!! HACK to account for cfgGameplay mixed case
+	cp ${MPMISSIONS}/${MAP}/cfggameplay.json ${MPMISSIONS}/${MAP}/cfgGameplay.json
+
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
 	# Remove any existing files, via the mod_ and custom_ prefixes
 	rm -rf ${MPMISSIONS}/${MAP}/mod_*
@@ -222,10 +226,11 @@ mergexml(){
 				fi
 				echo "Merge JSON '${WORKSHOP_DIR}/${ID}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 				rm -f /tmp/x /tmp/y
-				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
-#				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
 				# FIXME: This is a hack to fix the JSON file, as it expects mixed case
+				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/cfgGameplay.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
 				mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
+#				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/wtf
+#				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
 			fi
 		done
 		# These are merged directly into the upstream file, but are C
@@ -319,9 +324,10 @@ mergexml(){
 					fi
 					echo "Merge JSON '${SERVER_PROFILE}/custom/${dir}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 					rm -f /tmp/x /tmp/y
-					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
-#					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/cfgGameplay.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
 					mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
+#					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
+#					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
 				fi
 			done
 			if [[ ${FOUND} = 1 ]]
