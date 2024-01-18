@@ -48,6 +48,7 @@ Options and arguments:
   r|restart - Restart the server without restarting the container
   s|status - Shows the server's status: Running, uptime, mods, parameters, mod parameter, etc.
   stop - Stop the server
+  w|wipe - Wipes the current storage_1
 ${default}"
   exit 1
 }
@@ -110,10 +111,10 @@ EOF
 
 # Make sure to clean up and report on exit, as these files remain in the container's volume
 report() {
-  if [[ ${DONT_START} != "" ]]
-  then
-    exit 0
-  fi
+	if [[ ${DONT_START} != "" ]]
+	then
+		exit 0
+	fi
 	rm -f /tmp/mod_command_line /tmp/parameters
 	echo
 	echo -e "${yellow}========================================== error.log =========================================="
@@ -146,9 +147,6 @@ mergexml(){
 		-o -name "cfgweather.xml" \
 		-o -name "init.c" \
 	\) -exec cp -v {} ${SERVER_FILES}{} \;
-
-	# FIXME!!! HACK to account for cfgGameplay mixed case
-	cp ${MPMISSIONS}/${MAP}/cfggameplay.json ${MPMISSIONS}/${MAP}/cfgGameplay.json
 
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
 	# Remove any existing files, via the mod_ and custom_ prefixes
@@ -226,11 +224,8 @@ mergexml(){
 				fi
 				echo "Merge JSON '${WORKSHOP_DIR}/${ID}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 				rm -f /tmp/x /tmp/y
-				# FIXME: This is a hack to fix the JSON file, as it expects mixed case
-				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/cfgGameplay.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
-				mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
-#				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/wtf
-#				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+				jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${WORKSHOP_DIR}/${ID}/${var,,}.json > /tmp/x
+				mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
 			fi
 		done
 		# These are merged directly into the upstream file, but are C
@@ -324,10 +319,8 @@ mergexml(){
 					fi
 					echo "Merge JSON '${SERVER_PROFILE}/custom/${dir}/${var,,}.json' -> '${MPMISSIONS}/${MAP}/${var,,}.json'"
 					rm -f /tmp/x /tmp/y
-					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/cfgGameplay.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
-					mv /tmp/x ${MPMISSIONS}/${MAP}/cfgGameplay.json
-#					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
-#					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
+					jq -s '.[0] * .[1]' ${MPMISSIONS}/${MAP}/${var,,}.json ${SERVER_PROFILE}/custom/${dir}/${var,,}.json > /tmp/x
+					mv /tmp/x ${MPMISSIONS}/${MAP}/${var,,}.json
 				fi
 			done
 			if [[ ${FOUND} = 1 ]]
@@ -488,27 +481,27 @@ rcon(){
 # List mods
 activelist(){
 	X=1
-  C="${green}"
+	C="${green}"
 	spaces="                            "
 	have=no
-  for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
 	do
-	  if [[ ${have} = "no" ]]
-	  then
-	    have="yes"
-      echo -e "\n     ID         Name                             URL                                                                Size"
-      echo "------------------------------------------------------------------------------------------------------------------------"
-    fi
+		if [[ ${have} = "no" ]]
+		then
+			have="yes"
+			echo -e "\n     ID         Name                             URL                                                                Size"
+			echo "------------------------------------------------------------------------------------------------------------------------"
+		fi
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-	  MODNAME=$(get_mod_name ${ID})
+		MODNAME=$(get_mod_name ${ID})
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
 		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
 	if [[ ${have} = "no" ]]
-  then
-    echo -ne "${red}none${default}"
-  fi
+	then
+		echo -ne "${red}none${default}"
+	fi
 }
 
 get_map_name(){
@@ -523,7 +516,7 @@ get_map_name(){
 
 # Display the status of everything
 status(){
-  loadconfig
+	loadconfig
 	INSTALLED="${NO}"
 	RUNNING="${NO}"
 
@@ -539,14 +532,13 @@ status(){
 		D=$(date +%s)
 		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
 		DAYS=$(( (${D} - ${F}) / 86400 ))
-#		UPTIME=$(date --date="$(( ${D} - ${F} ))" +"${DAYS} days %H:%M:%S")
-		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server_console.log))) -u +"%H hours %M minutes %S seconds")
+		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server.pid))) -u +"%H hours %M minutes %S seconds")
 
 		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
 		# Current parameters
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
-  MAP=${MAP}
+	MAP=${MAP}
 	# Number of mods plus the list denoting on or off
 	echo -ne "
 Server files installed: ${INSTALLED}"
@@ -582,6 +574,22 @@ backup(){
 		cp -a "${i}" "${B}"
 	done
 	cp -a /profiles ${B}
+}
+
+wipe(){
+	DIR="${MPMISSIONS}/${MAP}/storage_1"
+	if ! [ -d "${DIR}" ]
+	then
+		echo "Storage directory ${DIR} does not exist"
+		return
+	fi
+	if prompt_yn "Wipe server storage directory '${DIR}'?"
+	then
+		rm -rf "${DIR}"
+		echo "Storage ${DIR} removed"
+	else
+		echo "Storage directory ${DIR} NOT removed..."
+	fi
 }
 
 MAP=$(get_map_name)
@@ -634,6 +642,9 @@ case "${C}" in
 		;;
 	stop)
 		stop "${@}"
+		;;
+	w|wipe)
+		wipe "${@}"
 		;;
 	*)
 		usage "$*"
