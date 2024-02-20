@@ -231,7 +231,7 @@ mergexml(){
 		# These are merged directly into the upstream file, but are C
 		for var in "INIT"
 		do
-			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.c" ]
+			if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.c.${MAP}" ]
 			then
 				if [[ ${FOUND} = 0 ]]
 				then
@@ -241,7 +241,7 @@ mergexml(){
 					FOUND=1
 				fi
 				echo "Patch '${WORKSHOP_DIR}/${ID}/${var,,}.c(.diff)' -> '${MPMISSIONS}/${MAP}/${var,,}.c'"
-				patch -s -p0 ${MPMISSIONS}/${MAP}/${var,,}.c < ${WORKSHOP_DIR}/${ID}/${var,,}.c || (
+				patch -s -p0 ${MPMISSIONS}/${MAP}/${var,,}.c.${MAP} < ${WORKSHOP_DIR}/${ID}/${var,,}.c || (
 					echo "Patch failed!"
 					exit 1
 				)

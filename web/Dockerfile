@@ -22,14 +22,10 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     locales \
     nano \
     procps \
-    python3-pip \
     wget \
     rename \
     steamcmd \
     xmlstarlet
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
@@ -56,9 +52,6 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash 
 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-# Add py3rcon
-RUN cd /usr/local && git clone https://github.com/indepth666/py3rcon.git
 
 # Setup a non-privileged user
 ARG USER_ID

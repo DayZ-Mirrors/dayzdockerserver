@@ -21,9 +21,12 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     locales \
     nano \
     patch \
+    python3 \
     procps \
     wget \
     xmlstarlet
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
