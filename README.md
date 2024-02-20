@@ -1,24 +1,12 @@
 # DayZDockerServer
 
+As of 02/20/2024, there is now an official Linux DayZ server!
+
 A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) container. The main script's functionality is derived from [this project](https://github.com/thelastnoc/dayz-sa_linuxserver). That functionality is described [here](https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673). The goal is to reproduce some of that functionality but also add more features. 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
-## Caveat Emptor
-
-As of DayZ release 1.15, a [Linux DayZ server](https://steamdb.info/app/1042420/) was made available in Dayz Experimental. This has not been officially released, so this will only run a DayZ Experimental server at the moment. Only the [DayZ Experimental client](https://dayz.fandom.com/wiki/Experimental) will be able to connect to it. The goal is to have a working implementation once the Linux server is officially released, presumably [here](https://steamdb.info/app/223350/).
-
-This process will create several docker volumes for the following sets of files: 
-* serverfiles: The base server files
-* mpmissions: The mpmissions directory of the base server files.
-* mods: All mods will be stored here
-* homedir: The user home directory. Each container gets its own. Where [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) keeps its resource files.
-* profiles: A running server's profile. A server container gets its own volume.
-* servermpmissions: A server's mpmissions directory. A server container gets its own volume.
-
-These volumes can get quite large. The `serverfiles` one will require at least 2.9G of disk space for the default install. The volume holding mods can fill up very quickly, with some map mods being as large as 10G (Deer Isle). Make sure you have that much disk space in the location where docker stores its volumes, usually `/var/lib/docker/volumes`.
-
-**This is a work in progress. It's subject to change and break often!**
+**This is a work in progress!**
 
 ## Configure and Build
 
