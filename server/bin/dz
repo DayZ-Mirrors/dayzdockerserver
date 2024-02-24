@@ -532,7 +532,7 @@ status(){
 		D=$(date +%s)
 		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
 		DAYS=$(( (${D} - ${F}) / 86400 ))
-		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r ${SERVER_PROFILE}/server.pid))) -u +"%H hours %M minutes %S seconds")
+		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r /tmp/parameters))) -u +"%H hours %M minutes %S seconds")
 
 		RUNNING="${YES}\nUptime: ${green}${UPTIME}${default}"
 		# Current parameters
