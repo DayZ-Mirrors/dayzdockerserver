@@ -530,7 +530,7 @@ status(){
 	then
 		# Uptime
 		D=$(date +%s)
-		F=$(date +%s -r ${SERVER_PROFILE}/server_console.log)
+		F=$(date +%s -r /tmp/parameters)
 		DAYS=$(( (${D} - ${F}) / 86400 ))
 		UPTIME="${DAYS} days "$(date -d@$(($(date +%s) - $(date +%s -r /tmp/parameters))) -u +"%H hours %M minutes %S seconds")
 

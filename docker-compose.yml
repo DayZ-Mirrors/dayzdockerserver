@@ -1,5 +1,3 @@
-version: "3.3"
-
 volumes:
   # For steamcmd files and resource files used by the scripts
   homedir_main:
