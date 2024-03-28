@@ -6,7 +6,11 @@ A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
-**This is a work in progress!**
+# Caveats
+
+* Some mods are known to crash the server on startup:
+  * [DayZ Expansion AI](https://steamcommunity.com/sharedfiles/filedetails/?id=2792982069)
+  * [Red Falcon Flight System Heliz](https://steamcommunity.com/workshop/filedetails/?id=2692979668)
 
 ## Configure and Build
 
@@ -52,7 +56,7 @@ The base server files must be installed before the server can be run:
 docker compose run --rm web dz install
 ```
 
-This will download about 2.7G of files.
+This will download about 2.9G of files.
 
 ## Run
 

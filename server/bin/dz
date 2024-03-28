@@ -136,7 +136,10 @@ report() {
 
 mergexml(){
 	echo
-	# First copy the pristine files from upstream
+
+	# Bring all base files into the working directories.
+
+	# Copy the pristine files from upstream
 	echo -e "${green}Copying upstream files into local mpmissions for map ${MAP}${default}":
 	find /mpmissions/${MAP} \( \
 		-name "cfgeconomycore.xml" \
@@ -147,6 +150,23 @@ mergexml(){
 		-o -name "cfgweather.xml" \
 		-o -name "init.c" \
 	\) -exec cp -v {} ${SERVER_FILES}{} \;
+
+	echo
+
+	# Remove previously copied keys and restore the default key
+	echo -e "${green}Resetting keys${default}"
+	mv ${SERVER_FILES}/keys/dayz.bikey /tmp
+	rm -rf ${SERVER_FILES}/keys/*
+	mv /tmp/dayz.bikey ${SERVER_FILES}/keys
+
+	# Copy all active mod keys
+	for link in $(ls -tdr ${SERVER_PROFILE}/@* 2> /dev/null)
+	do
+		ID=$(readlink ${link} | awk -F/ '{print $NF}')
+		MODNAME=$(get_mod_name ${ID})
+		echo -n "Copying key file(s) for mod ${MODNAME}: "
+		find ${WORKSHOP_DIR}/${ID} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
+	done
 
 	# Follow https://community.bistudio.com/wiki/DayZ:Central_Economy_mission_files_modding
 	# Remove any existing files, via the mod_ and custom_ prefixes
@@ -329,8 +349,11 @@ mergexml(){
 				mkdir -p ${MPMISSIONS}/${MAP}/custom_${dir}
 				for file in $(ls ${SERVER_PROFILE}/custom/${dir} 2> /dev/null)
 				do
-					echo -n "Copy "
-					cp -av ${SERVER_PROFILE}/custom/${dir}/${file} ${MPMISSIONS}/${MAP}/custom_${dir}
+					if ! [ -f ${MPMISSIONS}/${MAP}/custom_${dir}/${file} ]
+					then
+						echo -n "Additional Copy "
+						cp -av ${SERVER_PROFILE}/custom/${dir}/${file} ${MPMISSIONS}/${MAP}/custom_${dir}
+					fi
 				done
 			fi
 		done
@@ -447,8 +470,16 @@ activate(){
 		WW="de"
 		COLOR="${red}"
 	fi
+	# Check if the first argument is the word 'all'
+	if [[ ${1} = 'all' ]]
+	then
+		Q=$(ls -la ${SERVER_PROFILE}/@* | wc -l)
+		M=$(seq ${Q} | tac)
+	else
+		M="${@}"
+	fi
 	# Loop over the rest of the argument(s)
-	for i in ${@}
+	for i in ${M}
 	do
 		# Get the mod id and name
 		ID=$(get_mod_id ${i} ${W})
@@ -466,7 +497,6 @@ activate(){
 		else
 			echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} - is already ${WW}active"
 		fi
-		copy_keys ${W} ${ID}
 		echo -e "Mod id ${ID} - ${COLOR}${MODNAME}${default} ${WW}activated"
 		popd > /dev/null
 	done

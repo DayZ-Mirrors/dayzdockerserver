@@ -158,15 +158,3 @@ get_mod_command_line(){
 		mod_command_line='-mod='${mod_command_line::-1}
 	fi
 }
-
-# Copy mod keys
-copy_keys(){
-	if [[ ${1} = 1 ]]
-	then
-		echo -n "Copying key file(s): "
-		find ${WORKSHOP_DIR}/${2} -name "*.bikey" -exec cp -v {} "${SERVER_FILES}/keys/" \;
-	else
-	  echo -n "Removing key file(s): "
-    find ${WORKSHOP_DIR}/${2} -name "*.bikey" -execdir rm -vf "${SERVER_FILES}/keys/{}" \;
-	fi
-}
