@@ -1,16 +1,21 @@
 # DayZDockerServer
 
-As of 02/20/2024, there is now an official Linux DayZ server!
-
 A Linux [DayZ](https://dayz.com) server in a [Docker](https://docs.docker.com/) container. The main script's functionality is derived from [this project](https://github.com/thelastnoc/dayz-sa_linuxserver). That functionality is described [here](https://steamcommunity.com/sharedfiles/filedetails/?id=1517338673). The goal is to reproduce some of that functionality but also add more features. 
 
 The main goal is to provide a turnkey DayZ server with mod support that can be spun up with as little as a machine running Linux with Docker and Docker Compose installed. 
 
-# Caveats
+This project started when the Linux DayZ server was released for DayZ experimental version 1.14 on 09/02/2021. As of 02/20/2024, there is now an official Linux DayZ server, but...
+
+## Caveats
 
 * Some mods are known to crash the server on startup:
   * [DayZ Expansion AI](https://steamcommunity.com/sharedfiles/filedetails/?id=2792982069)
   * [Red Falcon Flight System Heliz](https://steamcommunity.com/workshop/filedetails/?id=2692979668)
+* Some mods work, but have bugs:
+  * [DayZ Expansion Groups](https://steamcommunity.com/sharedfiles/filedetails/?id=2792983364)
+    * The save file becomes corrupted and when the server restarts so the changes do not persist.
+
+This project is a work in progress: See the [roadmap](ROADMAP.md).
 
 ## Configure and Build
 
