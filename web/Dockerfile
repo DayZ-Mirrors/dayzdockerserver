@@ -1,4 +1,7 @@
-FROM debian:bullseye
+FROM debian:bookworm
+
+# Replace shell with bash so we can source files
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Set debconf to run non-interactively and agree to the SteamCMD EULA
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections \
@@ -6,16 +9,11 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
     && echo steam steam/license note '' | debconf-set-selections \
     && dpkg --add-architecture i386
 
-# Add contrib and backports
-RUN sed -i /etc/apt/sources.list -e 's/main/main contrib non-free/'
-
-RUN echo 'deb http://deb.debian.org/debian bullseye-backports main non-free' >> /etc/apt/sources.list
+# Add backports and contrib
+RUN sed -i /etc/apt/sources.list.d/debian.sources -e 's/Components: main/Components: main contrib non-free/g'
 
 # Install _only_ the necessary packages
 RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
-    curl \
-    ca-certificates \
-    git \
     gwenhywfar-tools \
     jq \
     libxml2-utils \
@@ -40,11 +38,11 @@ ENV PATH /usr/games:/files/bin:/web/bin:${PATH}
 # Install nodejs
 RUN mkdir /usr/local/nvm
 ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION 18.18.2
+ENV NODE_VERSION 20.12.2
 RUN echo $NODE_VERSION
 
 # Install nvm with node and npm
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
+RUN wget -O - https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && . $NVM_DIR/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm alias default $NODE_VERSION \
@@ -63,6 +61,11 @@ RUN groupadd -g ${USER_ID} user && \
 
 # Shut steamcmd up
 RUN cd /usr/lib/i386-linux-gnu && ln -s /web/bin/steamservice.so
+
+# Add bercon https://github.com/WoozyMasta/bercon
+RUN wget https://github.com/WoozyMasta/bercon/releases/download/1.0.0/bercon \
+    && chmod +x bercon \
+    && mv bercon /usr/bin
 
 # Use our non-privileged user
 USER user

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<messages>
+    <message>
+        <deadline>240</deadline>
+        <shutdown>1</shutdown>
+        <text>The server will restart in #tmin minutes...</text>
+    </message>
+    <message>
+        <delay>1</delay>
+        <repeat>30</repeat>
+        <onconnect>1</onconnect>
+        <text>Welcome to #name!</text>
+    </message>
+</messages>

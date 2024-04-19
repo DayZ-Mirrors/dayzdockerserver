@@ -81,7 +81,7 @@ loadconfig(){
 		fi
 		if [ "${passwd}" == "" ]
 		then
-			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\nOpen the Battleye config with 'dayzserver rcon'."
+			printf "[ ${red}FAIL${default} ] Could not generate a passwort for RCON!\n"
 			exit 1
 		else
 			cat > "${BE_SERVER_FILE}" <<EOF
@@ -102,11 +102,6 @@ EOF
 		passwd=$(grep RConPassword ${FILE} | awk '{print $2}')
 #		printf "[ ${cyan}INFO${default} ] Using existing RCON password: ${yellow}${passwd}${default}\n"
 	fi
-	cp /usr/local/py3rcon/configexample.json ~/py3rcon.config.json
-	jq --arg port 2303 --arg rcon_password b0fNIBVfkM \
-		'.logfile="py3rcon.log" | .loglevel=0 | .server.port=$port | .server.rcon_password=$rcon_password | del(.repeatMessage)' \
-		/usr/local/py3rcon/configexample.json \
-		> ~/py3rcon.config.json
 }
 
 # Make sure to clean up and report on exit, as these files remain in the container's volume
@@ -130,8 +125,9 @@ report() {
 	# Back these files up into a new directory with the current time stamp in the name
 	DIR="${SERVER_PROFILE}/logs/$(date +%Y-%m-%d-%H-%M-%S)"
 	mkdir -p ${DIR}
-	cd ${SERVER_PROFILE}
-	mv -v *.log *.RPT *.mdmp ${DIR} 2> /dev/null
+	pushd ${SERVER_PROFILE} > /dev/null
+	mv -v *.log *.RPT *.mdmp ${DIR} 2> /dev/null || true
+	popd > /dev/null
 }
 
 mergexml(){
@@ -150,6 +146,17 @@ mergexml(){
 		-o -name "cfgweather.xml" \
 		-o -name "init.c" \
 	\) -exec cp -v {} ${SERVER_FILES}{} \;
+
+	# Same for any files in the db subdirectory we may modify
+	find /mpmissions/${MAP}/db \( \
+		-name "messages.xml" \
+	\) -exec cp -v {} ${SERVER_FILES}{} \;
+
+	# For now let's just replace the file instead of merging, as the upstream file has nothing in it.
+	if [ -f ${FILES}/messages.xml ]
+	then
+		cp -v ${FILES}/messages.xml ${MPMISSIONS}/${MAP}/db/messages.xml
+	fi
 
 	echo
 
@@ -376,6 +383,8 @@ start(){
 		done
 		exit 0
 	fi
+	# Clean up from previous runs
+	rm -f ${SERVER_FILES}/dont_restart
 	# Ensure mpmissions has at least one map. If not, copy it from the local read-only volume that stores pristine mpmissons directories
 	if [ ! -d "${MPMISSIONS}/${MAP}" ] && [ -d "/mpmissions/${MAP}" ]
 	then
@@ -384,10 +393,6 @@ start(){
 		echo
 		cp -av /mpmissions/${MAP} ${MPMISSIONS}
 	fi
-	# Do the report on exit. Set here so that it only happens once we're starting the server, and not for other actions.
-	trap '
-		report
-	' EXIT
 	get_mods
 	mergexml
 	if [[ ${DONT_START} != "" ]]
@@ -408,25 +413,28 @@ start(){
 	echo ${parameters} > /tmp/parameters
 	./DayZServer "${mod_command_line}" ${parameters}
 	EXIT_CODE=$?
-	if [ -f ${SERVER_FILES}/restart ]
-	then
-		rm -f ${SERVER_FILES}/restart
-		EXIT_CODE=42
-	fi
 	printf "\n[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
-	exit ${EXIT_CODE}
+	report
+	if [ -f ${SERVER_FILES}/dont_restart ]
+	then
+		printf "\n[ ${red}DayZ${default} ] Server script exiting, container shutting down...\n"
+	else
+		printf "\n[ ${green}DayZ${default} ] Restarting server\n"
+		exec dz start
+	fi
+	exit 0
 }
 
 # Restarts the server by forcing an exit code other than 0, causing docker to restart the container.
 restart(){
-	touch "${SERVER_FILES}/restart"
 	echo "Restarting DayZ server..."
 	kill -TERM $(pidof DayZServer)
 }
 
-# Stops the server cleanly and exits 0, which will stop the container.
+# Stops the server but does not restart it.
 stop(){
 	echo "Stopping DayZ server..."
+	touch "${SERVER_FILES}/dont_restart"
 	kill -TERM $(pidof DayZServer)
 }
 
@@ -501,11 +509,6 @@ activate(){
 		popd > /dev/null
 	done
 	status
-}
-
-# Our internal RCON
-rcon(){
-	exec /usr/local/py3rcon/py3rcon.py --gui ~/py3rcon.config.json
 }
 
 # List mods

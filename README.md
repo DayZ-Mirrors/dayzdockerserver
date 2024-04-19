@@ -10,10 +10,12 @@ This project started when the Linux DayZ server was released for DayZ experiment
 
 * Some mods are known to crash the server on startup:
   * [DayZ Expansion AI](https://steamcommunity.com/sharedfiles/filedetails/?id=2792982069)
-  * [Red Falcon Flight System Heliz](https://steamcommunity.com/workshop/filedetails/?id=2692979668)
+  * [Red Falcon Flight System Heliz](https://steamcommunity.com/workshop/filedetails/?id=2692979668) - Bug report [here](https://feedback.bistudio.com/T176564)
 * Some mods work, but have bugs:
   * [DayZ Expansion Groups](https://steamcommunity.com/sharedfiles/filedetails/?id=2792983364)
     * The save file becomes corrupted and when the server restarts so the changes do not persist.
+* There are other bugs:
+  * (Server doesn't stop with SIGTERM)[https://feedback.bistudio.com/T170721]
 
 This project is a work in progress: See the [roadmap](ROADMAP.md).
 
