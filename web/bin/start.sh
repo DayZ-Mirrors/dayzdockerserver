@@ -7,6 +7,7 @@ then
 	cat >> .bashrc <<EOF
 alias ls='ls --color'
 export PS1="${debian_chroot:+($debian_chroot)}\u@dz-web:\w\$ "
+unset DEVELOPMENT
 EOF
 fi
 
