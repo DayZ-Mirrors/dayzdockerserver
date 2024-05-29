@@ -4,6 +4,7 @@
 cat > .bashrc <<EOF
 alias ls='ls --color'
 export PS1="${debian_chroot:+($debian_chroot)}\u@dz-server:\w\$ "
+unset DEVELOPMENT
 EOF
 
 # Start the server.
