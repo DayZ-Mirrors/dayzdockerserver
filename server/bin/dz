@@ -571,6 +571,15 @@ status(){
 		# Current parameters
 		RUNNING="${RUNNING}\nRunning Parameters: $(cat /tmp/parameters)\nRunning mod parameter: $(cat /tmp/mod_command_line)"
 	fi
+	# Release or Experimental
+	if [[ ${release_client_appid} = "221100" ]]
+	then
+		RELEASE="Stable"
+	else
+		RELEASE="Experimental"
+	fi
+	VERSION="$(strings /serverfiles/DayZServer | grep -P "DayZ \d\.\d+\.\d+" | cut -c6-) - ${RELEASE}"
+	# Map
 	MAP=${MAP}
 	# Number of mods plus the list denoting on or off
 	echo -ne "
@@ -592,6 +601,7 @@ Working mod parameter: ${mod_command_line}"
 	if [[ "${INSTALLED}" = "${YES}" ]]
 	then
 		echo "Map: ${MAP}"
+		echo "Version: ${VERSION}"
 	fi
 	echo
 }

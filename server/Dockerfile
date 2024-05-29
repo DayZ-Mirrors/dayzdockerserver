@@ -11,6 +11,7 @@ RUN sed -i /etc/apt/sources.list.d/debian.sources -e 's/Components: main/Compone
 
 # Install _only_ the necessary packages
 RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends \
+    binutils \
     gwenhywfar-tools \
     jq \
     libxml2-utils \

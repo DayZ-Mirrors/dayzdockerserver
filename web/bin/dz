@@ -28,7 +28,7 @@ Options and arguments:
   m|modupdate - Update the mod files
   p|map id - Install a mod's mpmissions files by id. (Presumes template exists)
   r|remove id - Remove all files and directories of a Workshop item by id
-  s|status - Shows Steam login status, if base files are installed, installed mods
+  l|s|status - Shows Steam login status, if base files are installed, installed mods
   u|update - Update the server files
   x|xml id - Get and normalize XML files from a mod's template by id (Presumes template exists)
 ${default}"
@@ -260,6 +260,13 @@ status(){
 	if [ -f "${SERVER_INSTALL_FILE}" ]
 	then
 		INSTALLED="${YES}"
+		if [[ ${release_client_appid} = "221100" ]]
+		then
+			RELEASE="Stable"
+		else
+			RELEASE="Experimental"
+		fi
+		VERSION="$(strings /serverfiles/DayZServer | grep -P "DayZ \d\.\d+\.\d+" | cut -c6-) - ${RELEASE}"
 	fi
 	# Logged into Steam
 	if [ -f "${STEAM_LOGIN}" ]
@@ -281,6 +288,10 @@ Server files installed: ${INSTALLED}"
 		echo
 		exit 0
 	fi
+	# Version of DayZ Server files
+	echo -ne "
+Version: ${VERSION}"
+
 	# Mods
 	echo -ne "
 Mods: "
