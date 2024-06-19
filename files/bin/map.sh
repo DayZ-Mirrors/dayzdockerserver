@@ -2,11 +2,17 @@
 
 set -eE
 
-if [ -f /files/mods/${1}/map.env ]
+TERM="map"
+if [[ ${1} =~ ^[0-9]+$ ]]
 then
-	source /files/mods/${1}/map.env
+	TERM="mod id"
+fi
+
+if [ -f "/files/mods/${1}/map.env" ]
+then
+	source "/files/mods/${1}/map.env"
 else
-	echo "map.env not found for mod id ${1}..."
+	echo "map.env not found for ${TERM} ${1}..."
 	exit 1
 fi
 
@@ -14,17 +20,18 @@ if [[ ${2} = "uninstall" ]]
 then
 	echo "Backing up, as uninstalling will remove the ${MAP} mpmissions directory"
 	dz backup
-	rm -rf ${SERVER_FILES}/mpmissions/${MPDIR}
-elif [[ ${2} = "update" ]]
+	rm -rf "${SERVER_FILES}/mpmissions/${MPDIR}"
+elif [[ ${2} = "update" ]] || [[ ${2} = "install" ]]
 then
 	cd /tmp
-	git clone ${REPO} 2> /dev/null 1> /dev/null
-	cp -a ${DIR}/${MPDIR} ${SERVER_FILES}/mpmissions
-	rm -rf ${DIR}
-elif [[ ${2} = "install" ]]
-then
-	cd /tmp
-	git clone ${REPO} 2> /dev/null 1> /dev/null
-	cp -a ${DIR}/${MPDIR} ${SERVER_FILES}/mpmissions
-	rm -rf ${DIR}
+	if [ -d "${DIR}" ]
+	then
+		pushd "${DIR}" > /dev/null
+		git pull
+		popd > /dev/null
+	else
+		git clone "${REPO}"
+	fi
+	rm -rf "${SERVER_FILES}/mpmissions/${MPDIR}"
+	cp -a "${DIR}/${MPDIR}" "${SERVER_FILES}/mpmissions"
 fi

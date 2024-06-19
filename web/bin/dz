@@ -56,7 +56,6 @@ installxml(){
   do
     var=$(echo ${i} | cut -d: -f1)
     CHECK=$(echo ${i} | cut -d: -f2)
-    CHILD=$(echo ${i} | cut -d: -f3)
     if [ -f "${WORKSHOP_DIR}/${ID}/${var,,}.xml" ]
     then
       echo "Normalizing ${WORKSHOP_DIR}/${ID}/${var,,}.xml..."
@@ -127,13 +126,14 @@ add(){
 
 # Remove a mod
 remove(){
-	if [ -d "${WORKSHOP_DIR}/${1}" ]
+	DIR="${WORKSHOP_DIR}/${1:?}"
+	if [ -d "${DIR}" ]
 	then
 		MODNAME=$(get_mod_name ${1})
-		echo "Removing directory ${WORKSHOP_DIR}/${1}"
-		rm -rf "${WORKSHOP_DIR}/${1}"
+		echo "Removing directory ${DIR}"
+		rm -rf "${DIR}"
 	else
-		echo "Directory ${WORKSHOP_DIR}/${1} doesn't exist?"
+		echo "Directory ${DIR} doesn't exist?"
 	fi
 	if [ -L "${SERVER_FILES}/@${MODNAME}" ]
 	then
@@ -305,9 +305,14 @@ Mods: "
 
 map(){
 	# Install map mpmissions for mods that have them. Presumes a map.env was created for the mod, with the required metadata (git URL, etc.)
-	if [ -f ${FILES}/mods/${1}/map.env ]
+	TERM="map"
+  if [[ "${1}" =~ ^[0-9]+$ ]]
+  then
+  	TERM="mod id"
+  fi
+	if [ -f "${FILES}/mods/${1}/map.env" ]
 	then
-		echo "Installing mpmissions files for mod id ${1}..."
+		echo "Installing mpmissions files for ${TERM} ${1}..."
 		source ${FILES}/mods/${1}/map.env
 		${FILES}/bin/map.sh ${1} install
 	fi
