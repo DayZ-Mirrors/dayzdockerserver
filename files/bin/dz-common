@@ -5,49 +5,49 @@ set -eEa
 # If you want/need the server and rcon ports to be different, set them here.
 # The steam query port is set in serverDZ.cfg.
 
-# Server port
-port=2302
-rcon_port=2303
+# Server port. Set these in the .env file for the container.
+export port=${SERVER_PORT}
+export rcon_port=${RCON_PORT}
 
 # Don't change anything else.
 
 # Colors
-default="\e[0m"
-red="\e[31m"
-green="\e[32m"
-yellow="\e[93m"
-lightblue="\e[94m"
-blue="\e[34m"
-magenta="\e[35m"
-cyan="\e[36m"
+export default="\e[0m"
+export red="\e[31m"
+export green="\e[32m"
+export yellow="\e[93m"
+export lightblue="\e[94m"
+export blue="\e[34m"
+export magenta="\e[35m"
+export 	cyan="\e[36m"
 
 # DayZ release server Steam app ID.
 # Now that the Linux server is released, the binaries will come from this ID.
-release_server_appid=223350
+export release_server_appid=223350
 
 # Leaving the experimental server appid here to allow for the use of the experimental server.
-#release_server_appid=1042420
+#export release_server_appid=1042420
 
 # DayZ release client SteamID. This is for mods, as only the release client has them.
-release_client_appid=221100
+export release_client_appid=221100
 
 # Server container profile directory
-SERVER_PROFILE="/profiles"
+export SERVER_PROFILE="/profiles"
 
 # Common container base directories
-FILES="/files"
-SERVER_FILES="/serverfiles"
+export FILES="/files"
+export SERVER_FILES="/serverfiles"
 
 # Used to check if dayZ is installed
-SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
+export SERVER_INSTALL_FILE="${SERVER_FILES}/DayZServer"
 
 # Steam files
-STEAM_LOGIN="${HOME}/steamlogin"
-STEAMCMD=steamcmd
+export STEAM_LOGIN="${HOME}/steamlogin"
+export STEAMCMD=steamcmd
 
 # Other stuff
-YES="${green}yes${default}"
-NO="${red}no${default}"
+export YES="${green}yes${default}"
+export NO="${red}no${default}"
 
 # Convenience function
 prompt_yn(){
@@ -95,7 +95,7 @@ get_mod_name(){
 		echo "Mod ID ${1} doesn't exist" >&2
 		exit 1
 	fi
-	NAME=$(grep name ${WORKSHOP_DIR}/${1}/meta.cpp | cut -d '"' -f2 | tr -cd [:alnum:])
+	NAME=$(grep name "${WORKSHOP_DIR}/${1}/meta.cpp" | cut -d '"' -f2 | tr -cd "[:alnum:]")
 	if [[ ${NAME} = "" ]]
 	then
 		echo "Could not get metadata. See above. Exiting..."
@@ -125,7 +125,7 @@ get_mod_id(){
 	for link in $(ls ${ARG} ${DIR}/@* 2> /dev/null)
 	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
-		if [[ ${X} = ${1} ]]
+		if [[ "${X}" = "${1}" ]]
 		then
 			echo -n ${ID}
 			return
@@ -140,7 +140,7 @@ get_mods(){
 	do
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		MODNAME=$(get_mod_name ${ID})
-		workshoplist+=" +workshop_download_item "${release_client_appid}" "${ID}
+		workshoplist+=" +workshop_download_item ${release_client_appid} ${ID}"
 	done
 	get_mod_command_line
 }
