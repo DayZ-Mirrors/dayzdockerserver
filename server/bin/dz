@@ -11,6 +11,7 @@ mkdir -p ${SERVER_PROFILE}/battleye
 SERVER_CFG_FILE="serverDZ.cfg"
 SERVER_CFG_DST="${SERVER_PROFILE}/${SERVER_CFG_FILE}"
 SERVER_CFG_SRC="${FILES}/${SERVER_CFG_FILE}"
+SERVER_CFG_SAVE="${SERVER_PROFILE}/${SERVER_CFG_FILE}.save"
 
 # Command line parameters except mod, as that is handled separately.
 parameters="-config=${SERVER_CFG_DST} -port=${port} -freezecheck -BEpath=${SERVER_PROFILE}/battleye -profiles=${SERVER_PROFILE} -nologs"
@@ -62,10 +63,10 @@ loadconfig(){
 		exit 1
 	fi
 	# Handle the initial server configuration file
-	if [ ! -f ${SERVER_CFG_DST} ]
+	if [ ! -f ${SERVER_CFG_SAVE} ]
 	then
 		echo "Creating initial server configuration file"
-		cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+		cp "${SERVER_CFG_SRC}" "${SERVER_CFG_SAVE}"
 	fi
 	# battleye config and rconpassword setup
 	# The server creates a new file from this file, which it then uses.
@@ -411,6 +412,9 @@ start(){
 	# actual status with those
 	echo ${mod_command_line} > /tmp/mod_command_line
 	echo ${parameters} > /tmp/parameters
+	# Add the steam port from the environment
+	cp -a "${SERVER_CFG_SAVE}" "${SERVER_CFG_DST}"
+	sed -e "s,^steamQueryPort.*,steamQueryPort = ${STEAM_PORT};," -i "${SERVER_CFG_DST}"
 	./DayZServer "${mod_command_line}" ${parameters}
 	EXIT_CODE=$?
 	printf "\n[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
@@ -446,20 +450,20 @@ force(){
 
 # Handle any changes in the server config file by allowing them to be merged after viewing a diff.
 config(){
-	if ! diff -q "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}"
+	if ! diff -q "${SERVER_CFG_SAVE}" "${SERVER_CFG_SRC}"
 	then
 		echo "========================================================================="
-		diff -Nau --color "${SERVER_CFG_DST}" "${SERVER_CFG_SRC}" | more
+		diff -Nau --color "${SERVER_CFG_SAVE}" "${SERVER_CFG_SRC}" | more
 		echo "========================================================================="
 		if prompt_yn "The new server configuration file differs from what's installed. Use it?"
 		then
 			echo "Updating the server configuration file"
-			cp "${SERVER_CFG_SRC}" "${SERVER_CFG_DST}"
+			cp "${SERVER_CFG_SRC}" "${SERVER_CFG_SAVE}"
 		else
 			echo "NOT updating the server configuration file"
 		fi
 	else
-		echo "No differences found between ${SERVER_CFG_SRC} and ${SERVER_CFG_DST}"
+		echo "No differences found between ${SERVER_CFG_SRC} and ${SERVER_CFG_SAVE}"
 	fi
 }
 
@@ -540,9 +544,9 @@ activelist(){
 get_map_name(){
   MAP="none"
   # Map name
-  if [[ -f ${SERVER_CFG_DST} ]]
+  if [[ -f ${SERVER_CFG_SAVE} ]]
   then
-    MAP=$(grep -E "template=" ${SERVER_CFG_DST} | grep -vE "^//" | cut -d= -f2 | cut -d\; -f1 | tr -d '"')
+    MAP=$(grep -E "template=" ${SERVER_CFG_SAVE} | grep -vE "^//" | cut -d= -f2 | cut -d\; -f1 | tr -d '"')
   fi
   echo ${MAP}
 }
