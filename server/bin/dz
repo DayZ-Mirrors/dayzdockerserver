@@ -529,13 +529,13 @@ activelist(){
 		if [[ ${have} = "no" ]]
 		then
 			have="yes"
-			echo -e "\n     ID         Name                             URL                                                                Size"
-			echo "------------------------------------------------------------------------------------------------------------------------"
+			echo -e "\n     ID         Name                              URL                                                                Size"
+			echo "-------------------------------------------------------------------------------------------------------------------------"
 		fi
 		ID=$(readlink ${link} | awk -F/ '{print $NF}')
 		MODNAME=$(get_mod_name ${ID})
 		SIZE=$(du -sh "${WORKSHOP_DIR}/${ID}" | awk '{print $1}')
-		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}+1}" ${ID} ${SIZE}
+		printf "${C}%.3d  %s %.30s    %s  https://steamcommunity.com/sharedfiles/filedetails/?id=%s  %s${default}\n" ${X} ${ID} "${MODNAME}" "${spaces:${#MODNAME}}" ${ID} ${SIZE}
 		X=$((X+1))
 	done
 	if [[ ${have} = "no" ]]
