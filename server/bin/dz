@@ -414,7 +414,10 @@ start(){
 	echo ${parameters} > /tmp/parameters
 	# Add the steam port from the environment
 	cp -a "${SERVER_CFG_SAVE}" "${SERVER_CFG_DST}"
-	sed -e "s,^steamQueryPort.*,steamQueryPort = ${STEAM_PORT};," -i "${SERVER_CFG_DST}"
+	if [[ ${STEAM_PORT} != "" ]]
+	then
+		sed -e "s,^steamQueryPort.*,steamQueryPort = ${STEAM_PORT};," -i "${SERVER_CFG_DST}"
+	fi
 	./DayZServer "${mod_command_line}" ${parameters}
 	EXIT_CODE=$?
 	printf "\n[ ${yellow}DayZ${default} ] Server exited. Exit code: ${EXIT_CODE}\n"
