@@ -106,6 +106,17 @@ cp -a /files/custom/starting-gear /profiles/custom/
 
 Restart the server.
 
+### No personal light
+
+The personal light is usually configured using the `disablePersonalLight` setting in [serverDZ.cfg](../serverDZ.cfg), but if a cfggameplay.json file is present, which is the default being employed for this project, that setting must be overridden there. To configure the personal light:
+
+```shell
+mkdir -p /profiles/custom
+cp -a /files/custom/no-personal-light /profiles/custom
+```
+
+Restart the server.
+
 ### References
 
 [BI DayZ Wiki - Spawning Gear Configuration](https://community.bistudio.com/wiki/DayZ:Spawning_Gear_Configuration)
