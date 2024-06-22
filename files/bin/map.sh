@@ -32,6 +32,7 @@ then
 	else
 		git clone "${REPO}"
 	fi
-	rm -rf "${SERVER_FILES}/mpmissions/${MPDIR}"
-	cp -a "${DIR}/${MPDIR}" "${SERVER_FILES}/mpmissions"
+	rm -rf ${SERVER_FILES}/mpmissions/${MPDIR:?}
+	pushd "${DIR}" > /dev/null
+	find . -name "${MPDIR}" -exec cp -a {} "${SERVER_FILES}/mpmissions" \;
 fi
