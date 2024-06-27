@@ -6,6 +6,16 @@ set -eEa
 # The steam query port is set in serverDZ.cfg.
 
 # Server port. Set these in the .env file for the container.
+if [[ ${SERVER_PORT} = "" ]]
+then
+	export SERVER_PORT=2302
+fi
+
+if [[ ${RCON_PORT} = "" ]]
+then
+	export RCON_PORT=2303
+fi
+
 export port=${SERVER_PORT}
 export rcon_port=${RCON_PORT}
 

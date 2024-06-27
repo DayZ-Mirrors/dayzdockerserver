@@ -190,6 +190,10 @@ install(){
 		printf "[ ${yellow}DayZ${default} ] Downloading DayZ Server-Files!\n"
 		dologin
 		${STEAMCMD} +force_install_dir ${SERVER_FILES} +login "${steamlogin}" +app_update "${release_server_appid}" validate +quit
+		# This installs the mpmissions for charnarusplus and enoch (AKA Livonia) from github. The game once allowed the full server
+		# to be downloaded, but now you get the server without any mpmissions. This is a workaround.
+		echo "Installing mpmissions for ChernarusPlus and Livonia from github..."
+		map default
 	else
 		printf "[ ${lightblue}DayZ${default} ] The server is already installed.\n"
 	fi

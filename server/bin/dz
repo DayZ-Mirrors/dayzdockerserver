@@ -138,15 +138,18 @@ mergexml(){
 
 	# Copy the pristine files from upstream
 	echo -e "${green}Copying upstream files into local mpmissions for map ${MAP}${default}":
-	find /mpmissions/${MAP} \( \
-		-name "cfgeconomycore.xml" \
-		-o -name "cfgenvironment.xml" \
-		-o -name "cfgeventgroups.xml" \
-		-o -name "cfgeventspawns.xml" \
-		-o -name "cfggameplay.json" \
-		-o -name "cfgweather.xml" \
-		-o -name "init.c" \
-	\) -exec cp -v {} ${SERVER_FILES}{} \;
+	# Not all maps have all files, so we need to check for their existence before copying them
+	for i in "cfgeconomycore.xml" "cfgenvironment.xml" "cfgeventgroups.xml" "cfgeventspawns.xml" "cfggameplay.json" "cfgweather.xml" "init.c"
+	do
+		if [ -f /mpmissions/${MAP}/${i} ]
+		then
+			cp -v /mpmissions/${MAP}/${i} ${SERVER_FILES}/${i}
+		else
+			# Copy it from the Chernarus map
+			echo "The map ${MAP} does not have a ${i} file, copying from Chernarus..."
+			cp -v /mpmissions/dayzOffline.chernarusplus/${i} ${SERVER_FILES}/${i}
+		fi
+	done
 
 	# Same for any files in the db subdirectory we may modify
 	find /mpmissions/${MAP}/db \( \
