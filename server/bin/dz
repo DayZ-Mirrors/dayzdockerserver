@@ -143,11 +143,11 @@ mergexml(){
 	do
 		if [ -f /mpmissions/${MAP}/${i} ]
 		then
-			cp -v /mpmissions/${MAP}/${i} ${SERVER_FILES}/${i}
+			cp -v /mpmissions/${MAP}/${i} ${MPMISSIONS}/${MAP}/${i}
 		else
 			# Copy it from the Chernarus map
 			echo "The map ${MAP} does not have a ${i} file, copying from Chernarus..."
-			cp -v /mpmissions/dayzOffline.chernarusplus/${i} ${SERVER_FILES}/${i}
+			cp -v /mpmissions/dayzOffline.chernarusplus/${i} ${MPMISSIONS}/${MAP}/${i}
 		fi
 	done
 
