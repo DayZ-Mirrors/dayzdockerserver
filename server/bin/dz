@@ -5,7 +5,7 @@ source dz-common
 # Server container base directories
 MPMISSIONS="${SERVER_FILES}/mpmissions"
 
-mkdir -p ${SERVER_PROFILE}/battleye
+mkdir -p "${SERVER_PROFILE}"/battleye
 
 # Server configuration file
 SERVER_CFG_FILE="serverDZ.cfg"
@@ -381,10 +381,8 @@ start(){
 			echo "Caught SIGTERM/SIGINT..."
 			exit 0
 		' SIGTERM SIGINT
-		while [ true ]
-		do
-			sleep 1
-		done
+		tail -f /dev/null &
+		wait $!
 		exit 0
 	fi
 	# Clean up from previous runs
