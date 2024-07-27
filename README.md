@@ -15,7 +15,7 @@ This project started when the Linux DayZ server was released for DayZ experiment
   * [DayZ Expansion Groups](https://steamcommunity.com/sharedfiles/filedetails/?id=2792983364)
     * The save file becomes corrupted and when the server restarts so the changes do not persist.
 * There are other bugs:
-  * (Server doesn't stop with SIGTERM)[https://feedback.bistudio.com/T170721]
+  * [Server doesn't stop with SIGTERM](https://feedback.bistudio.com/T170721)
 
 This project is a work in progress: See the [roadmap](ROADMAP.md).
 
