@@ -122,6 +122,7 @@ add(){
 	symlink 1 ${1} "${MODNAME}"
 	echo -e "Mod id ${1} - ${green}${MODNAME}${default} - added"
 	xml ${ID}
+	map ${ID}
 }
 
 # Remove a mod

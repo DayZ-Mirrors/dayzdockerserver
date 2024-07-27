@@ -4,7 +4,7 @@
 if ! echo .bashrc | grep -q "dz-web"
 then
 	echo "Adding PS1 to .bashrc..."
-	cat >> .bashrc <<EOF
+	cat > .bashrc <<EOF
 alias ls='ls --color'
 export PS1="${debian_chroot:+($debian_chroot)}\u@dz-web:\w\$ "
 unset DEVELOPMENT
