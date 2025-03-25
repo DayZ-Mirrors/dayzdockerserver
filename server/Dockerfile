@@ -16,9 +16,11 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-reco
     jq \
     libxml2-utils \
     locales \
+    ltrace \
     nano \
     patch \
     procps \
+    strace \
     wget \
     xmlstarlet
 
